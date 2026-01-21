@@ -1,0 +1,251 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-dark: #0a0a0f;
+  --bg-card: #12121a;
+  --bg-card-light: #1a1a25;
+  --accent-cyan: #00f0ff;
+  --accent-pink: #ff00aa;
+  --accent-purple: #8b5cf6;
+  --text-primary: #e4e4e7;
+  --text-muted: #71717a;
+  --border-color: #2a2a35;
+  --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.3);
+  --glow-pink: 0 0 20px rgba(255, 0, 170, 0.3);
+  --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-cyber-bg text-cyber-text font-sans antialiased;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 10, 15, 0.95), rgba(10, 10, 15, 1)),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 240, 255, 0.03) 2px,
+        rgba(0, 240, 255, 0.03) 4px
+      );
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Cyber card with glow border */
+  .cyber-card {
+    @apply bg-cyber-card rounded-lg p-4 border border-cyber-border relative overflow-hidden;
+    transition: all 0.3s ease;
+  }
+
+  .cyber-card:hover {
+    @apply border-cyber-cyan/40;
+    box-shadow: var(--glow-cyan);
+  }
+
+  /* Gradient border effect */
+  .gradient-border {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: 0.5rem;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.5rem;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple), var(--accent-pink));
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Cyber button */
+  .cyber-btn {
+    @apply px-4 py-2 font-mono text-sm uppercase tracking-wider rounded relative overflow-hidden;
+    @apply bg-cyber-card border border-cyber-cyan/50 text-cyber-cyan;
+    @apply hover:bg-cyber-cyan/10 hover:shadow-glow-cyan-sm;
+    transition: all 0.2s ease;
+  }
+
+  .cyber-btn-primary {
+    @apply bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan;
+  }
+
+  .cyber-btn-pink {
+    @apply bg-cyber-pink/20 border-cyber-pink text-cyber-pink;
+    @apply hover:bg-cyber-pink/30 hover:shadow-glow-pink-sm;
+  }
+
+  /* Tier badges */
+  .tier-s {
+    @apply bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-amber-400 border-amber-500/50;
+  }
+
+  .tier-a {
+    @apply bg-cyber-purple/20 text-cyber-purple border-cyber-purple/50;
+  }
+
+  .tier-b {
+    @apply bg-cyber-cyan/20 text-cyber-cyan border-cyber-cyan/50;
+  }
+
+  .tier-c {
+    @apply bg-cyber-muted/20 text-cyber-muted border-cyber-muted/50;
+  }
+
+  /* Ranking number */
+  .rank-number {
+    @apply font-mono text-2xl font-bold;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Score display */
+  .score-display {
+    @apply font-mono text-xl font-bold text-cyber-cyan;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+
+  /* Trend indicators */
+  .trend-up {
+    @apply text-green-400;
+  }
+
+  .trend-down {
+    @apply text-red-400;
+  }
+
+  .trend-neutral {
+    @apply text-cyber-muted;
+  }
+
+  /* Stat bar */
+  .stat-bar {
+    @apply h-2 rounded-full bg-cyber-border overflow-hidden;
+  }
+
+  .stat-bar-fill {
+    @apply h-full rounded-full;
+    transition: width 0.5s ease-out;
+  }
+
+  .stat-bar-cyan {
+    @apply bg-gradient-to-r from-cyber-cyan/50 to-cyber-cyan;
+  }
+
+  .stat-bar-pink {
+    @apply bg-gradient-to-r from-cyber-pink/50 to-cyber-pink;
+  }
+
+  /* Table styles */
+  .cyber-table {
+    @apply w-full text-sm;
+  }
+
+  .cyber-table th {
+    @apply px-4 py-3 text-left text-cyber-muted font-mono uppercase tracking-wider text-xs border-b border-cyber-border;
+  }
+
+  .cyber-table td {
+    @apply px-4 py-3 border-b border-cyber-border/50;
+  }
+
+  .cyber-table tbody tr {
+    @apply transition-colors;
+  }
+
+  .cyber-table tbody tr:hover {
+    @apply bg-cyber-card-light;
+  }
+
+  /* Select dropdown */
+  .cyber-select {
+    @apply bg-cyber-card border border-cyber-border rounded px-4 py-2;
+    @apply text-cyber-text font-mono;
+    @apply focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan/50;
+    transition: all 0.2s ease;
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    @apply bg-cyber-card-light rounded animate-pulse;
+  }
+
+  /* Scan line effect overlay */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 240, 255, 0.02) 2px,
+      rgba(0, 240, 255, 0.02) 4px
+    );
+    pointer-events: none;
+    animation: scan 8s linear infinite;
+  }
+}
+
+@layer utilities {
+  /* Glow text */
+  .glow-text-cyan {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+
+  .glow-text-pink {
+    text-shadow: 0 0 10px rgba(255, 0, 170, 0.5), 0 0 20px rgba(255, 0, 170, 0.3);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(0, 240, 255, 0.3);
+  color: white;
+}
+
+/* Custom scrollbar for browsers that support it */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}

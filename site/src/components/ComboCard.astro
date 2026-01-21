@@ -1,0 +1,89 @@
+---
+import TrendIndicator from './TrendIndicator.astro';
+
+interface Props {
+  rank?: number;
+  combo: string;
+  blade: string;
+  ratchet: string;
+  bit: string;
+  score: number;
+  uses: number;
+  first: number;
+  second?: number;
+  third?: number;
+  trend?: number;
+  compact?: boolean;
+}
+
+const { rank, combo, blade, ratchet, bit, score, uses, first, second = 0, third = 0, trend = 0, compact = false } = Astro.props;
+---
+
+<div class="cyber-card group transition-all duration-300">
+  <div class="flex items-start gap-4">
+    {/* Rank number */}
+    {rank !== undefined && (
+      <div class="flex-shrink-0">
+        <span class="rank-number">{rank}</span>
+      </div>
+    )}
+
+    {/* Main content */}
+    <div class="flex-grow min-w-0">
+      {/* Combo name with parts breakdown */}
+      <div class="mb-2">
+        <h3 class="font-mono text-lg font-bold text-cyber-text truncate">{combo}</h3>
+        <div class="flex items-center gap-2 mt-1 text-sm">
+          <span class="text-cyber-cyan">{blade}</span>
+          <span class="text-cyber-muted">+</span>
+          <span class="text-cyber-pink">{ratchet}</span>
+          <span class="text-cyber-purple">{bit}</span>
+        </div>
+      </div>
+
+      {/* Score display */}
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="score-display">{score.toFixed(1)}</span>
+        <span class="text-cyber-muted text-sm">score</span>
+        {trend !== undefined && <TrendIndicator trend={trend} size="sm" />}
+      </div>
+
+      {/* Stats */}
+      <div class:list={['grid gap-2 text-sm', compact ? 'grid-cols-2' : 'grid-cols-4']}>
+        <div class="flex items-center gap-2">
+          <span class="text-cyber-muted">Uses:</span>
+          <span class="font-mono text-cyber-text">{uses}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-amber-400">1st:</span>
+          <span class="font-mono text-cyber-text">{first}</span>
+        </div>
+        {!compact && (
+          <>
+            <div class="flex items-center gap-2">
+              <span class="text-gray-400">2nd:</span>
+              <span class="font-mono text-cyber-text">{second}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-amber-700">3rd:</span>
+              <span class="font-mono text-cyber-text">{third}</span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Win rate bar */}
+      {!compact && uses > 0 && (
+        <div class="mt-3">
+          <div class="flex justify-between text-xs text-cyber-muted mb-1">
+            <span>Win Rate</span>
+            <span class="font-mono">{((first / uses) * 100).toFixed(1)}%</span>
+          </div>
+          <div class="stat-bar">
+            <div class="stat-bar-fill stat-bar-pink" style={`width: ${(first / uses) * 100}%`}></div>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</div>

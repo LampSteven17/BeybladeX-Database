@@ -1,0 +1,131 @@
+---
+import Navigation from '../components/Navigation.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'BeybladeX Tournament Meta Analysis - Track winning combos, blade rankings, and tournament statistics.' } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} | BeybladeX Database</title>
+
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body class="min-h-screen">
+    <Navigation currentPath={currentPath} />
+
+    <!-- Main content with top padding for fixed nav -->
+    <main class="pt-16 min-h-screen">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-cyber-border py-12 mt-16 bg-cyber-bg/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Main Footer Content -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <!-- About -->
+          <div>
+            <h3 class="font-mono font-bold text-cyber-text mb-3">
+              <span class="text-cyber-cyan">#</span> BeybladeX Database
+            </h3>
+            <p class="text-cyber-muted text-sm leading-relaxed">
+              Tournament meta analysis powered by competitive data from multiple sources worldwide.
+              Track winning combos, blade rankings, and build the perfect setup.
+            </p>
+          </div>
+
+          <!-- Data Sources -->
+          <div>
+            <h3 class="font-mono font-bold text-cyber-text mb-3">
+              <span class="text-cyber-pink">#</span> Data Sources
+            </h3>
+            <ul class="space-y-2 text-sm">
+              <li>
+                <a href="https://worldbeyblade.org" target="_blank" rel="noopener noreferrer"
+                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                  <span>World Beyblade Organization</span>
+                  <span class="text-xs text-cyber-border">(NA/Global)</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.instagram.com/bladerleaguegermany/" target="_blank" rel="noopener noreferrer"
+                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                  <span>Blader League Germany</span>
+                  <span class="text-xs text-cyber-border">(EU)</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://okuyama3093.com" target="_blank" rel="noopener noreferrer"
+                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                  <span>okuyama3093.com</span>
+                  <span class="text-xs text-cyber-border">(Japan)</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://hobby.watch.impress.co.jp" target="_blank" rel="noopener noreferrer"
+                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                  <span>Hobby Watch</span>
+                  <span class="text-xs text-cyber-border">(Japan)</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Disclaimer -->
+          <div>
+            <h3 class="font-mono font-bold text-cyber-text mb-3">
+              <span class="text-cyber-purple">#</span> Disclaimer
+            </h3>
+            <p class="text-cyber-muted text-sm leading-relaxed mb-2">
+              This website was built with assistance from generative AI (Claude by Anthropic).
+              All code has been reviewed for accuracy and functionality.
+            </p>
+            <p class="text-cyber-muted text-sm leading-relaxed">
+              This is an unofficial fan project. Not affiliated with or endorsed by Takara Tomy, Hasbro, or the World Beyblade Organization. Beyblade is a trademark of Takara Tomy.
+            </p>
+          </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="pt-6 border-t border-cyber-border/50 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-cyber-muted">
+          <div class="flex items-center gap-2">
+            <span class="font-mono">BeybladeX Database</span>
+            <span class="text-cyber-border">|</span>
+            <span>Open source meta analysis</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span>Built with Astro + DuckDB</span>
+            <span class="text-cyber-border">|</span>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+               class="hover:text-cyber-cyan transition-colors">
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Global loading indicator -->
+    <div id="global-loader" class="fixed inset-0 bg-cyber-bg/80 backdrop-blur-sm z-[100] hidden items-center justify-center">
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-12 h-12 border-2 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin"></div>
+        <span class="text-cyber-cyan font-mono text-sm">Loading database...</span>
+      </div>
+    </div>
+  </body>
+</html>

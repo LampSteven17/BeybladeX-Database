@@ -1,0 +1,96 @@
+---
+import TrendIndicator from './TrendIndicator.astro';
+
+interface BladeRow {
+  blade: string;
+  raw_score: number;
+  uses: number;
+  first: number;
+  second: number;
+  third: number;
+  trend: number;
+  tier?: 'S' | 'A' | 'B' | 'C';
+}
+
+interface Props {
+  blades: BladeRow[];
+  showTier?: boolean;
+  compact?: boolean;
+}
+
+const { blades, showTier = true, compact = false } = Astro.props;
+
+const tierColors = {
+  S: 'text-amber-400 bg-amber-500/10',
+  A: 'text-cyber-purple bg-cyber-purple/10',
+  B: 'text-cyber-cyan bg-cyber-cyan/10',
+  C: 'text-cyber-muted bg-cyber-muted/10',
+};
+---
+
+<div class="overflow-x-auto">
+  <table class="cyber-table">
+    <thead>
+      <tr>
+        <th class="w-16">#</th>
+        {showTier && <th class="w-16">Tier</th>}
+        <th>Blade</th>
+        <th class="text-right">Score</th>
+        <th class="text-right">Uses</th>
+        {!compact && (
+          <>
+            <th class="text-right">1st</th>
+            <th class="text-right">2nd</th>
+            <th class="text-right">3rd</th>
+          </>
+        )}
+        <th class="text-right">Win %</th>
+        <th class="text-right">Trend</th>
+      </tr>
+    </thead>
+    <tbody>
+      {blades.map((blade, index) => (
+        <tr class="ranking-row" data-animate="fade-in" data-animate-delay={index * 30}>
+          <td class="font-mono">
+            <span class="rank-number text-lg">{index + 1}</span>
+          </td>
+          {showTier && blade.tier && (
+            <td>
+              <span
+                class:list={[
+                  'px-2 py-1 text-xs font-mono font-bold rounded',
+                  tierColors[blade.tier],
+                ]}
+              >
+                {blade.tier}
+              </span>
+            </td>
+          )}
+          {showTier && !blade.tier && <td></td>}
+          <td class="font-mono font-medium text-cyber-text">{blade.blade}</td>
+          <td class="text-right font-mono text-cyber-cyan">{blade.raw_score.toFixed(1)}</td>
+          <td class="text-right font-mono">{blade.uses}</td>
+          {!compact && (
+            <>
+              <td class="text-right font-mono text-amber-400">{blade.first}</td>
+              <td class="text-right font-mono text-gray-400">{blade.second}</td>
+              <td class="text-right font-mono text-amber-700">{blade.third}</td>
+            </>
+          )}
+          <td class="text-right font-mono">
+            {blade.uses > 0 ? ((blade.first / blade.uses) * 100).toFixed(1) : '0.0'}%
+          </td>
+          <td class="text-right">
+            <TrendIndicator trend={blade.trend} size="sm" />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+{blades.length === 0 && (
+  <div class="text-center py-8 text-cyber-muted">
+    <p>No blade data available</p>
+  </div>
+)}

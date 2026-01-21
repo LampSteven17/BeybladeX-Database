@@ -1,0 +1,92 @@
+---
+/**
+ * Region filter component that appears in the navigation.
+ * Stores selection in localStorage and dispatches 'regionchange' event.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+
+// Region options with flag icons and database values
+const regions = [
+  { value: 'ALL', label: 'Global', icon: '🌐' },
+  { value: 'NA', label: 'USA', icon: '🇺🇸' },
+  { value: 'EU', label: 'Europe', icon: '🇪🇺' },
+  { value: 'JAPAN', label: 'Japan', icon: '🇯🇵' },
+];
+---
+
+<div class:list={['region-filter flex items-center gap-1', className]}>
+  {regions.map((region) => (
+    <button
+      data-region={region.value}
+      title={region.label}
+      class="region-btn w-8 h-8 text-lg rounded-lg transition-all duration-200 hover:bg-cyber-card border border-transparent flex items-center justify-center opacity-50 hover:opacity-100"
+    >
+      <span class="leading-none">{region.icon}</span>
+    </button>
+  ))}
+</div>
+
+<script>
+  // Region filter client-side logic
+  const STORAGE_KEY = 'beyblade-region';
+
+  function getSelectedRegion(): string {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem(STORAGE_KEY) || 'ALL';
+    }
+    return 'ALL';
+  }
+
+  function setSelectedRegion(region: string): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, region);
+    }
+    // Dispatch custom event for pages to listen to
+    window.dispatchEvent(new CustomEvent('regionchange', { detail: { region } }));
+  }
+
+  function updateButtonStyles(): void {
+    const selected = getSelectedRegion();
+    document.querySelectorAll('.region-btn').forEach((btn) => {
+      const btnRegion = btn.getAttribute('data-region');
+      if (btnRegion === selected) {
+        btn.classList.remove('opacity-50', 'border-transparent');
+        btn.classList.add('opacity-100', 'bg-cyber-cyan/10', 'border-cyber-cyan/30', 'ring-1', 'ring-cyber-cyan/50');
+      } else {
+        btn.classList.add('opacity-50', 'border-transparent');
+        btn.classList.remove('opacity-100', 'bg-cyber-cyan/10', 'border-cyber-cyan/30', 'ring-1', 'ring-cyber-cyan/50');
+      }
+    });
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    updateButtonStyles();
+
+    // Add click handlers
+    document.querySelectorAll('.region-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const region = btn.getAttribute('data-region') || 'ALL';
+        setSelectedRegion(region);
+        updateButtonStyles();
+      });
+    });
+  });
+
+  // Also run immediately for Astro's client-side navigation
+  updateButtonStyles();
+  document.querySelectorAll('.region-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const region = btn.getAttribute('data-region') || 'ALL';
+      setSelectedRegion(region);
+      updateButtonStyles();
+    });
+  });
+
+  // Export for use in other scripts
+  (window as any).getSelectedRegion = getSelectedRegion;
+</script>

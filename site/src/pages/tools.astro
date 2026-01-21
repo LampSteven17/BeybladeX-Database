@@ -1,0 +1,1125 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Tools">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header */}
+    <div class="mb-8">
+      <h1 class="text-3xl font-mono font-bold text-cyber-text mb-2">
+        <span class="text-cyber-purple">#</span> Tools
+      </h1>
+      <p class="text-cyber-muted">
+        Build optimal combos and compare blades head-to-head.
+      </p>
+    </div>
+
+    {/* Tab Navigation */}
+    <div class="flex gap-2 mb-8">
+      <button
+        id="tab-builder"
+        class="tab-btn px-6 py-3 font-mono text-sm rounded-lg transition-all border active"
+        data-tab="builder"
+      >
+        Combo Builder
+      </button>
+      <button
+        id="tab-compare"
+        class="tab-btn px-6 py-3 font-mono text-sm rounded-lg transition-all border"
+        data-tab="compare"
+      >
+        Head-to-Head
+      </button>
+    </div>
+
+    {/* ========== BUILDER TAB ========== */}
+    <div id="panel-builder" class="tab-panel">
+      {/* Component Selectors */}
+      <div class="cyber-card mb-8">
+        <h3 class="text-lg font-mono font-bold text-cyber-text mb-4">
+          <span class="text-cyber-cyan">#</span> Build Your Combo
+        </h3>
+
+        {/* Main Components Row */}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label for="builder-blade-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+              Blade
+            </label>
+            <select id="builder-blade-select" class="cyber-select w-full" disabled>
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div>
+            <label for="builder-ratchet-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+              Ratchet
+            </label>
+            <select id="builder-ratchet-select" class="cyber-select w-full" disabled>
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div>
+            <label for="builder-bit-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+              Bit
+            </label>
+            <select id="builder-bit-select" class="cyber-select w-full" disabled>
+              <option value="">Loading...</option>
+            </select>
+          </div>
+        </div>
+
+        {/* CX-Only Components Row */}
+        <div id="builder-cx-section" class="hidden">
+          <div class="border-t border-cyber-border pt-4 mt-4">
+            <p class="text-sm text-amber-400 font-mono mb-4">CX Custom Parts</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="builder-lockchip-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+                  Lock Chip <span class="text-red-400">*</span>
+                </label>
+                <select id="builder-lockchip-select" class="cyber-select w-full">
+                  <option value="">-- Select Lock Chip --</option>
+                </select>
+              </div>
+              <div>
+                <label for="builder-assist-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+                  Assist Blade <span class="text-cyber-muted">(Optional)</span>
+                </label>
+                <select id="builder-assist-select" class="cyber-select w-full">
+                  <option value="">-- None --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Selected Combo Info */}
+      <div id="builder-combo-info" class="hidden mb-8">
+        <div class="cyber-card gradient-border">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+              <div class="flex-grow">
+                <h2 id="builder-combo-name" class="text-2xl font-mono font-bold text-cyber-text"></h2>
+                <p class="text-cyber-muted text-sm">Your combo</p>
+              </div>
+              <div id="builder-series-badge" class="hidden px-3 py-1 text-sm font-mono rounded border"></div>
+            </div>
+
+            {/* Stats Grid */}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-cyber-border">
+              <div class="text-center">
+                <div id="builder-combo-score" class="text-2xl font-mono font-bold text-cyber-cyan">--</div>
+                <div class="text-cyber-muted text-xs uppercase">Score</div>
+              </div>
+              <div class="text-center">
+                <div id="builder-combo-uses" class="text-2xl font-mono font-bold text-cyber-text">--</div>
+                <div class="text-cyber-muted text-xs uppercase">Uses</div>
+              </div>
+              <div class="text-center">
+                <div id="builder-combo-avgplace" class="text-2xl font-mono font-bold text-green-400">--</div>
+                <div class="text-cyber-muted text-xs uppercase">Avg Place</div>
+              </div>
+              <div class="text-center">
+                <div id="builder-combo-wins" class="text-2xl font-mono font-bold text-amber-400">--</div>
+                <div class="text-cyber-muted text-xs uppercase">1st Place</div>
+              </div>
+            </div>
+
+            {/* Placement Breakdown */}
+            <div class="grid grid-cols-3 gap-4 pt-4 border-t border-cyber-border">
+              <div class="text-center">
+                <div id="builder-combo-first" class="text-amber-400 font-mono text-xl font-bold">--</div>
+                <div class="text-cyber-muted text-xs">1st</div>
+              </div>
+              <div class="text-center">
+                <div id="builder-combo-second" class="text-gray-400 font-mono text-xl font-bold">--</div>
+                <div class="text-cyber-muted text-xs">2nd</div>
+              </div>
+              <div class="text-center">
+                <div id="builder-combo-third" class="text-amber-700 font-mono text-xl font-bold">--</div>
+                <div class="text-cyber-muted text-xs">3rd</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* No Data State */}
+      <div id="builder-nodata-state" class="hidden">
+        <div class="cyber-card text-center py-12">
+          <svg class="w-16 h-16 text-cyber-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-cyber-muted text-lg mb-2">No tournament data for this combo</p>
+          <p class="text-cyber-muted/60 text-sm">This combination hasn't been recorded in any tournaments yet</p>
+        </div>
+      </div>
+
+      {/* Empty State */}
+      <div id="builder-empty-state" class="cyber-card text-center py-12">
+        <svg class="w-16 h-16 text-cyber-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <p class="text-cyber-muted text-lg mb-2">Build your combo to see stats</p>
+        <p class="text-cyber-muted/60 text-sm">Select a blade, ratchet, and bit to view tournament performance data</p>
+      </div>
+
+      {/* Loading State */}
+      <div id="builder-loading-state" class="hidden">
+        <div class="cyber-card text-center py-12">
+          <div class="w-12 h-12 border-2 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-cyber-cyan font-mono">Loading combo stats...</p>
+        </div>
+      </div>
+
+      {/* Top Combos Section */}
+      <div class="mt-12">
+        <h3 class="text-xl font-mono font-bold text-cyber-text mb-4">
+          <span class="text-cyber-purple">#</span> Top Overall Combos
+        </h3>
+        <div id="builder-top-combos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }, () => (
+            <div class="cyber-card h-32 skeleton"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* ========== COMPARE TAB ========== */}
+    <div id="panel-compare" class="tab-panel hidden">
+      {/* Combo 1 Selectors */}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="cyber-card border-cyber-cyan/30">
+          <h3 class="text-lg font-mono font-bold text-cyber-cyan mb-4">Combo 1</h3>
+
+          {/* Main Components */}
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+            <div>
+              <label for="compare-blade1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                Blade
+              </label>
+              <select id="compare-blade1-select" class="cyber-select w-full text-sm" disabled>
+                <option value="">Loading...</option>
+              </select>
+            </div>
+            <div>
+              <label for="compare-ratchet1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                Ratchet
+              </label>
+              <select id="compare-ratchet1-select" class="cyber-select w-full text-sm" disabled>
+                <option value="">Loading...</option>
+              </select>
+            </div>
+            <div>
+              <label for="compare-bit1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                Bit
+              </label>
+              <select id="compare-bit1-select" class="cyber-select w-full text-sm" disabled>
+                <option value="">Loading...</option>
+              </select>
+            </div>
+          </div>
+
+          {/* CX-Only Components */}
+          <div id="compare-cx1-section" class="hidden border-t border-cyber-border pt-3 mt-3">
+            <p class="text-xs text-amber-400 font-mono mb-2">CX Parts</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="compare-lockchip1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                  Lock Chip <span class="text-red-400">*</span>
+                </label>
+                <select id="compare-lockchip1-select" class="cyber-select w-full text-sm">
+                  <option value="">-- Select --</option>
+                </select>
+              </div>
+              <div>
+                <label for="compare-assist1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                  Assist
+                </label>
+                <select id="compare-assist1-select" class="cyber-select w-full text-sm">
+                  <option value="">-- None --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Combo 2 Selectors */}
+        <div class="cyber-card border-cyber-pink/30">
+          <h3 class="text-lg font-mono font-bold text-cyber-pink mb-4">Combo 2</h3>
+
+          {/* Main Components */}
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+            <div>
+              <label for="compare-blade2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                Blade
+              </label>
+              <select id="compare-blade2-select" class="cyber-select w-full text-sm" disabled>
+                <option value="">Loading...</option>
+              </select>
+            </div>
+            <div>
+              <label for="compare-ratchet2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                Ratchet
+              </label>
+              <select id="compare-ratchet2-select" class="cyber-select w-full text-sm" disabled>
+                <option value="">Loading...</option>
+              </select>
+            </div>
+            <div>
+              <label for="compare-bit2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                Bit
+              </label>
+              <select id="compare-bit2-select" class="cyber-select w-full text-sm" disabled>
+                <option value="">Loading...</option>
+              </select>
+            </div>
+          </div>
+
+          {/* CX-Only Components */}
+          <div id="compare-cx2-section" class="hidden border-t border-cyber-border pt-3 mt-3">
+            <p class="text-xs text-amber-400 font-mono mb-2">CX Parts</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="compare-lockchip2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                  Lock Chip <span class="text-red-400">*</span>
+                </label>
+                <select id="compare-lockchip2-select" class="cyber-select w-full text-sm">
+                  <option value="">-- Select --</option>
+                </select>
+              </div>
+              <div>
+                <label for="compare-assist2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                  Assist
+                </label>
+                <select id="compare-assist2-select" class="cyber-select w-full text-sm">
+                  <option value="">-- None --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* VS Badge */}
+      <div class="flex justify-center mb-8">
+        <div class="px-6 py-2 bg-cyber-card border border-cyber-border rounded-full font-mono text-xl font-bold">
+          <span class="text-cyber-cyan" id="compare-vs-combo1">?</span>
+          <span class="text-cyber-muted mx-4">VS</span>
+          <span class="text-cyber-pink" id="compare-vs-combo2">?</span>
+        </div>
+      </div>
+
+      {/* Comparison Results */}
+      <div id="compare-results" class="hidden">
+        {/* Stats Cards */}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Combo 1 Card */}
+          <div class="cyber-card border-cyber-cyan/30">
+            <div class="text-center mb-6">
+              <h3 id="compare-card1-name" class="text-xl font-mono font-bold text-cyber-cyan"></h3>
+              <p id="compare-card1-parts" class="text-sm text-cyber-muted mt-1"></p>
+            </div>
+            <div class="space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-cyber-muted">Score</span>
+                <span id="compare-card1-score" class="font-mono text-2xl text-cyber-text"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-cyber-muted">Uses</span>
+                <span id="compare-card1-uses" class="font-mono text-xl text-cyber-text"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-cyber-muted">Avg Place</span>
+                <span id="compare-card1-avgplace" class="font-mono text-xl text-cyber-text"></span>
+              </div>
+              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-cyber-border">
+                <div class="text-center">
+                  <div id="compare-card1-first" class="text-amber-400 font-mono text-xl font-bold"></div>
+                  <div class="text-cyber-muted text-xs">1st</div>
+                </div>
+                <div class="text-center">
+                  <div id="compare-card1-second" class="text-gray-400 font-mono text-xl font-bold"></div>
+                  <div class="text-cyber-muted text-xs">2nd</div>
+                </div>
+                <div class="text-center">
+                  <div id="compare-card1-third" class="text-amber-700 font-mono text-xl font-bold"></div>
+                  <div class="text-cyber-muted text-xs">3rd</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Combo 2 Card */}
+          <div class="cyber-card border-cyber-pink/30">
+            <div class="text-center mb-6">
+              <h3 id="compare-card2-name" class="text-xl font-mono font-bold text-cyber-pink"></h3>
+              <p id="compare-card2-parts" class="text-sm text-cyber-muted mt-1"></p>
+            </div>
+            <div class="space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-cyber-muted">Score</span>
+                <span id="compare-card2-score" class="font-mono text-2xl text-cyber-text"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-cyber-muted">Uses</span>
+                <span id="compare-card2-uses" class="font-mono text-xl text-cyber-text"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-cyber-muted">Avg Place</span>
+                <span id="compare-card2-avgplace" class="font-mono text-xl text-cyber-text"></span>
+              </div>
+              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-cyber-border">
+                <div class="text-center">
+                  <div id="compare-card2-first" class="text-amber-400 font-mono text-xl font-bold"></div>
+                  <div class="text-cyber-muted text-xs">1st</div>
+                </div>
+                <div class="text-center">
+                  <div id="compare-card2-second" class="text-gray-400 font-mono text-xl font-bold"></div>
+                  <div class="text-cyber-muted text-xs">2nd</div>
+                </div>
+                <div class="text-center">
+                  <div id="compare-card2-third" class="text-amber-700 font-mono text-xl font-bold"></div>
+                  <div class="text-cyber-muted text-xs">3rd</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Comparison Bars */}
+        <div class="cyber-card mb-8">
+          <h4 class="font-mono text-sm uppercase tracking-wider text-cyber-muted mb-6">Stat Comparison</h4>
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span id="compare-bar-score1" class="text-cyber-cyan font-mono"></span>
+                <span class="text-cyber-muted">Score</span>
+                <span id="compare-bar-score2" class="text-cyber-pink font-mono"></span>
+              </div>
+              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
+                <div id="compare-bar-score1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
+                <div id="compare-bar-score2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span id="compare-bar-uses1" class="text-cyber-cyan font-mono"></span>
+                <span class="text-cyber-muted">Uses</span>
+                <span id="compare-bar-uses2" class="text-cyber-pink font-mono"></span>
+              </div>
+              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
+                <div id="compare-bar-uses1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
+                <div id="compare-bar-uses2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span id="compare-bar-avgplace1" class="text-cyber-cyan font-mono"></span>
+                <span class="text-cyber-muted">Avg Place</span>
+                <span id="compare-bar-avgplace2" class="text-cyber-pink font-mono"></span>
+              </div>
+              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
+                <div id="compare-bar-avgplace1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
+                <div id="compare-bar-avgplace2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span id="compare-bar-first1" class="text-cyber-cyan font-mono"></span>
+                <span class="text-cyber-muted">1st Place Finishes</span>
+                <span id="compare-bar-first2" class="text-cyber-pink font-mono"></span>
+              </div>
+              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
+                <div id="compare-bar-first1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
+                <div id="compare-bar-first2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Head-to-Head Section */}
+        <div id="compare-h2h-section" class="cyber-card hidden">
+          <h4 class="font-mono text-sm uppercase tracking-wider text-cyber-muted mb-6">
+            Head-to-Head (<span id="compare-h2h-tournaments">0</span> common tournaments)
+          </h4>
+          <div class="grid grid-cols-3 gap-4 text-center mb-6">
+            <div>
+              <div id="compare-h2h-combo1-wins" class="text-cyber-cyan font-mono text-3xl font-bold">0</div>
+              <div id="compare-h2h-combo1-name" class="text-cyber-muted text-sm">Higher</div>
+            </div>
+            <div>
+              <div id="compare-h2h-ties" class="text-cyber-muted font-mono text-3xl font-bold">0</div>
+              <div class="text-cyber-muted text-sm">Ties</div>
+            </div>
+            <div>
+              <div id="compare-h2h-combo2-wins" class="text-cyber-pink font-mono text-3xl font-bold">0</div>
+              <div id="compare-h2h-combo2-name" class="text-cyber-muted text-sm">Higher</div>
+            </div>
+          </div>
+          <div class="flex h-6 rounded overflow-hidden bg-cyber-border">
+            <div id="compare-h2h-bar1" class="bg-cyber-cyan/70 transition-all duration-700"></div>
+            <div id="compare-h2h-bar-tie" class="bg-cyber-muted/50 transition-all duration-700"></div>
+            <div id="compare-h2h-bar2" class="bg-cyber-pink/70 transition-all duration-700"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Empty State */}
+      <div id="compare-empty-state" class="cyber-card text-center py-16">
+        <svg class="w-20 h-20 text-cyber-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        <p class="text-cyber-muted text-lg mb-2">Build two combos to compare</p>
+        <p class="text-cyber-muted/60 text-sm">Select blade, ratchet, and bit for each combo to see a head-to-head comparison</p>
+      </div>
+
+      {/* Loading State */}
+      <div id="compare-loading-state" class="hidden">
+        <div class="cyber-card text-center py-16">
+          <div class="w-12 h-12 border-2 border-cyber-purple/30 border-t-cyber-purple rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-cyber-purple font-mono">Comparing combos...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .tab-btn {
+    @apply text-cyber-muted border-cyber-border bg-cyber-card;
+  }
+  .tab-btn:hover {
+    @apply text-cyber-text border-cyber-purple/50;
+  }
+  .tab-btn.active {
+    @apply text-cyber-purple border-cyber-purple bg-cyber-purple/10;
+  }
+</style>
+
+<script>
+  import {
+    initDB,
+    getAllBlades,
+    getAllRatchets,
+    getAllBits,
+    getAllAssists,
+    getAllLockChips,
+    getBestCombosForBlade,
+    getRankedCombos,
+    getComboStats,
+    compareFullCombos,
+    getBladeSeries,
+    BLADE_SERIES,
+    type FullComboComparisonResult
+  } from '../lib/db';
+  import { staggerFadeIn } from '../lib/animations';
+
+  // ========== TAB SWITCHING ==========
+  function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabName = btn.getAttribute('data-tab');
+        if (!tabName) return;
+
+        // Update active tab button
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Show/hide panels
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+          panel.classList.add('hidden');
+        });
+        document.getElementById(`panel-${tabName}`)?.classList.remove('hidden');
+      });
+    });
+  }
+
+  // ========== DATA STORES ==========
+  let allBlades: string[] = [];
+  let allRatchets: string[] = [];
+  let allBits: string[] = [];
+  let allAssists: string[] = [];
+  let allLockChips: string[] = [];
+
+  // ========== BUILDER TAB ==========
+  let builderBlade = '';
+  let builderRatchet = '';
+  let builderBit = '';
+  let builderLockChip = '';
+  let builderAssist = '';
+
+  async function initBuilder() {
+    const bladeSelect = document.getElementById('builder-blade-select') as HTMLSelectElement;
+    const ratchetSelect = document.getElementById('builder-ratchet-select') as HTMLSelectElement;
+    const bitSelect = document.getElementById('builder-bit-select') as HTMLSelectElement;
+    const lockChipSelect = document.getElementById('builder-lockchip-select') as HTMLSelectElement;
+    const assistSelect = document.getElementById('builder-assist-select') as HTMLSelectElement;
+
+    try {
+      await initDB();
+
+      const [blades, ratchets, bits, assists, lockChips, topCombos] = await Promise.all([
+        getAllBlades(),
+        getAllRatchets(),
+        getAllBits(),
+        getAllAssists(),
+        getAllLockChips(),
+        getRankedCombos(6, 2),
+      ]);
+
+      allBlades = blades;
+      allRatchets = ratchets;
+      allBits = bits;
+      allAssists = assists;
+      allLockChips = lockChips;
+
+      // Populate blade dropdown
+      bladeSelect.innerHTML = `
+        <option value="">-- Select Blade --</option>
+        ${blades.map(b => `<option value="${b}">${b}</option>`).join('')}
+      `;
+      bladeSelect.disabled = false;
+
+      // Populate ratchet dropdown
+      ratchetSelect.innerHTML = `
+        <option value="">-- Select Ratchet --</option>
+        ${ratchets.map(r => `<option value="${r}">${r}</option>`).join('')}
+      `;
+      ratchetSelect.disabled = false;
+
+      // Populate bit dropdown
+      bitSelect.innerHTML = `
+        <option value="">-- Select Bit --</option>
+        ${bits.map(b => `<option value="${b}">${b}</option>`).join('')}
+      `;
+      bitSelect.disabled = false;
+
+      // Populate CX-specific dropdowns
+      lockChipSelect.innerHTML = `
+        <option value="">-- None --</option>
+        ${lockChips.map(l => `<option value="${l}">${l}</option>`).join('')}
+      `;
+
+      assistSelect.innerHTML = `
+        <option value="">-- None --</option>
+        ${assists.map(a => `<option value="${a}">${a}</option>`).join('')}
+      `;
+
+      renderTopCombos(topCombos);
+      initCompareSelects();
+
+    } catch (error) {
+      console.error('Failed to initialize:', error);
+      bladeSelect.innerHTML = '<option value="">Failed to load</option>';
+    }
+  }
+
+  function updateBuilderCXVisibility() {
+    const cxSection = document.getElementById('builder-cx-section');
+    if (!cxSection) return;
+
+    const series = getBladeSeries(builderBlade);
+    if (series === 'CX') {
+      cxSection.classList.remove('hidden');
+    } else {
+      cxSection.classList.add('hidden');
+      // Clear CX selections when switching away from CX
+      builderLockChip = '';
+      builderAssist = '';
+      const lockChipSelect = document.getElementById('builder-lockchip-select') as HTMLSelectElement;
+      const assistSelect = document.getElementById('builder-assist-select') as HTMLSelectElement;
+      if (lockChipSelect) lockChipSelect.value = '';
+      if (assistSelect) assistSelect.value = '';
+    }
+  }
+
+  async function updateBuilderCombo() {
+    const comboInfo = document.getElementById('builder-combo-info');
+    const emptyState = document.getElementById('builder-empty-state');
+    const loadingState = document.getElementById('builder-loading-state');
+    const nodataState = document.getElementById('builder-nodata-state');
+
+    if (!comboInfo || !emptyState || !loadingState || !nodataState) return;
+
+    // Check if we have a complete combo (blade + ratchet + bit)
+    // CX blades also require a lock chip
+    const series = getBladeSeries(builderBlade);
+    const isCX = series === 'CX';
+    const needsLockChip = isCX && !builderLockChip;
+
+    if (!builderBlade || !builderRatchet || !builderBit || needsLockChip) {
+      comboInfo.classList.add('hidden');
+      nodataState.classList.add('hidden');
+      loadingState.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      return;
+    }
+
+    // Show loading
+    emptyState.classList.add('hidden');
+    comboInfo.classList.add('hidden');
+    nodataState.classList.add('hidden');
+    loadingState.classList.remove('hidden');
+
+    try {
+      const series = getBladeSeries(builderBlade);
+      const isCX = series === 'CX';
+
+      const stats = await getComboStats(
+        builderBlade,
+        builderRatchet,
+        builderBit,
+        isCX && builderLockChip ? builderLockChip : undefined,
+        isCX && builderAssist ? builderAssist : undefined
+      );
+
+      loadingState.classList.add('hidden');
+
+      if (!stats || stats.uses === 0) {
+        nodataState.classList.remove('hidden');
+        return;
+      }
+
+      // Update combo info
+      const comboName = document.getElementById('builder-combo-name');
+      const seriesBadge = document.getElementById('builder-series-badge');
+
+      // Format: [LockChip] [Blade] [Assist] [Ratchet][Bit]
+      let bladePart = builderBlade;
+      if (builderLockChip) {
+        bladePart = `${builderLockChip} ${builderBlade}`;
+      }
+      if (builderAssist) {
+        bladePart = `${bladePart} ${builderAssist}`;
+      }
+      const comboStr = `${bladePart} ${builderRatchet}${builderBit}`;
+
+      if (comboName) comboName.textContent = comboStr;
+
+      if (seriesBadge && series) {
+        seriesBadge.classList.remove('hidden');
+        seriesBadge.textContent = series;
+        seriesBadge.className = 'px-3 py-1 text-sm font-mono rounded border';
+        if (series === 'BX') seriesBadge.classList.add('text-cyber-cyan', 'border-cyber-cyan/30', 'bg-cyber-cyan/10');
+        else if (series === 'CX') seriesBadge.classList.add('text-amber-400', 'border-amber-400/30', 'bg-amber-400/10');
+        else if (series === 'UX') seriesBadge.classList.add('text-cyber-pink', 'border-cyber-pink/30', 'bg-cyber-pink/10');
+      } else if (seriesBadge) {
+        seriesBadge.classList.add('hidden');
+      }
+
+      // Helper to format avg placement as ordinal
+      const formatPlacement = (avg: number) => {
+        if (avg === 0) return '--';
+        const rounded = Math.round(avg);
+        if (rounded <= 1) return '1st';
+        if (rounded === 2) return '2nd';
+        return '3rd';
+      };
+
+      // Update stats
+      (document.getElementById('builder-combo-score') as HTMLElement).textContent = stats.raw_score.toFixed(1);
+      (document.getElementById('builder-combo-uses') as HTMLElement).textContent = stats.uses.toString();
+      (document.getElementById('builder-combo-avgplace') as HTMLElement).textContent = formatPlacement(stats.avg_placement);
+      (document.getElementById('builder-combo-wins') as HTMLElement).textContent = stats.first.toString();
+      (document.getElementById('builder-combo-first') as HTMLElement).textContent = stats.first.toString();
+      (document.getElementById('builder-combo-second') as HTMLElement).textContent = stats.second.toString();
+      (document.getElementById('builder-combo-third') as HTMLElement).textContent = stats.third.toString();
+
+      comboInfo.classList.remove('hidden');
+
+    } catch (error) {
+      console.error('Failed to load combo stats:', error);
+      loadingState.classList.add('hidden');
+      nodataState.classList.remove('hidden');
+    }
+  }
+
+  function renderTopCombos(combos: Awaited<ReturnType<typeof getRankedCombos>>) {
+    const grid = document.getElementById('builder-top-combos-grid');
+    if (!grid) return;
+
+    grid.innerHTML = combos.map((combo, i) => `
+      <div class="cyber-card group cursor-pointer hover:border-cyber-purple/50 transition-all" data-blade="${combo.blade}" data-ratchet="${combo.ratchet}" data-bit="${combo.bit}">
+        <div class="flex items-start gap-3">
+          <span class="rank-number text-xl">${i + 1}</span>
+          <div class="flex-grow">
+            <div class="font-mono font-bold text-cyber-text">${combo.combo}</div>
+            <div class="flex items-center gap-2 mt-1 text-sm">
+              <span class="text-cyber-cyan">${combo.blade}</span>
+              <span class="text-cyber-muted">+</span>
+              <span class="text-cyber-pink">${combo.ratchet}</span>
+              <span class="text-cyber-purple">${combo.bit}</span>
+            </div>
+            <div class="flex items-center gap-4 mt-2 text-sm">
+              <span class="text-cyber-pink font-mono">${combo.raw_score.toFixed(1)}</span>
+              <span class="text-cyber-muted">${combo.uses} uses</span>
+              <span class="text-amber-400">${combo.first} wins</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('[data-blade]').forEach(el => {
+      el.addEventListener('click', () => {
+        const blade = el.getAttribute('data-blade');
+        const ratchet = el.getAttribute('data-ratchet');
+        const bit = el.getAttribute('data-bit');
+
+        if (blade && ratchet && bit) {
+          const bladeSelect = document.getElementById('builder-blade-select') as HTMLSelectElement;
+          const ratchetSelect = document.getElementById('builder-ratchet-select') as HTMLSelectElement;
+          const bitSelect = document.getElementById('builder-bit-select') as HTMLSelectElement;
+
+          bladeSelect.value = blade;
+          ratchetSelect.value = ratchet;
+          bitSelect.value = bit;
+
+          builderBlade = blade;
+          builderRatchet = ratchet;
+          builderBit = bit;
+
+          updateBuilderCXVisibility();
+          updateBuilderCombo();
+        }
+      });
+    });
+
+    staggerFadeIn(grid.children, { delay: 50 });
+  }
+
+  // ========== COMPARE TAB ==========
+  let combo1 = { blade: '', ratchet: '', bit: '', lockChip: '', assist: '' };
+  let combo2 = { blade: '', ratchet: '', bit: '', lockChip: '', assist: '' };
+
+  function initCompareSelects() {
+    // Populate Combo 1 selects
+    populateSelect('compare-blade1-select', allBlades, '-- Select Blade --');
+    populateSelect('compare-ratchet1-select', allRatchets, '-- Select Ratchet --');
+    populateSelect('compare-bit1-select', allBits, '-- Select Bit --');
+    populateSelect('compare-lockchip1-select', allLockChips, '-- None --');
+    populateSelect('compare-assist1-select', allAssists, '-- None --');
+
+    // Populate Combo 2 selects
+    populateSelect('compare-blade2-select', allBlades, '-- Select Blade --');
+    populateSelect('compare-ratchet2-select', allRatchets, '-- Select Ratchet --');
+    populateSelect('compare-bit2-select', allBits, '-- Select Bit --');
+    populateSelect('compare-lockchip2-select', allLockChips, '-- None --');
+    populateSelect('compare-assist2-select', allAssists, '-- None --');
+
+    // Enable selects
+    ['compare-blade1-select', 'compare-ratchet1-select', 'compare-bit1-select',
+     'compare-blade2-select', 'compare-ratchet2-select', 'compare-bit2-select'].forEach(id => {
+      const el = document.getElementById(id) as HTMLSelectElement;
+      if (el) el.disabled = false;
+    });
+  }
+
+  function populateSelect(id: string, options: string[], placeholder: string) {
+    const select = document.getElementById(id) as HTMLSelectElement;
+    if (!select) return;
+
+    select.innerHTML = `
+      <option value="">${placeholder}</option>
+      ${options.map(o => `<option value="${o}">${o}</option>`).join('')}
+    `;
+  }
+
+  function updateCompareCXVisibility(comboNum: 1 | 2) {
+    const cxSection = document.getElementById(`compare-cx${comboNum}-section`);
+    const combo = comboNum === 1 ? combo1 : combo2;
+
+    if (!cxSection) return;
+
+    const series = getBladeSeries(combo.blade);
+    if (series === 'CX') {
+      cxSection.classList.remove('hidden');
+    } else {
+      cxSection.classList.add('hidden');
+      // Clear CX selections
+      combo.lockChip = '';
+      combo.assist = '';
+      const lockChipSelect = document.getElementById(`compare-lockchip${comboNum}-select`) as HTMLSelectElement;
+      const assistSelect = document.getElementById(`compare-assist${comboNum}-select`) as HTMLSelectElement;
+      if (lockChipSelect) lockChipSelect.value = '';
+      if (assistSelect) assistSelect.value = '';
+    }
+  }
+
+  function getComboDisplayName(combo: { blade: string; ratchet: string; bit: string; lockChip: string; assist: string }) {
+    if (!combo.blade) return '?';
+    // Format: [LockChip] [Blade] [Assist] or just [Blade]
+    let name = combo.blade;
+    if (combo.lockChip) {
+      name = `${combo.lockChip} ${combo.blade}`;
+    }
+    if (!combo.ratchet || !combo.bit) return name;
+    if (combo.assist) {
+      name = `${name} ${combo.assist}`;
+    }
+    return name;
+  }
+
+  function updateVSBadge() {
+    const vs1 = document.getElementById('compare-vs-combo1');
+    const vs2 = document.getElementById('compare-vs-combo2');
+
+    if (vs1) vs1.textContent = getComboDisplayName(combo1);
+    if (vs2) vs2.textContent = getComboDisplayName(combo2);
+  }
+
+  async function runComparison() {
+    const resultsEl = document.getElementById('compare-results');
+    const emptyState = document.getElementById('compare-empty-state');
+    const loadingState = document.getElementById('compare-loading-state');
+
+    if (!resultsEl || !emptyState || !loadingState) return;
+
+    updateVSBadge();
+
+    // Check if both combos are complete (blade + ratchet + bit minimum)
+    // CX blades also require a lock chip
+    const series1 = getBladeSeries(combo1.blade);
+    const series2 = getBladeSeries(combo2.blade);
+    const combo1NeedsLockChip = series1 === 'CX' && !combo1.lockChip;
+    const combo2NeedsLockChip = series2 === 'CX' && !combo2.lockChip;
+
+    const combo1Complete = combo1.blade && combo1.ratchet && combo1.bit && !combo1NeedsLockChip;
+    const combo2Complete = combo2.blade && combo2.ratchet && combo2.bit && !combo2NeedsLockChip;
+
+    if (!combo1Complete || !combo2Complete) {
+      resultsEl.classList.add('hidden');
+      loadingState.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      return;
+    }
+
+    // Show loading
+    emptyState.classList.add('hidden');
+    resultsEl.classList.add('hidden');
+    loadingState.classList.remove('hidden');
+
+    try {
+      const result = await compareFullCombos(
+        {
+          blade: combo1.blade,
+          ratchet: combo1.ratchet,
+          bit: combo1.bit,
+          lockChip: series1 === 'CX' && combo1.lockChip ? combo1.lockChip : undefined,
+          assist: series1 === 'CX' && combo1.assist ? combo1.assist : undefined,
+        },
+        {
+          blade: combo2.blade,
+          ratchet: combo2.ratchet,
+          bit: combo2.bit,
+          lockChip: series2 === 'CX' && combo2.lockChip ? combo2.lockChip : undefined,
+          assist: series2 === 'CX' && combo2.assist ? combo2.assist : undefined,
+        }
+      );
+
+      renderComparison(result);
+    } catch (error) {
+      console.error('Comparison failed:', error);
+      loadingState.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+    }
+  }
+
+  function renderComparison(result: FullComboComparisonResult) {
+    document.getElementById('compare-loading-state')?.classList.add('hidden');
+    document.getElementById('compare-results')?.classList.remove('hidden');
+
+    const { combo1: c1, combo2: c2, head_to_head } = result;
+
+    // Format blade name with lock chip and assist if present
+    const formatBladeName = (c: typeof c1) => {
+      let name = c.blade;
+      if (c.lockChip) name = `${c.lockChip} ${name}`;
+      if (c.assist) name = `${name} ${c.assist}`;
+      return name;
+    };
+    const formatParts = (c: typeof c1) => `${c.ratchet} ${c.bit}`;
+
+    // Helper to format avg placement as ordinal
+    const formatPlacement = (avg: number) => {
+      if (avg === 0) return '--';
+      const rounded = Math.round(avg);
+      if (rounded <= 1) return '1st';
+      if (rounded === 2) return '2nd';
+      return '3rd';
+    };
+
+    // Card 1
+    (document.getElementById('compare-card1-name') as HTMLElement).textContent = formatBladeName(c1);
+    (document.getElementById('compare-card1-parts') as HTMLElement).textContent = formatParts(c1);
+    (document.getElementById('compare-card1-score') as HTMLElement).textContent = c1.score.toFixed(1);
+    (document.getElementById('compare-card1-uses') as HTMLElement).textContent = c1.uses.toString();
+    (document.getElementById('compare-card1-avgplace') as HTMLElement).textContent = formatPlacement(c1.avg_placement);
+    (document.getElementById('compare-card1-first') as HTMLElement).textContent = c1.first.toString();
+    (document.getElementById('compare-card1-second') as HTMLElement).textContent = c1.second.toString();
+    (document.getElementById('compare-card1-third') as HTMLElement).textContent = c1.third.toString();
+
+    // Card 2
+    (document.getElementById('compare-card2-name') as HTMLElement).textContent = formatBladeName(c2);
+    (document.getElementById('compare-card2-parts') as HTMLElement).textContent = formatParts(c2);
+    (document.getElementById('compare-card2-score') as HTMLElement).textContent = c2.score.toFixed(1);
+    (document.getElementById('compare-card2-uses') as HTMLElement).textContent = c2.uses.toString();
+    (document.getElementById('compare-card2-avgplace') as HTMLElement).textContent = formatPlacement(c2.avg_placement);
+    (document.getElementById('compare-card2-first') as HTMLElement).textContent = c2.first.toString();
+    (document.getElementById('compare-card2-second') as HTMLElement).textContent = c2.second.toString();
+    (document.getElementById('compare-card2-third') as HTMLElement).textContent = c2.third.toString();
+
+    // Comparison bars
+    updateBar('score', c1.score, c2.score);
+    updateBar('uses', c1.uses, c2.uses);
+    // For avg placement, lower is better, so invert: use (4 - avg) so higher bar = better
+    updateBarPlacement('avgplace', c1.avg_placement, c2.avg_placement, formatPlacement);
+    updateBar('first', c1.first, c2.first);
+
+    // Head-to-head section
+    const h2hSection = document.getElementById('compare-h2h-section');
+    if (head_to_head.common_tournaments > 0) {
+      h2hSection?.classList.remove('hidden');
+      (document.getElementById('compare-h2h-tournaments') as HTMLElement).textContent = head_to_head.common_tournaments.toString();
+      (document.getElementById('compare-h2h-combo1-wins') as HTMLElement).textContent = head_to_head.combo1_placed_higher.toString();
+      (document.getElementById('compare-h2h-combo2-wins') as HTMLElement).textContent = head_to_head.combo2_placed_higher.toString();
+      (document.getElementById('compare-h2h-ties') as HTMLElement).textContent = head_to_head.ties.toString();
+      (document.getElementById('compare-h2h-combo1-name') as HTMLElement).textContent = `${formatBladeName(c1)} Higher`;
+      (document.getElementById('compare-h2h-combo2-name') as HTMLElement).textContent = `${formatBladeName(c2)} Higher`;
+
+      const total = head_to_head.combo1_placed_higher + head_to_head.combo2_placed_higher + head_to_head.ties;
+      const pct1 = total > 0 ? (head_to_head.combo1_placed_higher / total) * 100 : 33;
+      const pctTie = total > 0 ? (head_to_head.ties / total) * 100 : 34;
+      const pct2 = total > 0 ? (head_to_head.combo2_placed_higher / total) * 100 : 33;
+
+      (document.getElementById('compare-h2h-bar1') as HTMLElement).style.width = `${pct1}%`;
+      (document.getElementById('compare-h2h-bar-tie') as HTMLElement).style.width = `${pctTie}%`;
+      (document.getElementById('compare-h2h-bar2') as HTMLElement).style.width = `${pct2}%`;
+    } else {
+      h2hSection?.classList.add('hidden');
+    }
+  }
+
+  function updateBar(name: string, val1: number, val2: number, suffix: string = '') {
+    const total = val1 + val2;
+    const pct1 = total > 0 ? (val1 / total) * 100 : 50;
+    const pct2 = total > 0 ? (val2 / total) * 100 : 50;
+
+    const format = (v: number) => suffix === '%' ? `${v.toFixed(1)}${suffix}` : v.toString();
+
+    (document.getElementById(`compare-bar-${name}1`) as HTMLElement).textContent = format(val1);
+    (document.getElementById(`compare-bar-${name}2`) as HTMLElement).textContent = format(val2);
+    (document.getElementById(`compare-bar-${name}1-fill`) as HTMLElement).style.width = `${pct1}%`;
+    (document.getElementById(`compare-bar-${name}2-fill`) as HTMLElement).style.width = `${pct2}%`;
+  }
+
+  function updateBarPlacement(name: string, val1: number, val2: number, formatFn: (v: number) => string) {
+    // For placement, lower is better, so invert: (4 - avg) makes higher bar = better placement
+    const inv1 = val1 > 0 ? 4 - val1 : 0;
+    const inv2 = val2 > 0 ? 4 - val2 : 0;
+    const total = inv1 + inv2;
+    const pct1 = total > 0 ? (inv1 / total) * 100 : 50;
+    const pct2 = total > 0 ? (inv2 / total) * 100 : 50;
+
+    (document.getElementById(`compare-bar-${name}1`) as HTMLElement).textContent = formatFn(val1);
+    (document.getElementById(`compare-bar-${name}2`) as HTMLElement).textContent = formatFn(val2);
+    (document.getElementById(`compare-bar-${name}1-fill`) as HTMLElement).style.width = `${pct1}%`;
+    (document.getElementById(`compare-bar-${name}2-fill`) as HTMLElement).style.width = `${pct2}%`;
+  }
+
+  // ========== INIT ==========
+  document.addEventListener('DOMContentLoaded', () => {
+    initTabs();
+    initBuilder();
+
+    // Builder events
+    const builderBladeSelect = document.getElementById('builder-blade-select') as HTMLSelectElement;
+    const builderRatchetSelect = document.getElementById('builder-ratchet-select') as HTMLSelectElement;
+    const builderBitSelect = document.getElementById('builder-bit-select') as HTMLSelectElement;
+    const builderLockChipSelect = document.getElementById('builder-lockchip-select') as HTMLSelectElement;
+    const builderAssistSelect = document.getElementById('builder-assist-select') as HTMLSelectElement;
+
+    builderBladeSelect?.addEventListener('change', (e) => {
+      builderBlade = (e.target as HTMLSelectElement).value;
+      updateBuilderCXVisibility();
+      updateBuilderCombo();
+    });
+
+    builderRatchetSelect?.addEventListener('change', (e) => {
+      builderRatchet = (e.target as HTMLSelectElement).value;
+      updateBuilderCombo();
+    });
+
+    builderBitSelect?.addEventListener('change', (e) => {
+      builderBit = (e.target as HTMLSelectElement).value;
+      updateBuilderCombo();
+    });
+
+    builderLockChipSelect?.addEventListener('change', (e) => {
+      builderLockChip = (e.target as HTMLSelectElement).value;
+      updateBuilderCombo();
+    });
+
+    builderAssistSelect?.addEventListener('change', (e) => {
+      builderAssist = (e.target as HTMLSelectElement).value;
+      updateBuilderCombo();
+    });
+
+    // Compare events - Combo 1
+    document.getElementById('compare-blade1-select')?.addEventListener('change', (e) => {
+      combo1.blade = (e.target as HTMLSelectElement).value;
+      updateCompareCXVisibility(1);
+      runComparison();
+    });
+
+    document.getElementById('compare-ratchet1-select')?.addEventListener('change', (e) => {
+      combo1.ratchet = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+
+    document.getElementById('compare-bit1-select')?.addEventListener('change', (e) => {
+      combo1.bit = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+
+    document.getElementById('compare-lockchip1-select')?.addEventListener('change', (e) => {
+      combo1.lockChip = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+
+    document.getElementById('compare-assist1-select')?.addEventListener('change', (e) => {
+      combo1.assist = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+
+    // Compare events - Combo 2
+    document.getElementById('compare-blade2-select')?.addEventListener('change', (e) => {
+      combo2.blade = (e.target as HTMLSelectElement).value;
+      updateCompareCXVisibility(2);
+      runComparison();
+    });
+
+    document.getElementById('compare-ratchet2-select')?.addEventListener('change', (e) => {
+      combo2.ratchet = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+
+    document.getElementById('compare-bit2-select')?.addEventListener('change', (e) => {
+      combo2.bit = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+
+    document.getElementById('compare-lockchip2-select')?.addEventListener('change', (e) => {
+      combo2.lockChip = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+
+    document.getElementById('compare-assist2-select')?.addEventListener('change', (e) => {
+      combo2.assist = (e.target as HTMLSelectElement).value;
+      runComparison();
+    });
+  });
+</script>

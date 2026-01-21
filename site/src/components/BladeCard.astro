@@ -1,0 +1,114 @@
+---
+import TrendIndicator from './TrendIndicator.astro';
+
+interface Props {
+  rank?: number;
+  blade: string;
+  score: number;
+  uses: number;
+  first: number;
+  second: number;
+  third: number;
+  trend?: number;
+  tier?: 'S' | 'A' | 'B' | 'C';
+  compact?: boolean;
+}
+
+const { rank, blade, score, uses, first, second, third, trend = 0, tier, compact = false } = Astro.props;
+
+const tierColors = {
+  S: 'from-yellow-500/30 to-amber-500/30 border-amber-500/50',
+  A: 'from-cyber-purple/30 to-purple-500/30 border-cyber-purple/50',
+  B: 'from-cyber-cyan/30 to-cyan-500/30 border-cyber-cyan/50',
+  C: 'from-cyber-muted/30 to-gray-500/30 border-cyber-muted/50',
+};
+
+const tierTextColors = {
+  S: 'text-amber-400',
+  A: 'text-cyber-purple',
+  B: 'text-cyber-cyan',
+  C: 'text-cyber-muted',
+};
+---
+
+<div
+  class:list={[
+    'cyber-card group transition-all duration-300',
+    tier && `bg-gradient-to-br ${tierColors[tier]}`,
+    compact ? 'p-3' : 'p-4',
+  ]}
+>
+  <div class="flex items-start gap-4">
+    {/* Rank number */}
+    {rank !== undefined && (
+      <div class="flex-shrink-0">
+        <span class="rank-number">{rank}</span>
+      </div>
+    )}
+
+    {/* Main content */}
+    <div class="flex-grow min-w-0">
+      <div class="flex items-center gap-2 mb-2">
+        <h3 class="font-mono text-lg font-bold text-cyber-text truncate">{blade}</h3>
+        {tier && (
+          <span
+            class:list={[
+              'px-2 py-0.5 text-xs font-mono font-bold rounded border',
+              tierTextColors[tier],
+              tier === 'S' && 'border-amber-500/50 bg-amber-500/10',
+              tier === 'A' && 'border-cyber-purple/50 bg-cyber-purple/10',
+              tier === 'B' && 'border-cyber-cyan/50 bg-cyber-cyan/10',
+              tier === 'C' && 'border-cyber-muted/50 bg-cyber-muted/10',
+            ]}
+          >
+            {tier}
+          </span>
+        )}
+      </div>
+
+      {/* Score display */}
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="score-display">{score.toFixed(1)}</span>
+        <span class="text-cyber-muted text-sm">score</span>
+        {trend !== undefined && <TrendIndicator trend={trend} size="sm" />}
+      </div>
+
+      {/* Stats grid */}
+      <div class:list={['grid gap-2 text-sm', compact ? 'grid-cols-2' : 'grid-cols-4']}>
+        <div class="flex items-center gap-2">
+          <span class="text-cyber-muted">Uses:</span>
+          <span class="font-mono text-cyber-text">{uses}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-amber-400">1st:</span>
+          <span class="font-mono text-cyber-text">{first}</span>
+        </div>
+        {!compact && (
+          <>
+            <div class="flex items-center gap-2">
+              <span class="text-gray-400">2nd:</span>
+              <span class="font-mono text-cyber-text">{second}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-amber-700">3rd:</span>
+              <span class="font-mono text-cyber-text">{third}</span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Win rate bar */}
+      {!compact && uses > 0 && (
+        <div class="mt-3">
+          <div class="flex justify-between text-xs text-cyber-muted mb-1">
+            <span>Win Rate</span>
+            <span class="font-mono">{((first / uses) * 100).toFixed(1)}%</span>
+          </div>
+          <div class="stat-bar">
+            <div class="stat-bar-fill stat-bar-cyan" style={`width: ${(first / uses) * 100}%`}></div>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</div>

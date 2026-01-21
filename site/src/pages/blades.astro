@@ -1,0 +1,456 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Blade Rankings">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header */}
+    <div class="mb-8">
+      <h1 class="text-3xl font-mono font-bold text-cyber-text mb-2">
+        <span class="text-cyber-cyan">#</span> Blade Rankings
+      </h1>
+      <p class="text-cyber-muted">
+        Blades ranked by weighted tournament performance. Recent results count more.
+      </p>
+    </div>
+
+    {/* Series Filter Tabs */}
+    <div class="mb-6">
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button
+          id="filter-all"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 bg-cyber-cyan/10 text-cyber-cyan border-cyber-cyan/30"
+          data-series="all"
+        >
+          All Series
+        </button>
+        <button
+          id="filter-bx"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-cyber-muted border-cyber-border hover:text-cyan-400 hover:border-cyan-400/30"
+          data-series="BX"
+        >
+          <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 mr-2"></span>
+          BX Series
+        </button>
+        <button
+          id="filter-cx"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-cyber-muted border-cyber-border hover:text-amber-400 hover:border-amber-400/30"
+          data-series="CX"
+        >
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
+          CX Custom
+        </button>
+        <button
+          id="filter-ux"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-cyber-muted border-cyber-border hover:text-pink-400 hover:border-pink-400/30"
+          data-series="UX"
+        >
+          <span class="inline-block w-2 h-2 rounded-full bg-pink-400 mr-2"></span>
+          UX Unique
+        </button>
+      </div>
+    </div>
+
+    {/* Search Bar */}
+    <div class="mb-4">
+      <div class="relative">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search blades..."
+          class="w-full md:w-80 px-4 py-2 pl-10 bg-cyber-card border border-cyber-border rounded-lg font-mono text-sm text-cyber-text placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan/50 transition-colors"
+        />
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyber-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+    </div>
+
+    {/* Tier Filter */}
+    <div class="mb-6 flex flex-wrap gap-3 items-center">
+      <span class="text-cyber-muted text-sm">Filter by Tier:</span>
+      <div class="flex flex-wrap gap-2">
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 bg-cyber-cyan/10 text-cyber-cyan border-cyber-cyan/30" data-tier="all">All</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-rose-400 border-rose-500/30 hover:bg-rose-500/10" data-tier="SS">SS</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-amber-400 border-amber-500/30 hover:bg-amber-500/10" data-tier="S">S</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-purple border-cyber-purple/30 hover:bg-cyber-purple/10" data-tier="A">A</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-cyan border-cyber-cyan/30 hover:bg-cyber-cyan/10" data-tier="B">B</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-green-400 border-green-500/30 hover:bg-green-500/10" data-tier="C">C</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-muted border-cyber-muted/30 hover:bg-cyber-muted/10" data-tier="D">D</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-gray-500 border-gray-500/30 hover:bg-gray-500/10" data-tier="F">F</button>
+      </div>
+    </div>
+
+    {/* Blade Rankings Table */}
+    <div class="cyber-card">
+      <div class="overflow-x-auto">
+        <table class="cyber-table" id="rankings-table">
+          <thead>
+            <tr>
+              <th class="w-16">#</th>
+              <th class="w-20">Tier</th>
+              <th>Blade</th>
+              <th class="w-16">Series</th>
+              <th class="text-right">Score</th>
+              <th class="text-right">Uses</th>
+              <th class="text-right">1st</th>
+              <th class="text-right">2nd</th>
+              <th class="text-right">3rd</th>
+              <th class="text-right">1st %</th>
+              <th class="text-right">Trend</th>
+              <th class="w-12"></th>
+            </tr>
+          </thead>
+          <tbody id="rankings-body">
+            {/* Loading skeletons */}
+            {Array.from({ length: 15 }, (_, i) => (
+              <tr>
+                <td colspan="12">
+                  <div class="skeleton h-12 rounded"></div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {/* Expanded Blade Detail Panel */}
+    <div id="blade-detail" class="hidden mt-6 cyber-card gradient-border">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 id="detail-blade-name" class="text-2xl font-mono font-bold text-cyber-text"></h2>
+          <p class="text-cyber-muted text-sm">Best ratchet + bit combinations</p>
+        </div>
+        <button id="close-detail" class="text-cyber-muted hover:text-cyber-text transition-colors p-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="detail-combos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Combo cards will be inserted here */}
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { initDB, getRankedBlades, getBestCombosForBlade, BLADE_SERIES, type BladeStats, type Region } from '../lib/db';
+  import { staggerFadeIn } from '../lib/animations';
+
+  let currentBlades: BladeStats[] = [];
+  let allBlades: BladeStats[] = [];
+  let currentSeries: 'all' | 'BX' | 'CX' | 'UX' = 'all';
+  let currentTier: string = 'all';
+  let searchQuery: string = '';
+
+  function getSelectedRegion(): Region {
+    if (typeof localStorage !== 'undefined') {
+      return (localStorage.getItem('beyblade-region') as Region) || 'ALL';
+    }
+    return 'ALL';
+  }
+
+  async function loadRankings() {
+    try {
+      await initDB();
+      const region = getSelectedRegion();
+      allBlades = await getRankedBlades(100, 2, region);
+      currentBlades = allBlades;
+      renderTable(currentBlades);
+      setupSeriesFilters();
+      setupTierFilters();
+      setupSearch();
+    } catch (error) {
+      console.error('Failed to load rankings:', error);
+      const tbody = document.getElementById('rankings-body');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="12" class="text-center text-red-400 py-8">
+              Failed to load blade rankings. Please refresh the page.
+            </td>
+          </tr>
+        `;
+      }
+    }
+  }
+
+  function setupSeriesFilters() {
+    document.querySelectorAll('.series-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const series = tab.getAttribute('data-series') as 'all' | 'BX' | 'CX' | 'UX';
+        filterBySeries(series);
+        updateTabStyles(series);
+      });
+    });
+  }
+
+  function applyFilters() {
+    let filtered = allBlades;
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(b => b.blade.toLowerCase().includes(query));
+    }
+
+    // Apply series filter
+    if (currentSeries !== 'all') {
+      filtered = filtered.filter(b => b.series === currentSeries);
+    }
+
+    // Apply tier filter
+    if (currentTier !== 'all') {
+      filtered = filtered.filter(b => b.tier === currentTier);
+    }
+
+    currentBlades = filtered;
+    renderTable(currentBlades);
+  }
+
+  function setupSearch() {
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = (e.target as HTMLInputElement).value;
+        applyFilters();
+      });
+    }
+  }
+
+  function filterBySeries(series: 'all' | 'BX' | 'CX' | 'UX') {
+    currentSeries = series;
+    applyFilters();
+  }
+
+  function setupTierFilters() {
+    document.querySelectorAll('.tier-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tier = btn.getAttribute('data-tier') || 'all';
+        currentTier = tier;
+        updateTierStyles(tier);
+        applyFilters();
+      });
+    });
+  }
+
+  function updateTierStyles(activeTier: string) {
+    document.querySelectorAll('.tier-filter').forEach(btn => {
+      const tier = btn.getAttribute('data-tier');
+      btn.classList.remove('bg-cyber-cyan/10', 'bg-rose-500/10', 'bg-amber-500/10', 'bg-cyber-purple/10', 'bg-green-500/10', 'bg-cyber-muted/10', 'bg-gray-500/10');
+      if (tier === activeTier) {
+        if (tier === 'all') btn.classList.add('bg-cyber-cyan/10');
+        else if (tier === 'SS') btn.classList.add('bg-rose-500/10');
+        else if (tier === 'S') btn.classList.add('bg-amber-500/10');
+        else if (tier === 'A') btn.classList.add('bg-cyber-purple/10');
+        else if (tier === 'B') btn.classList.add('bg-cyber-cyan/10');
+        else if (tier === 'C') btn.classList.add('bg-green-500/10');
+        else if (tier === 'D') btn.classList.add('bg-cyber-muted/10');
+        else if (tier === 'F') btn.classList.add('bg-gray-500/10');
+      }
+    });
+  }
+
+  function updateTabStyles(activeSeries: string) {
+    document.querySelectorAll('.series-tab').forEach(tab => {
+      const series = tab.getAttribute('data-series');
+      if (series === activeSeries) {
+        tab.classList.remove('text-cyber-muted', 'border-cyber-border');
+        if (series === 'BX') {
+          tab.classList.add('bg-cyan-500/10', 'text-cyan-400', 'border-cyan-400/30');
+        } else if (series === 'CX') {
+          tab.classList.add('bg-amber-500/10', 'text-amber-400', 'border-amber-400/30');
+        } else if (series === 'UX') {
+          tab.classList.add('bg-pink-500/10', 'text-pink-400', 'border-pink-400/30');
+        } else {
+          tab.classList.add('bg-cyber-cyan/10', 'text-cyber-cyan', 'border-cyber-cyan/30');
+        }
+      } else {
+        tab.classList.remove(
+          'bg-cyber-cyan/10', 'text-cyber-cyan', 'border-cyber-cyan/30',
+          'bg-cyan-500/10', 'text-cyan-400', 'border-cyan-400/30',
+          'bg-amber-500/10', 'text-amber-400', 'border-amber-400/30',
+          'bg-pink-500/10', 'text-pink-400', 'border-pink-400/30'
+        );
+        tab.classList.add('text-cyber-muted', 'border-cyber-border');
+      }
+    });
+  }
+
+  function getSeriesBadge(series: string | undefined): string {
+    if (!series) return '<span class="text-cyber-muted text-xs">-</span>';
+    const colors: Record<string, { bg: string; text: string; border: string }> = {
+      'BX': { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/40' },
+      'CX': { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/40' },
+      'UX': { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/40' },
+    };
+    const color = colors[series] || { bg: 'bg-cyber-muted/20', text: 'text-cyber-muted', border: 'border-cyber-muted/30' };
+    return `<span class="px-2 py-0.5 text-xs font-mono font-bold rounded ${color.bg} ${color.text} border ${color.border}">${series}</span>`;
+  }
+
+  function renderTable(blades: BladeStats[]) {
+    const tbody = document.getElementById('rankings-body');
+    if (!tbody) return;
+
+    if (blades.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="12" class="text-center text-cyber-muted py-8">
+            No blades found for the selected series.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = blades.map((blade) => `
+      <tr class="ranking-row cursor-pointer hover:bg-cyber-card-light" data-blade="${blade.blade}">
+        <td class="font-mono">
+          <span class="rank-number text-lg">${blade.rank}</span>
+        </td>
+        <td>
+          ${blade.tier ? `<span class="tier-badge px-2 py-1 text-xs font-mono font-bold rounded cursor-pointer hover:ring-2 hover:ring-white/30 ${getTierClass(blade.tier)}" data-tier="${blade.tier}">${blade.tier}</span>` : ''}
+        </td>
+        <td class="font-mono font-medium text-cyber-text">${blade.blade}</td>
+        <td>${getSeriesBadge(blade.series)}</td>
+        <td class="text-right font-mono text-cyber-cyan">${blade.raw_score.toFixed(1)}</td>
+        <td class="text-right font-mono">${blade.uses}</td>
+        <td class="text-right font-mono text-amber-400">${blade.first}</td>
+        <td class="text-right font-mono text-gray-400">${blade.second}</td>
+        <td class="text-right font-mono text-amber-700">${blade.third}</td>
+        <td class="text-right font-mono">
+          ${blade.uses > 0 ? ((blade.first / blade.uses) * 100).toFixed(1) : '0.0'}%
+        </td>
+        <td class="text-right">
+          ${getTrendHtml(blade.trend)}
+        </td>
+        <td class="text-center">
+          <svg class="w-5 h-5 text-cyber-muted group-hover:text-cyber-cyan transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </td>
+      </tr>
+    `).join('');
+
+    // Add click handlers to rows
+    tbody.querySelectorAll('.ranking-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        // Don't trigger row click if clicking on tier badge
+        if ((e.target as HTMLElement).classList.contains('tier-badge')) return;
+        const bladeName = row.getAttribute('data-blade');
+        if (bladeName) showBladeDetail(bladeName);
+      });
+    });
+
+    // Add click handlers to tier badges in table
+    tbody.querySelectorAll('.tier-badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tier = badge.getAttribute('data-tier') || 'all';
+        currentTier = tier;
+        updateTierStyles(tier);
+        applyFilters();
+      });
+    });
+
+    // Animate rows
+    staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
+  }
+
+  async function showBladeDetail(bladeName: string) {
+    const detailPanel = document.getElementById('blade-detail');
+    const nameEl = document.getElementById('detail-blade-name');
+    const combosEl = document.getElementById('detail-combos');
+
+    if (!detailPanel || !nameEl || !combosEl) return;
+
+    nameEl.textContent = bladeName;
+    combosEl.innerHTML = '<div class="col-span-full text-center py-4"><div class="w-8 h-8 border-2 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin mx-auto"></div></div>';
+    detailPanel.classList.remove('hidden');
+
+    // Scroll to panel
+    detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    try {
+      const region = getSelectedRegion();
+      const combos = await getBestCombosForBlade(bladeName, 9, region);
+
+      if (combos.length === 0) {
+        combosEl.innerHTML = '<div class="col-span-full text-center text-cyber-muted py-4">No combo data available</div>';
+        return;
+      }
+
+      combosEl.innerHTML = combos.map((combo, i) => `
+        <div class="cyber-card p-4">
+          <div class="flex items-start gap-3">
+            <span class="rank-number text-xl">${i + 1}</span>
+            <div class="flex-grow">
+              <div class="font-mono font-bold text-cyber-text">${combo.combo}</div>
+              <div class="flex items-center gap-2 mt-1 text-sm">
+                <span class="text-cyber-pink">${combo.ratchet}</span>
+                <span class="text-cyber-purple">${combo.bit}</span>
+              </div>
+              <div class="flex items-center gap-4 mt-2 text-sm">
+                <span class="text-cyber-cyan font-mono">${combo.raw_score.toFixed(1)}</span>
+                <span class="text-cyber-muted">${combo.uses} uses</span>
+                <span class="text-amber-400">${combo.first} wins</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      staggerFadeIn(combosEl.children, { delay: 50 });
+    } catch (error) {
+      console.error('Failed to load blade combos:', error);
+      combosEl.innerHTML = '<div class="col-span-full text-center text-red-400 py-4">Failed to load combos</div>';
+    }
+  }
+
+  function getTierClass(tier: string): string {
+    const classes: Record<string, string> = {
+      SS: 'text-rose-400 bg-rose-500/10',
+      S: 'text-amber-400 bg-amber-500/10',
+      A: 'text-cyber-purple bg-cyber-purple/10',
+      B: 'text-cyber-cyan bg-cyber-cyan/10',
+      C: 'text-green-400 bg-green-500/10',
+      D: 'text-cyber-muted bg-cyber-muted/10',
+      F: 'text-gray-500 bg-gray-500/10',
+    };
+    return classes[tier] || '';
+  }
+
+  function getTrendHtml(trend: number): string {
+    if (trend > 0.1) {
+      return `<span class="text-green-400 text-sm inline-flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+        </svg>
+        +${(trend * 100).toFixed(0)}%
+      </span>`;
+    } else if (trend < -0.1) {
+      return `<span class="text-red-400 text-sm inline-flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+        ${(trend * 100).toFixed(0)}%
+      </span>`;
+    }
+    return '<span class="text-cyber-muted text-sm">--</span>';
+  }
+
+  // Close detail panel handler
+  document.getElementById('close-detail')?.addEventListener('click', () => {
+    document.getElementById('blade-detail')?.classList.add('hidden');
+  });
+
+  // Load on DOM ready
+  document.addEventListener('DOMContentLoaded', loadRankings);
+
+  // Reload when region changes
+  window.addEventListener('regionchange', () => {
+    loadRankings();
+  });
+</script>

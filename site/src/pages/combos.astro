@@ -1,0 +1,325 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Combo Rankings">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header */}
+    <div class="mb-8">
+      <h1 class="text-3xl font-mono font-bold text-cyber-text mb-2">
+        <span class="text-cyber-pink">#</span> Combo Rankings
+      </h1>
+      <p class="text-cyber-muted">
+        Full blade + ratchet + bit combinations ranked by weighted tournament performance.
+      </p>
+    </div>
+
+    {/* Search Bar */}
+    <div class="mb-4">
+      <div class="relative">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search combos (blade, ratchet, or bit)..."
+          class="w-full md:w-96 px-4 py-2 pl-10 bg-cyber-card border border-cyber-border rounded-lg font-mono text-sm text-cyber-text placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan/50 transition-colors"
+        />
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyber-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+    </div>
+
+    {/* Tier Filter */}
+    <div class="mb-6 flex flex-wrap gap-3 items-center">
+      <span class="text-cyber-muted text-sm">Filter by Tier:</span>
+      <div class="flex flex-wrap gap-2">
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 bg-cyber-cyan/10 text-cyber-cyan border-cyber-cyan/30" data-tier="all">All</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-rose-400 border-rose-500/30 hover:bg-rose-500/10" data-tier="SS">SS</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-amber-400 border-amber-500/30 hover:bg-amber-500/10" data-tier="S">S</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-purple border-cyber-purple/30 hover:bg-cyber-purple/10" data-tier="A">A</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-cyan border-cyber-cyan/30 hover:bg-cyber-cyan/10" data-tier="B">B</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-green-400 border-green-500/30 hover:bg-green-500/10" data-tier="C">C</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-muted border-cyber-muted/30 hover:bg-cyber-muted/10" data-tier="D">D</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-gray-500 border-gray-500/30 hover:bg-gray-500/10" data-tier="F">F</button>
+      </div>
+    </div>
+
+    {/* Combo Rankings Table */}
+    <div class="cyber-card">
+      <div class="overflow-x-auto">
+        <table class="cyber-table" id="rankings-table">
+          <thead>
+            <tr>
+              <th class="w-16">#</th>
+              <th class="w-20">Tier</th>
+              <th>Blade</th>
+              <th>Ratchet</th>
+              <th>Bit</th>
+              <th class="text-right">Score</th>
+              <th class="text-right">Uses</th>
+              <th class="text-right">1st</th>
+              <th class="text-right">2nd</th>
+              <th class="text-right">3rd</th>
+              <th class="text-right">1st %</th>
+              <th class="text-right">Trend</th>
+            </tr>
+          </thead>
+          <tbody id="rankings-body">
+            {/* Loading skeletons */}
+            {Array.from({ length: 20 }, (_, i) => (
+              <tr>
+                <td colspan="12">
+                  <div class="skeleton h-12 rounded"></div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {/* Load More Button */}
+    <div class="mt-6 text-center">
+      <button
+        id="load-more-btn"
+        class="cyber-btn cyber-btn-primary hidden"
+      >
+        Load More
+      </button>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { initDB, getRankedCombos, type ComboStats, type Region } from '../lib/db';
+  import { staggerFadeIn } from '../lib/animations';
+
+  let allCombos: ComboStats[] = [];
+  let filteredCombos: ComboStats[] = [];
+  let displayedCount = 50;
+  let currentTier: string = 'all';
+  let searchQuery: string = '';
+  const LOAD_INCREMENT = 50;
+
+  function getSelectedRegion(): Region {
+    if (typeof localStorage !== 'undefined') {
+      return (localStorage.getItem('beyblade-region') as Region) || 'ALL';
+    }
+    return 'ALL';
+  }
+
+  async function loadRankings() {
+    try {
+      await initDB();
+      const region = getSelectedRegion();
+      allCombos = await getRankedCombos(200, 2, region);
+      filteredCombos = allCombos;
+      renderTable(filteredCombos.slice(0, displayedCount));
+      updateLoadMoreButton();
+      setupTierFilters();
+      setupSearch();
+    } catch (error) {
+      console.error('Failed to load rankings:', error);
+      const tbody = document.getElementById('rankings-body');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="12" class="text-center text-red-400 py-8">
+              Failed to load combo rankings. Please refresh the page.
+            </td>
+          </tr>
+        `;
+      }
+    }
+  }
+
+  function updateLoadMoreButton() {
+    const btn = document.getElementById('load-more-btn');
+    if (btn) {
+      if (displayedCount < filteredCombos.length) {
+        btn.classList.remove('hidden');
+        btn.textContent = `Load More (${filteredCombos.length - displayedCount} remaining)`;
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+  }
+
+  function loadMore() {
+    displayedCount += LOAD_INCREMENT;
+    renderTable(filteredCombos.slice(0, displayedCount));
+    updateLoadMoreButton();
+  }
+
+  function setupTierFilters() {
+    document.querySelectorAll('.tier-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tier = btn.getAttribute('data-tier') || 'all';
+        currentTier = tier;
+        updateTierStyles(tier);
+        applyTierFilter();
+      });
+    });
+  }
+
+  function updateTierStyles(activeTier: string) {
+    document.querySelectorAll('.tier-filter').forEach(btn => {
+      const tier = btn.getAttribute('data-tier');
+      btn.classList.remove('bg-cyber-cyan/10', 'bg-rose-500/10', 'bg-amber-500/10', 'bg-cyber-purple/10', 'bg-green-500/10', 'bg-cyber-muted/10', 'bg-gray-500/10');
+      if (tier === activeTier) {
+        if (tier === 'all') btn.classList.add('bg-cyber-cyan/10');
+        else if (tier === 'SS') btn.classList.add('bg-rose-500/10');
+        else if (tier === 'S') btn.classList.add('bg-amber-500/10');
+        else if (tier === 'A') btn.classList.add('bg-cyber-purple/10');
+        else if (tier === 'B') btn.classList.add('bg-cyber-cyan/10');
+        else if (tier === 'C') btn.classList.add('bg-green-500/10');
+        else if (tier === 'D') btn.classList.add('bg-cyber-muted/10');
+        else if (tier === 'F') btn.classList.add('bg-gray-500/10');
+      }
+    });
+  }
+
+  function applyFilters() {
+    let filtered = allCombos;
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(c =>
+        c.blade.toLowerCase().includes(query) ||
+        c.ratchet.toLowerCase().includes(query) ||
+        c.bit.toLowerCase().includes(query) ||
+        c.combo.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply tier filter
+    if (currentTier !== 'all') {
+      filtered = filtered.filter(c => c.tier === currentTier);
+    }
+
+    filteredCombos = filtered;
+    displayedCount = 50; // Reset to initial count
+    renderTable(filteredCombos.slice(0, displayedCount));
+    updateLoadMoreButton();
+  }
+
+  function applyTierFilter() {
+    applyFilters();
+  }
+
+  function setupSearch() {
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = (e.target as HTMLInputElement).value;
+        applyFilters();
+      });
+    }
+  }
+
+  // Tier is now calculated in getRankedCombos using bell curve distribution
+  function getTier(combo: ComboStats): 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F' {
+    return combo.tier || 'C';
+  }
+
+  function renderTable(combos: ComboStats[]) {
+    const tbody = document.getElementById('rankings-body');
+    if (!tbody) return;
+
+    if (combos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="12" class="text-center text-cyber-muted py-8">
+            No combos found.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = combos.map((combo) => {
+      const tier = getTier(combo);
+      return `
+        <tr class="ranking-row hover:bg-cyber-card-light">
+          <td class="font-mono">
+            <span class="rank-number text-lg">${combo.rank}</span>
+          </td>
+          <td>
+            <span class="tier-badge px-2 py-1 text-xs font-mono font-bold rounded cursor-pointer hover:ring-2 hover:ring-white/30 ${getTierClass(tier)}" data-tier="${tier}">${tier}</span>
+          </td>
+          <td class="font-mono font-medium text-cyber-cyan">${combo.blade}</td>
+          <td class="font-mono text-cyber-pink">${combo.ratchet}</td>
+          <td class="font-mono text-cyber-purple">${combo.bit}</td>
+          <td class="text-right font-mono text-cyber-text">${combo.raw_score.toFixed(1)}</td>
+          <td class="text-right font-mono">${combo.uses}</td>
+          <td class="text-right font-mono text-amber-400">${combo.first}</td>
+          <td class="text-right font-mono text-gray-400">${combo.second}</td>
+          <td class="text-right font-mono text-amber-700">${combo.third}</td>
+          <td class="text-right font-mono">
+            ${combo.uses > 0 ? ((combo.first / combo.uses) * 100).toFixed(1) : '0.0'}%
+          </td>
+          <td class="text-right">
+            ${getTrendHtml(combo.trend)}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Add click handlers to tier badges
+    tbody.querySelectorAll('.tier-badge').forEach(badge => {
+      badge.addEventListener('click', () => {
+        const tier = badge.getAttribute('data-tier') || 'all';
+        currentTier = tier;
+        updateTierStyles(tier);
+        applyTierFilter();
+      });
+    });
+
+    // Animate rows
+    staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 20 });
+  }
+
+  function getTierClass(tier: string): string {
+    const classes: Record<string, string> = {
+      SS: 'text-rose-400 bg-rose-500/10',
+      S: 'text-amber-400 bg-amber-500/10',
+      A: 'text-cyber-purple bg-cyber-purple/10',
+      B: 'text-cyber-cyan bg-cyber-cyan/10',
+      C: 'text-green-400 bg-green-500/10',
+      D: 'text-cyber-muted bg-cyber-muted/10',
+      F: 'text-gray-500 bg-gray-500/10',
+    };
+    return classes[tier] || '';
+  }
+
+  function getTrendHtml(trend: number): string {
+    if (trend > 0.1) {
+      return `<span class="text-green-400 text-sm inline-flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+        </svg>
+        +${(trend * 100).toFixed(0)}%
+      </span>`;
+    } else if (trend < -0.1) {
+      return `<span class="text-red-400 text-sm inline-flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+        ${(trend * 100).toFixed(0)}%
+      </span>`;
+    }
+    return '<span class="text-cyber-muted text-sm">--</span>';
+  }
+
+  // Setup load more button
+  document.getElementById('load-more-btn')?.addEventListener('click', loadMore);
+
+  // Load on DOM ready
+  document.addEventListener('DOMContentLoaded', loadRankings);
+
+  // Reload when region changes
+  window.addEventListener('regionchange', () => {
+    loadRankings();
+  });
+</script>

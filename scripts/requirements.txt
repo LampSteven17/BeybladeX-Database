@@ -1,0 +1,11 @@
+# Data collection and processing
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# Database
+duckdb>=1.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+tqdm>=4.66.0

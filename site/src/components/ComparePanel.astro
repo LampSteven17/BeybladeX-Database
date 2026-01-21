@@ -1,0 +1,241 @@
+---
+interface BladeStats {
+  name: string;
+  score: number;
+  uses: number;
+  first: number;
+  second: number;
+  third: number;
+  win_rate: number;
+}
+
+interface HeadToHead {
+  common_tournaments: number;
+  blade1_placed_higher: number;
+  blade2_placed_higher: number;
+  ties: number;
+}
+
+interface Props {
+  blade1?: BladeStats;
+  blade2?: BladeStats;
+  headToHead?: HeadToHead;
+  loading?: boolean;
+}
+
+const { blade1, blade2, headToHead, loading = false } = Astro.props;
+
+// Helper to calculate percentage for comparison bars
+function getComparisonWidth(val1: number, val2: number): { width1: number; width2: number } {
+  const total = val1 + val2;
+  if (total === 0) return { width1: 50, width2: 50 };
+  return {
+    width1: (val1 / total) * 100,
+    width2: (val2 / total) * 100,
+  };
+}
+---
+
+<div class="space-y-6">
+  {/* Stats Comparison */}
+  {blade1 && blade2 ? (
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Blade 1 Card */}
+      <div class="cyber-card border-cyber-cyan/30">
+        <div class="text-center mb-4">
+          <h3 class="font-mono text-xl font-bold text-cyber-cyan">{blade1.name}</h3>
+        </div>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-cyber-muted">Score</span>
+            <span class="font-mono text-cyber-text score-display">{blade1.score.toFixed(1)}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-cyber-muted">Uses</span>
+            <span class="font-mono text-cyber-text">{blade1.uses}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-cyber-muted">Win Rate</span>
+            <span class="font-mono text-cyber-text">{(blade1.win_rate * 100).toFixed(1)}%</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-cyber-border">
+            <div class="text-center">
+              <div class="text-amber-400 font-mono text-lg">{blade1.first}</div>
+              <div class="text-cyber-muted text-xs">1st</div>
+            </div>
+            <div class="text-center">
+              <div class="text-gray-400 font-mono text-lg">{blade1.second}</div>
+              <div class="text-cyber-muted text-xs">2nd</div>
+            </div>
+            <div class="text-center">
+              <div class="text-amber-700 font-mono text-lg">{blade1.third}</div>
+              <div class="text-cyber-muted text-xs">3rd</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Blade 2 Card */}
+      <div class="cyber-card border-cyber-pink/30">
+        <div class="text-center mb-4">
+          <h3 class="font-mono text-xl font-bold text-cyber-pink">{blade2.name}</h3>
+        </div>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-cyber-muted">Score</span>
+            <span class="font-mono text-cyber-text score-display">{blade2.score.toFixed(1)}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-cyber-muted">Uses</span>
+            <span class="font-mono text-cyber-text">{blade2.uses}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-cyber-muted">Win Rate</span>
+            <span class="font-mono text-cyber-text">{(blade2.win_rate * 100).toFixed(1)}%</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-cyber-border">
+            <div class="text-center">
+              <div class="text-amber-400 font-mono text-lg">{blade2.first}</div>
+              <div class="text-cyber-muted text-xs">1st</div>
+            </div>
+            <div class="text-center">
+              <div class="text-gray-400 font-mono text-lg">{blade2.second}</div>
+              <div class="text-cyber-muted text-xs">2nd</div>
+            </div>
+            <div class="text-center">
+              <div class="text-amber-700 font-mono text-lg">{blade2.third}</div>
+              <div class="text-cyber-muted text-xs">3rd</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : loading ? (
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="cyber-card h-64 skeleton"></div>
+      <div class="cyber-card h-64 skeleton"></div>
+    </div>
+  ) : (
+    <div class="cyber-card text-center py-12 text-cyber-muted">
+      <p>Select two blades to compare</p>
+    </div>
+  )}
+
+  {/* Comparison Bars */}
+  {blade1 && blade2 && (
+    <div class="cyber-card space-y-4">
+      <h4 class="font-mono text-sm uppercase tracking-wider text-cyber-muted mb-4">Stat Comparison</h4>
+
+      {/* Score comparison */}
+      {(() => {
+        const { width1, width2 } = getComparisonWidth(blade1.score, blade2.score);
+        return (
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-cyber-cyan">{blade1.score.toFixed(1)}</span>
+              <span class="text-cyber-muted">Score</span>
+              <span class="text-cyber-pink">{blade2.score.toFixed(1)}</span>
+            </div>
+            <div class="flex h-3 rounded overflow-hidden bg-cyber-border">
+              <div class="bg-cyber-cyan/70 compare-bar" style={`width: ${width1}%`}></div>
+              <div class="bg-cyber-pink/70 compare-bar" style={`width: ${width2}%`}></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Uses comparison */}
+      {(() => {
+        const { width1, width2 } = getComparisonWidth(blade1.uses, blade2.uses);
+        return (
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-cyber-cyan">{blade1.uses}</span>
+              <span class="text-cyber-muted">Uses</span>
+              <span class="text-cyber-pink">{blade2.uses}</span>
+            </div>
+            <div class="flex h-3 rounded overflow-hidden bg-cyber-border">
+              <div class="bg-cyber-cyan/70 compare-bar" style={`width: ${width1}%`}></div>
+              <div class="bg-cyber-pink/70 compare-bar" style={`width: ${width2}%`}></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Win rate comparison */}
+      {(() => {
+        const { width1, width2 } = getComparisonWidth(blade1.win_rate, blade2.win_rate);
+        return (
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-cyber-cyan">{(blade1.win_rate * 100).toFixed(1)}%</span>
+              <span class="text-cyber-muted">Win Rate</span>
+              <span class="text-cyber-pink">{(blade2.win_rate * 100).toFixed(1)}%</span>
+            </div>
+            <div class="flex h-3 rounded overflow-hidden bg-cyber-border">
+              <div class="bg-cyber-cyan/70 compare-bar" style={`width: ${width1}%`}></div>
+              <div class="bg-cyber-pink/70 compare-bar" style={`width: ${width2}%`}></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 1st place comparison */}
+      {(() => {
+        const { width1, width2 } = getComparisonWidth(blade1.first, blade2.first);
+        return (
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-cyber-cyan">{blade1.first}</span>
+              <span class="text-cyber-muted">1st Place</span>
+              <span class="text-cyber-pink">{blade2.first}</span>
+            </div>
+            <div class="flex h-3 rounded overflow-hidden bg-cyber-border">
+              <div class="bg-cyber-cyan/70 compare-bar" style={`width: ${width1}%`}></div>
+              <div class="bg-cyber-pink/70 compare-bar" style={`width: ${width2}%`}></div>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  )}
+
+  {/* Head-to-Head */}
+  {headToHead && headToHead.common_tournaments > 0 && (
+    <div class="cyber-card">
+      <h4 class="font-mono text-sm uppercase tracking-wider text-cyber-muted mb-4">
+        Head-to-Head ({headToHead.common_tournaments} common tournaments)
+      </h4>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <div class="text-cyber-cyan font-mono text-2xl font-bold">{headToHead.blade1_placed_higher}</div>
+          <div class="text-cyber-muted text-sm">{blade1?.name} Higher</div>
+        </div>
+        <div>
+          <div class="text-cyber-muted font-mono text-2xl font-bold">{headToHead.ties}</div>
+          <div class="text-cyber-muted text-sm">Ties</div>
+        </div>
+        <div>
+          <div class="text-cyber-pink font-mono text-2xl font-bold">{headToHead.blade2_placed_higher}</div>
+          <div class="text-cyber-muted text-sm">{blade2?.name} Higher</div>
+        </div>
+      </div>
+
+      {/* Visual bar */}
+      {(() => {
+        const total = headToHead.blade1_placed_higher + headToHead.blade2_placed_higher + headToHead.ties;
+        if (total === 0) return null;
+        const w1 = (headToHead.blade1_placed_higher / total) * 100;
+        const w2 = (headToHead.blade2_placed_higher / total) * 100;
+        const wTie = (headToHead.ties / total) * 100;
+        return (
+          <div class="flex h-4 rounded overflow-hidden bg-cyber-border mt-4">
+            <div class="bg-cyber-cyan/70" style={`width: ${w1}%`}></div>
+            <div class="bg-cyber-muted/50" style={`width: ${wTie}%`}></div>
+            <div class="bg-cyber-pink/70" style={`width: ${w2}%`}></div>
+          </div>
+        );
+      })()}
+    </div>
+  )}
+</div>

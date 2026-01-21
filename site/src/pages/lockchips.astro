@@ -1,0 +1,197 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Lock Chip Rankings">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header */}
+    <div class="mb-8">
+      <h1 class="text-3xl font-mono font-bold text-cyber-text mb-2">
+        <span class="text-amber-400">#</span> Lock Chip Rankings
+      </h1>
+      <p class="text-cyber-muted">
+        Lock chips ranked by weighted tournament performance. These are the swappable character chips on CX blades.
+      </p>
+    </div>
+
+    {/* Rankings Table */}
+    <div class="cyber-card">
+      <div class="overflow-x-auto">
+        <table class="cyber-table" id="rankings-table">
+          <thead>
+            <tr>
+              <th class="w-16">#</th>
+              <th>Lock Chip</th>
+              <th class="text-right">Score</th>
+              <th class="text-right">Uses</th>
+              <th class="text-right">1st</th>
+              <th class="text-right">2nd</th>
+              <th class="text-right">3rd</th>
+              <th class="text-right">1st %</th>
+              <th class="text-right">Trend</th>
+            </tr>
+          </thead>
+          <tbody id="rankings-body">
+            {/* Loading skeletons */}
+            {Array.from({ length: 10 }, () => (
+              <tr>
+                <td colspan="9">
+                  <div class="skeleton h-12 rounded"></div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {/* Info Section */}
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="cyber-card">
+        <h3 class="text-lg font-mono font-bold text-cyber-text mb-3">
+          <span class="text-amber-400">#</span> About Lock Chips
+        </h3>
+        <p class="text-cyber-muted text-sm">
+          Lock chips are the character-themed component of CX blades. They can be swapped between
+          different CX main blades to create custom combinations like Cerberus Blast or Emperor Brave.
+        </p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="text-lg font-mono font-bold text-cyber-text mb-3">
+          <span class="text-cyber-cyan">#</span> CX Blade Format
+        </h3>
+        <div class="space-y-2 text-sm">
+          <div class="text-cyber-muted">
+            CX blade structure:
+          </div>
+          <div class="font-mono text-cyber-text">
+            [Lock Chip] + [Main Blade]
+          </div>
+          <div class="text-cyber-muted text-xs mt-2">
+            Example: Pegasus + Blast = Pegasus Blast
+          </div>
+        </div>
+      </div>
+      <div class="cyber-card">
+        <h3 class="text-lg font-mono font-bold text-cyber-text mb-3">
+          <span class="text-cyber-cyan">#</span> Known Lock Chips
+        </h3>
+        <div class="flex flex-wrap gap-1 text-xs font-mono">
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Pegasus</span>
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Cerberus</span>
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Emperor</span>
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Valkyrie</span>
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Dran</span>
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Hells</span>
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Wizard</span>
+          <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">Phoenix</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Empty State */}
+    <div id="empty-state" class="hidden mt-8 cyber-card text-center py-12">
+      <div class="text-6xl mb-4">&#x1F50D;</div>
+      <h3 class="text-xl font-mono font-bold text-cyber-text mb-2">No Lock Chip Data Found</h3>
+      <p class="text-cyber-muted">
+        Lock chip data is extracted from CX blade combinations in tournament results.
+        Check back as more CX blades are used in tournaments.
+      </p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { initDB, getRankedLockChips, type Region } from '../lib/db';
+  import { staggerFadeIn } from '../lib/animations';
+
+  function getSelectedRegion(): Region {
+    if (typeof localStorage !== 'undefined') {
+      return (localStorage.getItem('beyblade-region') as Region) || 'ALL';
+    }
+    return 'ALL';
+  }
+
+  async function loadRankings() {
+    try {
+      await initDB();
+      const region = getSelectedRegion();
+      const lockChips = await getRankedLockChips(25, 1, region);
+
+      if (lockChips.length === 0) {
+        // Show empty state
+        document.getElementById('rankings-table')?.closest('.cyber-card')?.classList.add('hidden');
+        document.getElementById('empty-state')?.classList.remove('hidden');
+        return;
+      }
+
+      renderTable(lockChips);
+    } catch (error) {
+      console.error('Failed to load rankings:', error);
+      const tbody = document.getElementById('rankings-body');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="text-center text-red-400 py-8">
+              Failed to load lock chip rankings. Please refresh the page.
+            </td>
+          </tr>
+        `;
+      }
+    }
+  }
+
+  function renderTable(lockChips: Awaited<ReturnType<typeof getRankedLockChips>>) {
+    const tbody = document.getElementById('rankings-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = lockChips.map((chip, index) => {
+      return `
+      <tr class="ranking-row">
+        <td class="font-mono text-center">
+          <span class="rank-number text-lg">${index + 1}</span>
+        </td>
+        <td>
+          <span class="px-3 py-1 text-sm font-mono font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
+            ${chip.name}
+          </span>
+        </td>
+        <td class="text-right font-mono text-cyber-cyan">${chip.raw_score.toFixed(1)}</td>
+        <td class="text-right font-mono">${chip.uses}</td>
+        <td class="text-right font-mono text-amber-400">${chip.first}</td>
+        <td class="text-right font-mono text-gray-400">${chip.second}</td>
+        <td class="text-right font-mono text-amber-700">${chip.third}</td>
+        <td class="text-right font-mono">${chip.uses > 0 ? ((chip.first / chip.uses) * 100).toFixed(1) : '0.0'}%</td>
+        <td class="text-right">${getTrendHtml(chip.trend)}</td>
+      </tr>
+    `}).join('');
+
+    staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
+  }
+
+  function getTrendHtml(trend: number): string {
+    if (trend > 0.1) {
+      return `<span class="text-green-400 text-sm inline-flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+        </svg>
+        +${(trend * 100).toFixed(0)}%
+      </span>`;
+    } else if (trend < -0.1) {
+      return `<span class="text-red-400 text-sm inline-flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+        ${(trend * 100).toFixed(0)}%
+      </span>`;
+    }
+    return '<span class="text-cyber-muted text-sm">--</span>';
+  }
+
+  document.addEventListener('DOMContentLoaded', loadRankings);
+
+  // Reload when region changes
+  window.addEventListener('regionchange', () => {
+    loadRankings();
+  });
+</script>
