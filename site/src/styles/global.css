@@ -4,216 +4,499 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-dark: #0a0a0f;
-  --bg-card: #12121a;
-  --bg-card-light: #1a1a25;
-  --accent-cyan: #00f0ff;
-  --accent-pink: #ff00aa;
-  --accent-purple: #8b5cf6;
-  --text-primary: #e4e4e7;
-  --text-muted: #71717a;
-  --border-color: #2a2a35;
-  --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.3);
-  --glow-pink: 0 0 20px rgba(255, 0, 170, 0.3);
-  --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
-}
-
 @layer base {
   html {
     @apply scroll-smooth;
   }
 
   body {
-    @apply bg-cyber-bg text-cyber-text font-sans antialiased;
-    background-image:
-      linear-gradient(to bottom, rgba(10, 10, 15, 0.95), rgba(10, 10, 15, 1)),
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 240, 255, 0.03) 2px,
-        rgba(0, 240, 255, 0.03) 4px
-      );
+    @apply bg-terminal-bg text-fg font-mono antialiased;
     min-height: 100vh;
+    font-feature-settings: 'tnum' on, 'lnum' on;
   }
 }
 
 @layer components {
-  /* Cyber card with glow border */
-  .cyber-card {
-    @apply bg-cyber-card rounded-lg p-4 border border-cyber-border relative overflow-hidden;
-    transition: all 0.3s ease;
+  /* ===========================================
+   * Card Components
+   * =========================================== */
+  .card {
+    @apply bg-surface rounded-lg border border-stroke;
+    @apply transition-all duration-150;
   }
 
-  .cyber-card:hover {
-    @apply border-cyber-cyan/40;
-    box-shadow: var(--glow-cyan);
+  .card-interactive {
+    @apply card;
+    @apply hover:border-stroke-hover hover:bg-panel;
+    @apply cursor-pointer;
   }
 
-  /* Gradient border effect */
-  .gradient-border {
-    position: relative;
-    background: var(--bg-card);
-    border-radius: 0.5rem;
+  .card-padding {
+    @apply p-4;
   }
 
-  .gradient-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 0.5rem;
-    padding: 1px;
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple), var(--accent-pink));
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+  /* ===========================================
+   * Button Components
+   * =========================================== */
+  .btn {
+    @apply px-4 py-2 font-medium text-sm rounded-md;
+    @apply transition-all duration-150;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent/50;
   }
 
-  /* Cyber button */
-  .cyber-btn {
-    @apply px-4 py-2 font-mono text-sm uppercase tracking-wider rounded relative overflow-hidden;
-    @apply bg-cyber-card border border-cyber-cyan/50 text-cyber-cyan;
-    @apply hover:bg-cyber-cyan/10 hover:shadow-glow-cyan-sm;
-    transition: all 0.2s ease;
+  .btn-primary {
+    @apply btn;
+    @apply bg-accent text-white;
+    @apply hover:bg-accent-light;
   }
 
-  .cyber-btn-primary {
-    @apply bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan;
+  .btn-secondary {
+    @apply btn;
+    @apply bg-panel text-fg border border-stroke;
+    @apply hover:bg-hover hover:border-stroke-hover;
   }
 
-  .cyber-btn-pink {
-    @apply bg-cyber-pink/20 border-cyber-pink text-cyber-pink;
-    @apply hover:bg-cyber-pink/30 hover:shadow-glow-pink-sm;
+  .btn-ghost {
+    @apply btn;
+    @apply bg-transparent text-fg-secondary;
+    @apply hover:bg-panel hover:text-fg;
   }
 
-  /* Tier badges */
-  .tier-s {
-    @apply bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-amber-400 border-amber-500/50;
+  /* ===========================================
+   * Series Badges (BX/UX/CX)
+   * =========================================== */
+  .badge {
+    @apply px-2 py-0.5 text-xs font-mono font-semibold rounded;
   }
 
-  .tier-a {
-    @apply bg-cyber-purple/20 text-cyber-purple border-cyber-purple/50;
+  .badge-bx {
+    @apply badge;
+    @apply bg-series-bx-muted text-series-bx border border-series-bx/30;
   }
 
-  .tier-b {
-    @apply bg-cyber-cyan/20 text-cyber-cyan border-cyber-cyan/50;
+  .badge-ux {
+    @apply badge;
+    @apply bg-series-ux-muted text-series-ux border border-series-ux/30;
   }
 
-  .tier-c {
-    @apply bg-cyber-muted/20 text-cyber-muted border-cyber-muted/50;
+  .badge-cx {
+    @apply badge;
+    @apply bg-series-cx-muted text-series-cx border border-series-cx/30;
   }
 
-  /* Ranking number */
-  .rank-number {
-    @apply font-mono text-2xl font-bold;
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* ===========================================
+   * Tier Badges (Rankings)
+   * =========================================== */
+  .tier-badge {
+    @apply px-2 py-0.5 text-xs font-mono font-bold rounded;
   }
 
-  /* Score display */
-  .score-display {
-    @apply font-mono text-xl font-bold text-cyber-cyan;
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  .tier-badge-ss {
+    @apply tier-badge bg-tier-ss/20 text-tier-ss border border-tier-ss/30;
   }
 
-  /* Trend indicators */
-  .trend-up {
-    @apply text-green-400;
+  .tier-badge-s {
+    @apply tier-badge bg-tier-s/20 text-tier-s border border-tier-s/30;
   }
 
-  .trend-down {
-    @apply text-red-400;
+  .tier-badge-a {
+    @apply tier-badge bg-tier-a/20 text-tier-a border border-tier-a/30;
+  }
+
+  .tier-badge-b {
+    @apply tier-badge bg-tier-b/20 text-tier-b border border-tier-b/30;
+  }
+
+  .tier-badge-c {
+    @apply tier-badge bg-tier-c/20 text-tier-c border border-tier-c/30;
+  }
+
+  .tier-badge-d {
+    @apply tier-badge bg-tier-d/20 text-tier-d border border-tier-d/30;
+  }
+
+  .tier-badge-f {
+    @apply tier-badge bg-tier-f/20 text-tier-f border border-tier-f/30;
+  }
+
+  /* ===========================================
+   * Status/Trend Indicators
+   * =========================================== */
+  .trend-positive {
+    @apply text-positive;
+  }
+
+  .trend-negative {
+    @apply text-negative;
   }
 
   .trend-neutral {
-    @apply text-cyber-muted;
+    @apply text-fg-muted;
   }
 
-  /* Stat bar */
-  .stat-bar {
-    @apply h-2 rounded-full bg-cyber-border overflow-hidden;
+  /* ===========================================
+   * Ranking Number (gradient text)
+   * =========================================== */
+  .rank-number {
+    @apply font-mono text-2xl font-bold text-accent;
   }
 
-  .stat-bar-fill {
-    @apply h-full rounded-full;
-    transition: width 0.5s ease-out;
+  /* Top 3 get special colors */
+  .rank-1 { @apply text-tier-ss; }
+  .rank-2 { @apply text-fg-secondary; }
+  .rank-3 { @apply text-tier-a; }
+
+  /* ===========================================
+   * Score Display
+   * =========================================== */
+  .score {
+    @apply font-mono font-bold text-accent;
   }
 
-  .stat-bar-cyan {
-    @apply bg-gradient-to-r from-cyber-cyan/50 to-cyber-cyan;
+  .score-lg {
+    @apply score text-xl;
   }
 
-  .stat-bar-pink {
-    @apply bg-gradient-to-r from-cyber-pink/50 to-cyber-pink;
+  .score-sm {
+    @apply score text-sm;
   }
 
-  /* Table styles */
-  .cyber-table {
+  /* ===========================================
+   * Table Styles
+   * =========================================== */
+  .data-table {
     @apply w-full text-sm;
   }
 
-  .cyber-table th {
-    @apply px-4 py-3 text-left text-cyber-muted font-mono uppercase tracking-wider text-xs border-b border-cyber-border;
+  .data-table th {
+    @apply px-4 py-3 text-left text-fg-muted font-medium text-xs uppercase tracking-wider;
+    @apply border-b border-stroke bg-canvas/50;
   }
 
-  .cyber-table td {
-    @apply px-4 py-3 border-b border-cyber-border/50;
+  .data-table td {
+    @apply px-4 py-3 border-b border-stroke-subtle;
   }
 
-  .cyber-table tbody tr {
-    @apply transition-colors;
+  .data-table tbody tr {
+    @apply transition-colors duration-100;
   }
 
-  .cyber-table tbody tr:hover {
-    @apply bg-cyber-card-light;
+  .data-table tbody tr:hover {
+    @apply bg-panel;
   }
 
-  /* Select dropdown */
-  .cyber-select {
-    @apply bg-cyber-card border border-cyber-border rounded px-4 py-2;
-    @apply text-cyber-text font-mono;
-    @apply focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan/50;
-    transition: all 0.2s ease;
+  /* ===========================================
+   * Form Elements
+   * =========================================== */
+  .input {
+    @apply bg-surface border border-stroke rounded-md px-3 py-2;
+    @apply text-fg placeholder-fg-muted;
+    @apply focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30;
+    @apply transition-all duration-150;
   }
 
-  /* Loading skeleton */
+  .select {
+    @apply input appearance-none cursor-pointer;
+    @apply pr-8;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+  }
+
+  /* ===========================================
+   * Stat Bars
+   * =========================================== */
+  .stat-bar {
+    @apply h-1.5 rounded-full bg-stroke overflow-hidden;
+  }
+
+  .stat-bar-fill {
+    @apply h-full rounded-full transition-all duration-300;
+  }
+
+  .stat-bar-accent {
+    @apply bg-accent;
+  }
+
+  .stat-bar-positive {
+    @apply bg-positive;
+  }
+
+  .stat-bar-negative {
+    @apply bg-negative;
+  }
+
+  /* ===========================================
+   * Loading States
+   * =========================================== */
   .skeleton {
-    @apply bg-cyber-card-light rounded animate-pulse;
+    @apply bg-panel rounded animate-pulse;
   }
 
-  /* Scan line effect overlay */
-  .scanlines::after {
+  /* ===========================================
+   * Section Headers
+   * =========================================== */
+  .section-header {
+    @apply text-lg font-semibold text-fg mb-4;
+  }
+
+  .section-subheader {
+    @apply text-sm text-fg-secondary mb-2;
+  }
+
+  /* ===========================================
+   * Dividers
+   * =========================================== */
+  .divider {
+    @apply border-t border-stroke;
+  }
+
+  .divider-subtle {
+    @apply border-t border-stroke-subtle;
+  }
+
+  /* ===========================================
+   * Terminal Panel Components (Bloomberg style)
+   * =========================================== */
+  .terminal-panel {
+    @apply bg-terminal-surface rounded border border-terminal-border;
+  }
+
+  .terminal-panel-header {
+    @apply px-3 py-2 border-b border-terminal-border bg-terminal-elevated;
+    @apply text-xs font-mono uppercase tracking-widest text-fg-muted;
+    @apply flex items-center justify-between;
+  }
+
+  .terminal-panel-body {
+    @apply p-3;
+  }
+
+  /* ===========================================
+   * Data Rows (dense ranking display)
+   * =========================================== */
+  .data-row {
+    @apply flex items-center justify-between py-1.5 px-2;
+    @apply border-b border-terminal-border/50 last:border-0;
+    @apply hover:bg-terminal-elevated/50 transition-colors duration-100;
+    @apply text-sm font-mono;
+  }
+
+  .data-row-rank {
+    @apply w-6 text-fg-muted text-right mr-2;
+  }
+
+  .data-row-name {
+    @apply flex-1 text-fg truncate;
+  }
+
+  .data-row-value {
+    @apply text-accent tabular-nums ml-2;
+  }
+
+  .data-row-secondary {
+    @apply text-fg-muted text-xs ml-2;
+  }
+
+  /* ===========================================
+   * Stat Widget (compact stat display)
+   * =========================================== */
+  .stat-widget {
+    @apply terminal-panel p-3 text-center;
+  }
+
+  .stat-widget-label {
+    @apply text-[10px] font-mono uppercase tracking-widest text-fg-muted mb-1;
+  }
+
+  .stat-widget-value {
+    @apply text-xl font-mono font-bold tabular-nums;
+  }
+
+  /* ===========================================
+   * Feed Carousel (rotating news banner)
+   * =========================================== */
+  .feed-carousel {
+    @apply bg-terminal-surface border-b border-terminal-border overflow-hidden;
+    @apply h-10 relative;
+  }
+
+  .feed-carousel-inner {
+    @apply absolute inset-0 flex items-center justify-center;
+  }
+
+  .feed-slide {
+    @apply absolute inset-0 flex items-center justify-center px-4;
+    @apply text-xs font-mono uppercase tracking-wider;
+    @apply opacity-0 transition-all duration-500 ease-in-out;
+    transform: translateY(100%);
+  }
+
+  .feed-slide.active {
+    @apply opacity-100;
+    transform: translateY(0);
+  }
+
+  .feed-slide.exit {
+    @apply opacity-0;
+    transform: translateY(-100%);
+  }
+
+  .feed-slide-content {
+    @apply flex items-center gap-3;
+  }
+
+  .feed-icon {
+    @apply w-5 h-5 flex items-center justify-center rounded;
+  }
+
+  .feed-label {
+    @apply text-fg-muted text-[10px] mr-1;
+  }
+
+  .feed-value {
+    @apply text-fg font-semibold;
+  }
+
+  .feed-highlight {
+    @apply text-gold font-bold;
+  }
+
+  .feed-positive {
+    @apply text-positive font-bold;
+  }
+
+  .feed-negative {
+    @apply text-negative font-bold;
+  }
+
+  .feed-secondary {
+    @apply text-fg-muted text-[10px] ml-2;
+  }
+
+  .feed-divider {
+    @apply w-px h-4 bg-terminal-border mx-2;
+  }
+
+  /* Carousel indicators */
+  .feed-indicators {
+    @apply absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1;
+  }
+
+  .feed-indicator {
+    @apply w-1.5 h-1.5 rounded-full bg-terminal-border transition-colors duration-300;
+  }
+
+  .feed-indicator.active {
+    @apply bg-accent;
+  }
+
+  /* Legacy ticker classes for backwards compatibility */
+  .ticker-positive {
+    @apply text-positive;
+  }
+
+  .ticker-negative {
+    @apply text-negative;
+  }
+
+  /* ===========================================
+   * Delta Indicators (trend triangles)
+   * =========================================== */
+  .delta-up {
+    @apply text-positive inline-flex items-center gap-0.5;
+  }
+
+  .delta-up::before {
     content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 240, 255, 0.02) 2px,
-      rgba(0, 240, 255, 0.02) 4px
-    );
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 6px solid currentColor;
+  }
+
+  .delta-down {
+    @apply text-negative inline-flex items-center gap-0.5;
+  }
+
+  .delta-down::before {
+    content: '';
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid currentColor;
+  }
+
+  .delta-neutral {
+    @apply text-fg-muted;
+  }
+
+  /* ===========================================
+   * Micro Bar (thin inline progress)
+   * =========================================== */
+  .micro-bar {
+    @apply h-1 rounded-full bg-terminal-border overflow-hidden;
+  }
+
+  .micro-bar-fill {
+    @apply h-full rounded-full transition-all duration-300;
+  }
+
+  /* ===========================================
+   * Status Dot (live/stale indicator)
+   * =========================================== */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-live {
+    @apply bg-positive;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .status-dot-stale {
+    @apply bg-series-cx;
+  }
+
+  .status-dot-offline {
+    @apply bg-fg-muted;
+  }
+
+  /* ===========================================
+   * Champion Spotlight Hero
+   * =========================================== */
+  .champion-spotlight {
+    @apply relative overflow-hidden rounded-lg;
+    @apply border-2 border-gold/50;
+    @apply bg-gradient-to-br from-gold/10 via-terminal-surface to-terminal-surface;
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.15), inset 0 1px 0 rgba(251, 191, 36, 0.1);
+    animation: border-glow 3s ease-in-out infinite;
+  }
+
+  .champion-spotlight::before {
+    content: '';
+    @apply absolute inset-0;
+    background: radial-gradient(ellipse at top center, rgba(251, 191, 36, 0.15) 0%, transparent 60%);
     pointer-events: none;
-    animation: scan 8s linear infinite;
+  }
+
+  .champion-name {
+    @apply text-4xl md:text-5xl font-mono font-bold;
+    text-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+  }
+
+  /* ===========================================
+   * Sparkline Container
+   * =========================================== */
+  .sparkline {
+    @apply inline-block align-middle;
+  }
+
+  .sparkline svg {
+    @apply block;
   }
 }
 
 @layer utilities {
-  /* Glow text */
-  .glow-text-cyan {
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3);
-  }
-
-  .glow-text-pink {
-    text-shadow: 0 0 10px rgba(255, 0, 170, 0.5), 0 0 20px rgba(255, 0, 170, 0.3);
-  }
-
   /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -223,29 +506,34 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Tabular numbers for data */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* Selection styling */
 ::selection {
-  background: rgba(0, 240, 255, 0.3);
+  background: rgba(249, 115, 22, 0.3);
   color: white;
 }
 
-/* Custom scrollbar for browsers that support it */
+/* Custom scrollbar (terminal style) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-dark);
+  background: #0d1117;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: #30363d;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-cyan);
+  background: #484f58;
 }

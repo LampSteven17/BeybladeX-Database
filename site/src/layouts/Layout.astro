@@ -28,22 +28,37 @@ const currentPath = Astro.url.pathname;
   <body class="min-h-screen">
     <Navigation currentPath={currentPath} />
 
-    <!-- Main content with top padding for fixed nav -->
-    <main class="pt-16 min-h-screen">
+    <!-- Feed Carousel (rotating news banner) -->
+    <div id="feed-carousel" class="feed-carousel fixed top-14 left-0 right-0 z-40">
+      <div class="feed-carousel-inner">
+        <!-- Slides populated by JS -->
+        <div class="feed-slide active" id="feed-slide-0">
+          <div class="feed-slide-content">
+            <span class="feed-label">LOADING</span>
+            <span class="feed-value">...</span>
+          </div>
+        </div>
+      </div>
+      <!-- Carousel indicators -->
+      <div class="feed-indicators" id="feed-indicators"></div>
+    </div>
+
+    <!-- Main content with top padding for fixed nav + ticker -->
+    <main class="pt-22 min-h-screen">
       <slot />
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-cyber-border py-12 mt-16 bg-cyber-bg/50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer class="border-t border-terminal-border py-12 mt-16 bg-terminal-surface">
+      <div class="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Main Footer Content -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <!-- About -->
           <div>
-            <h3 class="font-mono font-bold text-cyber-text mb-3">
-              <span class="text-cyber-cyan">#</span> BeybladeX Database
+            <h3 class="font-semibold text-fg mb-3">
+              BeybladeX Database
             </h3>
-            <p class="text-cyber-muted text-sm leading-relaxed">
+            <p class="text-fg-secondary text-sm leading-relaxed">
               Tournament meta analysis powered by competitive data from multiple sources worldwide.
               Track winning combos, blade rankings, and build the perfect setup.
             </p>
@@ -51,36 +66,36 @@ const currentPath = Astro.url.pathname;
 
           <!-- Data Sources -->
           <div>
-            <h3 class="font-mono font-bold text-cyber-text mb-3">
-              <span class="text-cyber-pink">#</span> Data Sources
+            <h3 class="font-semibold text-fg mb-3">
+              Data Sources
             </h3>
             <ul class="space-y-2 text-sm">
               <li>
                 <a href="https://worldbeyblade.org" target="_blank" rel="noopener noreferrer"
-                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
                   <span>World Beyblade Organization</span>
-                  <span class="text-xs text-cyber-border">(NA/Global)</span>
+                  <span class="text-xs text-fg-muted">(NA/Global)</span>
                 </a>
               </li>
               <li>
                 <a href="https://www.instagram.com/bladerleaguegermany/" target="_blank" rel="noopener noreferrer"
-                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
                   <span>Blader League Germany</span>
-                  <span class="text-xs text-cyber-border">(EU)</span>
+                  <span class="text-xs text-fg-muted">(EU)</span>
                 </a>
               </li>
               <li>
                 <a href="https://okuyama3093.com" target="_blank" rel="noopener noreferrer"
-                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
                   <span>okuyama3093.com</span>
-                  <span class="text-xs text-cyber-border">(Japan)</span>
+                  <span class="text-xs text-fg-muted">(Japan)</span>
                 </a>
               </li>
               <li>
                 <a href="https://hobby.watch.impress.co.jp" target="_blank" rel="noopener noreferrer"
-                   class="text-cyber-muted hover:text-cyber-cyan transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
                   <span>Hobby Watch</span>
-                  <span class="text-xs text-cyber-border">(Japan)</span>
+                  <span class="text-xs text-fg-muted">(Japan)</span>
                 </a>
               </li>
             </ul>
@@ -88,44 +103,230 @@ const currentPath = Astro.url.pathname;
 
           <!-- Disclaimer -->
           <div>
-            <h3 class="font-mono font-bold text-cyber-text mb-3">
-              <span class="text-cyber-purple">#</span> Disclaimer
+            <h3 class="font-semibold text-fg mb-3">
+              Disclaimer
             </h3>
-            <p class="text-cyber-muted text-sm leading-relaxed mb-2">
+            <p class="text-fg-secondary text-sm leading-relaxed mb-2">
               This website was built with assistance from generative AI (Claude by Anthropic).
               All code has been reviewed for accuracy and functionality.
             </p>
-            <p class="text-cyber-muted text-sm leading-relaxed">
+            <p class="text-fg-secondary text-sm leading-relaxed">
               This is an unofficial fan project. Not affiliated with or endorsed by Takara Tomy, Hasbro, or the World Beyblade Organization. Beyblade is a trademark of Takara Tomy.
             </p>
           </div>
         </div>
 
         <!-- Bottom Bar -->
-        <div class="pt-6 border-t border-cyber-border/50 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-cyber-muted">
+        <div class="pt-6 border-t border-stroke-subtle flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-fg-muted">
           <div class="flex items-center gap-2">
-            <span class="font-mono">BeybladeX Database</span>
-            <span class="text-cyber-border">|</span>
+            <span>BeybladeX Database</span>
+            <span class="text-border-primary">·</span>
             <span>Open source meta analysis</span>
           </div>
           <div class="flex items-center gap-4">
             <span>Built with Astro + DuckDB</span>
-            <span class="text-cyber-border">|</span>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer"
-               class="hover:text-cyber-cyan transition-colors">
-              GitHub
-            </a>
           </div>
         </div>
       </div>
     </footer>
 
     <!-- Global loading indicator -->
-    <div id="global-loader" class="fixed inset-0 bg-cyber-bg/80 backdrop-blur-sm z-[100] hidden items-center justify-center">
+    <div id="global-loader" class="fixed inset-0 bg-terminal-bg/90 backdrop-blur-sm z-[100] hidden items-center justify-center">
       <div class="flex flex-col items-center gap-4">
-        <div class="w-12 h-12 border-2 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin"></div>
-        <span class="text-cyber-cyan font-mono text-sm">Loading database...</span>
+        <div class="w-10 h-10 border-2 border-stroke border-t-accent rounded-full animate-spin"></div>
+        <span class="text-fg-secondary text-sm font-mono">Loading database...</span>
       </div>
     </div>
+
+    <!-- Feed Carousel Script -->
+    <script>
+      import { initDB, getMetaSpotlight, getDatabaseSummary, type Region } from '../lib/db';
+
+      let carouselInterval: ReturnType<typeof setInterval> | null = null;
+      let currentSlide = 0;
+      let slides: string[] = [];
+
+      function getSelectedRegion(): Region {
+        if (typeof localStorage !== 'undefined') {
+          return (localStorage.getItem('beyblade-region') as Region) || 'ALL';
+        }
+        return 'ALL';
+      }
+
+      function createSlideHTML(index: number, content: string, isActive: boolean = false): string {
+        return `
+          <div class="feed-slide ${isActive ? 'active' : ''}" id="feed-slide-${index}">
+            <div class="feed-slide-content">
+              ${content}
+            </div>
+          </div>
+        `;
+      }
+
+      function updateIndicators(total: number, active: number) {
+        const container = document.getElementById('feed-indicators');
+        if (!container) return;
+
+        container.innerHTML = Array.from({ length: total }, (_, i) =>
+          `<div class="feed-indicator ${i === active ? 'active' : ''}"></div>`
+        ).join('');
+      }
+
+      function showSlide(index: number) {
+        const allSlides = document.querySelectorAll('.feed-slide');
+        allSlides.forEach((slide, i) => {
+          slide.classList.remove('active', 'exit');
+          if (i === currentSlide) {
+            slide.classList.add('exit');
+          }
+        });
+
+        currentSlide = index;
+        const targetSlide = document.getElementById(`feed-slide-${index}`);
+        if (targetSlide) {
+          setTimeout(() => {
+            targetSlide.classList.add('active');
+          }, 50);
+        }
+
+        updateIndicators(slides.length, index);
+      }
+
+      function nextSlide() {
+        const next = (currentSlide + 1) % slides.length;
+        showSlide(next);
+      }
+
+      async function initCarousel() {
+        const carouselInner = document.querySelector('.feed-carousel-inner');
+        if (!carouselInner) return;
+
+        try {
+          await initDB();
+          const region = getSelectedRegion();
+          const [spotlight, summary] = await Promise.all([
+            getMetaSpotlight(region),
+            getDatabaseSummary(region),
+          ]);
+
+          if (!spotlight.champion) {
+            carouselInner.innerHTML = createSlideHTML(0, `
+              <span class="feed-label">STATUS</span>
+              <span class="feed-value">No tournament data available</span>
+            `, true);
+            return;
+          }
+
+          const { champion, risers, fallers, isStale, lastTournamentDate } = spotlight;
+
+          // Format date
+          const lastDate = lastTournamentDate
+            ? new Date(lastTournamentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            : '';
+
+          // Build slides array
+          slides = [];
+
+          // Slide 1: Meta Champion
+          slides.push(`
+            <span class="feed-icon bg-gold/20 text-gold">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+              </svg>
+            </span>
+            <span class="feed-label">META CHAMPION</span>
+            <span class="feed-highlight">${champion.blade} ${champion.ratchet} ${champion.bit}</span>
+            <span class="feed-divider"></span>
+            <span class="feed-label">SCORE</span>
+            <span class="feed-highlight">${champion.score.toFixed(1)}</span>
+            <span class="feed-divider"></span>
+            <span class="feed-label">WIN RATE</span>
+            <span class="feed-positive">${champion.winRate}%</span>
+          `);
+
+          // Slide 2: Rising combos
+          if (risers.length > 0) {
+            const risersList = risers.slice(0, 3).map(r =>
+              `<span class="feed-value">${r.blade}</span><span class="feed-positive">+${r.change}</span>`
+            ).join('<span class="feed-divider"></span>');
+
+            slides.push(`
+              <span class="feed-icon bg-positive/20 text-positive">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+              </span>
+              <span class="feed-label">RISING</span>
+              ${risersList}
+            `);
+          }
+
+          // Slide 3: Falling combos
+          if (fallers.length > 0) {
+            const fallersList = fallers.slice(0, 3).map(f =>
+              `<span class="feed-value">${f.blade}</span><span class="feed-negative">${f.change}</span>`
+            ).join('<span class="feed-divider"></span>');
+
+            slides.push(`
+              <span class="feed-icon bg-negative/20 text-negative">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"/>
+                </svg>
+              </span>
+              <span class="feed-label">FALLING</span>
+              ${fallersList}
+            `);
+          }
+
+          // Slide 4: Tournament stats
+          slides.push(`
+            <span class="feed-icon bg-accent/20 text-accent">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </span>
+            <span class="feed-label">TOURNAMENTS</span>
+            <span class="feed-value">${summary.tournaments}</span>
+            <span class="feed-divider"></span>
+            <span class="feed-label">PLAYERS</span>
+            <span class="feed-value">${summary.unique_players}</span>
+            <span class="feed-divider"></span>
+            <span class="feed-label">BLADES</span>
+            <span class="feed-value">${summary.unique_blades}</span>
+            ${lastDate ? `<span class="feed-secondary">Latest: ${lastDate}</span>` : ''}
+          `);
+
+          // Render all slides
+          carouselInner.innerHTML = slides.map((content, i) =>
+            createSlideHTML(i, content, i === 0)
+          ).join('');
+
+          // Update indicators
+          updateIndicators(slides.length, 0);
+
+          // Clear existing interval
+          if (carouselInterval) {
+            clearInterval(carouselInterval);
+          }
+
+          // Start carousel rotation (4 seconds per slide)
+          carouselInterval = setInterval(nextSlide, 4000);
+
+        } catch (error) {
+          console.error('Failed to load carousel:', error);
+          carouselInner.innerHTML = createSlideHTML(0, `
+            <span class="feed-label">STATUS</span>
+            <span class="feed-value text-negative">Error loading data</span>
+          `, true);
+        }
+      }
+
+      // Initialize on load and region change
+      document.addEventListener('DOMContentLoaded', initCarousel);
+      window.addEventListener('regionchange', () => {
+        currentSlide = 0;
+        initCarousel();
+      });
+    </script>
   </body>
 </html>

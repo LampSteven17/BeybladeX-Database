@@ -6,10 +6,10 @@ import Layout from '../layouts/Layout.astro';
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* Header */}
     <div class="mb-8">
-      <h1 class="text-3xl font-mono font-bold text-cyber-text mb-2">
-        <span class="text-cyber-purple">#</span> Bit Rankings
+      <h1 class="text-3xl font-mono font-bold text-fg mb-2">
+        <span class="text-series-bx">#</span> Bit Rankings
       </h1>
-      <p class="text-cyber-muted">
+      <p class="text-fg-secondary">
         Bits (tips) ranked by weighted tournament performance. Higher score = more wins in recent events.
       </p>
     </div>
@@ -21,18 +21,18 @@ import Layout from '../layouts/Layout.astro';
           type="text"
           id="search-input"
           placeholder="Search bits..."
-          class="w-full md:w-80 px-4 py-2 pl-10 bg-cyber-card border border-cyber-border rounded-lg font-mono text-sm text-cyber-text placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan/50 transition-colors"
+          class="input w-full md:w-80 pl-10"
         />
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyber-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
     </div>
 
     {/* Rankings Table */}
-    <div class="cyber-card">
+    <div class="card card-padding">
       <div class="overflow-x-auto">
-        <table class="cyber-table" id="rankings-table">
+        <table class="data-table" id="rankings-table">
           <thead>
             <tr>
               <th class="w-16">#</th>
@@ -62,39 +62,39 @@ import Layout from '../layouts/Layout.astro';
 
     {/* Info Section */}
     <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="cyber-card">
-        <h3 class="text-lg font-mono font-bold text-cyber-text mb-3">
-          <span class="text-cyber-purple">#</span> About Bits
+      <div class="card card-padding">
+        <h3 class="text-lg font-mono font-bold text-fg mb-3">
+          <span class="text-series-bx">#</span> About Bits
         </h3>
-        <p class="text-cyber-muted text-sm">
+        <p class="text-fg-muted text-sm">
           Bits (also called tips) are the bottom part of the Beyblade that contacts the stadium.
           They determine movement patterns - from aggressive attack types to defensive stamina types.
         </p>
       </div>
-      <div class="cyber-card">
-        <h3 class="text-lg font-mono font-bold text-cyber-text mb-3">
-          <span class="text-cyber-cyan">#</span> Bit Types
+      <div class="card card-padding">
+        <h3 class="text-lg font-mono font-bold text-fg mb-3">
+          <span class="text-accent">#</span> Bit Types
         </h3>
         <div class="space-y-2 text-sm">
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/40 font-mono text-xs">Attack</span>
-            <span class="text-cyber-muted">Flat, Rush, Accel, Low Flat</span>
+            <span class="px-2 py-0.5 rounded bg-negative/20 text-negative border border-negative/40 font-mono text-xs">Attack</span>
+            <span class="text-fg-muted">Flat, Rush, Accel, Low Flat</span>
           </div>
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/40 font-mono text-xs">Stamina</span>
-            <span class="text-cyber-muted">Ball, Orb, Needle, Spike</span>
+            <span class="px-2 py-0.5 rounded bg-series-bx/20 text-series-bx border border-series-bx/40 font-mono text-xs">Stamina</span>
+            <span class="text-fg-muted">Ball, Orb, Needle, Spike</span>
           </div>
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/40 font-mono text-xs">Balance</span>
-            <span class="text-cyber-muted">Taper, Point, Unite, Level</span>
+            <span class="px-2 py-0.5 rounded bg-positive/20 text-positive border border-positive/40 font-mono text-xs">Balance</span>
+            <span class="text-fg-muted">Taper, Point, Unite, Level</span>
           </div>
         </div>
       </div>
-      <div class="cyber-card">
-        <h3 class="text-lg font-mono font-bold text-cyber-text mb-3">
-          <span class="text-cyber-cyan">#</span> Scoring System
+      <div class="card card-padding">
+        <h3 class="text-lg font-mono font-bold text-fg mb-3">
+          <span class="text-accent">#</span> Scoring System
         </h3>
-        <p class="text-cyber-muted text-sm">
+        <p class="text-fg-muted text-sm">
           Score is calculated using recency-weighted placement points: 1st = 3pts, 2nd = 2pts, 3rd = 1pt.
           Recent tournaments count more than older ones.
         </p>
@@ -130,7 +130,7 @@ import Layout from '../layouts/Layout.astro';
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="9" class="text-center text-red-400 py-8">
+            <td colspan="9" class="text-center text-negative py-8">
               Failed to load bit rankings. Please refresh the page.
             </td>
           </tr>
@@ -149,13 +149,13 @@ import Layout from '../layouts/Layout.astro';
     const balanceBits = ['Taper', 'Point', 'Unite', 'High Taper', 'GearPoint', 'Level', 'Elevate', 'Glide', 'Quake', 'Brake', 'Bound', 'Hexa', 'Cyclone', 'High Sword'];
 
     if (attackBits.includes(name)) {
-      return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/40' };
+      return { bg: 'bg-negative/20', text: 'text-negative', border: 'border-negative/40' };
     } else if (staminaBits.includes(name)) {
-      return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/40' };
+      return { bg: 'bg-series-bx/20', text: 'text-series-bx', border: 'border-series-bx/40' };
     } else if (balanceBits.includes(name)) {
-      return { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/40' };
+      return { bg: 'bg-positive/20', text: 'text-positive', border: 'border-positive/40' };
     }
-    return { bg: 'bg-cyber-purple/20', text: 'text-cyber-purple', border: 'border-cyber-purple/30' };
+    return { bg: 'bg-accent/20', text: 'text-accent', border: 'border-accent/30' };
   }
 
   function renderTable(bits: Awaited<ReturnType<typeof getRankedBits>>) {
@@ -174,11 +174,11 @@ import Layout from '../layouts/Layout.astro';
             ${bit.name}
           </span>
         </td>
-        <td class="text-right font-mono text-cyber-cyan">${bit.raw_score.toFixed(1)}</td>
+        <td class="text-right font-mono text-accent">${bit.raw_score.toFixed(1)}</td>
         <td class="text-right font-mono">${bit.uses}</td>
-        <td class="text-right font-mono text-amber-400">${bit.first}</td>
-        <td class="text-right font-mono text-gray-400">${bit.second}</td>
-        <td class="text-right font-mono text-amber-700">${bit.third}</td>
+        <td class="text-right font-mono text-tier-ss">${bit.first}</td>
+        <td class="text-right font-mono text-fg-muted">${bit.second}</td>
+        <td class="text-right font-mono text-tier-a">${bit.third}</td>
         <td class="text-right font-mono">${bit.uses > 0 ? ((bit.first / bit.uses) * 100).toFixed(1) : '0.0'}%</td>
         <td class="text-right">${getTrendHtml(bit.trend)}</td>
       </tr>
@@ -189,21 +189,21 @@ import Layout from '../layouts/Layout.astro';
 
   function getTrendHtml(trend: number): string {
     if (trend > 0.1) {
-      return `<span class="text-green-400 text-sm inline-flex items-center gap-1">
+      return `<span class="text-positive text-sm inline-flex items-center gap-1">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
         </svg>
         +${(trend * 100).toFixed(0)}%
       </span>`;
     } else if (trend < -0.1) {
-      return `<span class="text-red-400 text-sm inline-flex items-center gap-1">
+      return `<span class="text-negative text-sm inline-flex items-center gap-1">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
         ${(trend * 100).toFixed(0)}%
       </span>`;
     }
-    return '<span class="text-cyber-muted text-sm">--</span>';
+    return '<span class="text-fg-muted text-sm">--</span>';
   }
 
   function setupSearch() {

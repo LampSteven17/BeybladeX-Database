@@ -6,10 +6,10 @@ import Layout from '../layouts/Layout.astro';
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* Header */}
     <div class="mb-8">
-      <h1 class="text-3xl font-mono font-bold text-cyber-text mb-2">
-        <span class="text-cyber-purple">#</span> Tools
+      <h1 class="text-3xl font-mono font-bold text-fg mb-2">
+        <span class="text-series-bx">#</span> Tools
       </h1>
-      <p class="text-cyber-muted">
+      <p class="text-fg-secondary">
         Build optimal combos and compare blades head-to-head.
       </p>
     </div>
@@ -35,34 +35,34 @@ import Layout from '../layouts/Layout.astro';
     {/* ========== BUILDER TAB ========== */}
     <div id="panel-builder" class="tab-panel">
       {/* Component Selectors */}
-      <div class="cyber-card mb-8">
-        <h3 class="text-lg font-mono font-bold text-cyber-text mb-4">
-          <span class="text-cyber-cyan">#</span> Build Your Combo
+      <div class="card card-padding mb-8">
+        <h3 class="text-lg font-mono font-bold text-fg mb-4">
+          <span class="text-accent">#</span> Build Your Combo
         </h3>
 
         {/* Main Components Row */}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <label for="builder-blade-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+            <label for="builder-blade-select" class="block text-sm font-mono uppercase tracking-wider text-fg-muted mb-2">
               Blade
             </label>
-            <select id="builder-blade-select" class="cyber-select w-full" disabled>
+            <select id="builder-blade-select" class="select w-full" disabled>
               <option value="">Loading...</option>
             </select>
           </div>
           <div>
-            <label for="builder-ratchet-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+            <label for="builder-ratchet-select" class="block text-sm font-mono uppercase tracking-wider text-fg-muted mb-2">
               Ratchet
             </label>
-            <select id="builder-ratchet-select" class="cyber-select w-full" disabled>
+            <select id="builder-ratchet-select" class="select w-full" disabled>
               <option value="">Loading...</option>
             </select>
           </div>
           <div>
-            <label for="builder-bit-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
+            <label for="builder-bit-select" class="block text-sm font-mono uppercase tracking-wider text-fg-muted mb-2">
               Bit
             </label>
-            <select id="builder-bit-select" class="cyber-select w-full" disabled>
+            <select id="builder-bit-select" class="select w-full" disabled>
               <option value="">Loading...</option>
             </select>
           </div>
@@ -70,22 +70,22 @@ import Layout from '../layouts/Layout.astro';
 
         {/* CX-Only Components Row */}
         <div id="builder-cx-section" class="hidden">
-          <div class="border-t border-cyber-border pt-4 mt-4">
-            <p class="text-sm text-amber-400 font-mono mb-4">CX Custom Parts</p>
+          <div class="border-t border-stroke pt-4 mt-4">
+            <p class="text-sm text-series-cx font-mono mb-4">CX Custom Parts</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label for="builder-lockchip-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
-                  Lock Chip <span class="text-red-400">*</span>
+                <label for="builder-lockchip-select" class="block text-sm font-mono uppercase tracking-wider text-fg-muted mb-2">
+                  Lock Chip <span class="text-negative">*</span>
                 </label>
-                <select id="builder-lockchip-select" class="cyber-select w-full">
+                <select id="builder-lockchip-select" class="select w-full">
                   <option value="">-- Select Lock Chip --</option>
                 </select>
               </div>
               <div>
-                <label for="builder-assist-select" class="block text-sm font-mono uppercase tracking-wider text-cyber-muted mb-2">
-                  Assist Blade <span class="text-cyber-muted">(Optional)</span>
+                <label for="builder-assist-select" class="block text-sm font-mono uppercase tracking-wider text-fg-muted mb-2">
+                  Assist Blade <span class="text-fg-muted">(Optional)</span>
                 </label>
-                <select id="builder-assist-select" class="cyber-select w-full">
+                <select id="builder-assist-select" class="select w-full">
                   <option value="">-- None --</option>
                 </select>
               </div>
@@ -96,49 +96,49 @@ import Layout from '../layouts/Layout.astro';
 
       {/* Selected Combo Info */}
       <div id="builder-combo-info" class="hidden mb-8">
-        <div class="cyber-card gradient-border">
+        <div class="card card-padding border-accent/30">
           <div class="flex flex-col gap-4">
             <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
               <div class="flex-grow">
-                <h2 id="builder-combo-name" class="text-2xl font-mono font-bold text-cyber-text"></h2>
-                <p class="text-cyber-muted text-sm">Your combo</p>
+                <h2 id="builder-combo-name" class="text-2xl font-mono font-bold text-fg"></h2>
+                <p class="text-fg-muted text-sm">Your combo</p>
               </div>
               <div id="builder-series-badge" class="hidden px-3 py-1 text-sm font-mono rounded border"></div>
             </div>
 
             {/* Stats Grid */}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-cyber-border">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-stroke">
               <div class="text-center">
-                <div id="builder-combo-score" class="text-2xl font-mono font-bold text-cyber-cyan">--</div>
-                <div class="text-cyber-muted text-xs uppercase">Score</div>
+                <div id="builder-combo-score" class="text-2xl font-mono font-bold text-accent">--</div>
+                <div class="text-fg-muted text-xs uppercase">Score</div>
               </div>
               <div class="text-center">
-                <div id="builder-combo-uses" class="text-2xl font-mono font-bold text-cyber-text">--</div>
-                <div class="text-cyber-muted text-xs uppercase">Uses</div>
+                <div id="builder-combo-uses" class="text-2xl font-mono font-bold text-fg">--</div>
+                <div class="text-fg-muted text-xs uppercase">Uses</div>
               </div>
               <div class="text-center">
-                <div id="builder-combo-avgplace" class="text-2xl font-mono font-bold text-green-400">--</div>
-                <div class="text-cyber-muted text-xs uppercase">Avg Place</div>
+                <div id="builder-combo-avgplace" class="text-2xl font-mono font-bold text-positive">--</div>
+                <div class="text-fg-muted text-xs uppercase">Avg Place</div>
               </div>
               <div class="text-center">
-                <div id="builder-combo-wins" class="text-2xl font-mono font-bold text-amber-400">--</div>
-                <div class="text-cyber-muted text-xs uppercase">1st Place</div>
+                <div id="builder-combo-wins" class="text-2xl font-mono font-bold text-tier-ss">--</div>
+                <div class="text-fg-muted text-xs uppercase">1st Place</div>
               </div>
             </div>
 
             {/* Placement Breakdown */}
-            <div class="grid grid-cols-3 gap-4 pt-4 border-t border-cyber-border">
+            <div class="grid grid-cols-3 gap-4 pt-4 border-t border-stroke">
               <div class="text-center">
-                <div id="builder-combo-first" class="text-amber-400 font-mono text-xl font-bold">--</div>
-                <div class="text-cyber-muted text-xs">1st</div>
+                <div id="builder-combo-first" class="text-tier-ss font-mono text-xl font-bold">--</div>
+                <div class="text-fg-muted text-xs">1st</div>
               </div>
               <div class="text-center">
-                <div id="builder-combo-second" class="text-gray-400 font-mono text-xl font-bold">--</div>
-                <div class="text-cyber-muted text-xs">2nd</div>
+                <div id="builder-combo-second" class="text-fg-muted font-mono text-xl font-bold">--</div>
+                <div class="text-fg-muted text-xs">2nd</div>
               </div>
               <div class="text-center">
-                <div id="builder-combo-third" class="text-amber-700 font-mono text-xl font-bold">--</div>
-                <div class="text-cyber-muted text-xs">3rd</div>
+                <div id="builder-combo-third" class="text-tier-a font-mono text-xl font-bold">--</div>
+                <div class="text-fg-muted text-xs">3rd</div>
               </div>
             </div>
           </div>
@@ -147,40 +147,40 @@ import Layout from '../layouts/Layout.astro';
 
       {/* No Data State */}
       <div id="builder-nodata-state" class="hidden">
-        <div class="cyber-card text-center py-12">
-          <svg class="w-16 h-16 text-cyber-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="card card-padding text-center py-12">
+          <svg class="w-16 h-16 text-fg-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p class="text-cyber-muted text-lg mb-2">No tournament data for this combo</p>
-          <p class="text-cyber-muted/60 text-sm">This combination hasn't been recorded in any tournaments yet</p>
+          <p class="text-fg-muted text-lg mb-2">No tournament data for this combo</p>
+          <p class="text-fg-muted/60 text-sm">This combination hasn't been recorded in any tournaments yet</p>
         </div>
       </div>
 
       {/* Empty State */}
-      <div id="builder-empty-state" class="cyber-card text-center py-12">
-        <svg class="w-16 h-16 text-cyber-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div id="builder-empty-state" class="card card-padding text-center py-12">
+        <svg class="w-16 h-16 text-fg-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
-        <p class="text-cyber-muted text-lg mb-2">Build your combo to see stats</p>
-        <p class="text-cyber-muted/60 text-sm">Select a blade, ratchet, and bit to view tournament performance data</p>
+        <p class="text-fg-muted text-lg mb-2">Build your combo to see stats</p>
+        <p class="text-fg-muted/60 text-sm">Select a blade, ratchet, and bit to view tournament performance data</p>
       </div>
 
       {/* Loading State */}
       <div id="builder-loading-state" class="hidden">
-        <div class="cyber-card text-center py-12">
-          <div class="w-12 h-12 border-2 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin mx-auto mb-4"></div>
-          <p class="text-cyber-cyan font-mono">Loading combo stats...</p>
+        <div class="card card-padding text-center py-12">
+          <div class="w-12 h-12 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-accent font-mono">Loading combo stats...</p>
         </div>
       </div>
 
       {/* Top Combos Section */}
       <div class="mt-12">
-        <h3 class="text-xl font-mono font-bold text-cyber-text mb-4">
-          <span class="text-cyber-purple">#</span> Top Overall Combos
+        <h3 class="text-xl font-mono font-bold text-fg mb-4">
+          <span class="text-series-bx">#</span> Top Overall Combos
         </h3>
         <div id="builder-top-combos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }, () => (
-            <div class="cyber-card h-32 skeleton"></div>
+            <div class="card card-padding h-32 skeleton"></div>
           ))}
         </div>
       </div>
@@ -190,54 +190,54 @@ import Layout from '../layouts/Layout.astro';
     <div id="panel-compare" class="tab-panel hidden">
       {/* Combo 1 Selectors */}
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div class="cyber-card border-cyber-cyan/30">
-          <h3 class="text-lg font-mono font-bold text-cyber-cyan mb-4">Combo 1</h3>
+        <div class="card card-padding border-accent/30">
+          <h3 class="text-lg font-mono font-bold text-accent mb-4">Combo 1</h3>
 
           {/* Main Components */}
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>
-              <label for="compare-blade1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+              <label for="compare-blade1-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                 Blade
               </label>
-              <select id="compare-blade1-select" class="cyber-select w-full text-sm" disabled>
+              <select id="compare-blade1-select" class="select w-full text-sm" disabled>
                 <option value="">Loading...</option>
               </select>
             </div>
             <div>
-              <label for="compare-ratchet1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+              <label for="compare-ratchet1-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                 Ratchet
               </label>
-              <select id="compare-ratchet1-select" class="cyber-select w-full text-sm" disabled>
+              <select id="compare-ratchet1-select" class="select w-full text-sm" disabled>
                 <option value="">Loading...</option>
               </select>
             </div>
             <div>
-              <label for="compare-bit1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+              <label for="compare-bit1-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                 Bit
               </label>
-              <select id="compare-bit1-select" class="cyber-select w-full text-sm" disabled>
+              <select id="compare-bit1-select" class="select w-full text-sm" disabled>
                 <option value="">Loading...</option>
               </select>
             </div>
           </div>
 
           {/* CX-Only Components */}
-          <div id="compare-cx1-section" class="hidden border-t border-cyber-border pt-3 mt-3">
-            <p class="text-xs text-amber-400 font-mono mb-2">CX Parts</p>
+          <div id="compare-cx1-section" class="hidden border-t border-stroke pt-3 mt-3">
+            <p class="text-xs text-series-cx font-mono mb-2">CX Parts</p>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label for="compare-lockchip1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
-                  Lock Chip <span class="text-red-400">*</span>
+                <label for="compare-lockchip1-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
+                  Lock Chip <span class="text-negative">*</span>
                 </label>
-                <select id="compare-lockchip1-select" class="cyber-select w-full text-sm">
+                <select id="compare-lockchip1-select" class="select w-full text-sm">
                   <option value="">-- Select --</option>
                 </select>
               </div>
               <div>
-                <label for="compare-assist1-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                <label for="compare-assist1-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                   Assist
                 </label>
-                <select id="compare-assist1-select" class="cyber-select w-full text-sm">
+                <select id="compare-assist1-select" class="select w-full text-sm">
                   <option value="">-- None --</option>
                 </select>
               </div>
@@ -246,54 +246,54 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         {/* Combo 2 Selectors */}
-        <div class="cyber-card border-cyber-pink/30">
-          <h3 class="text-lg font-mono font-bold text-cyber-pink mb-4">Combo 2</h3>
+        <div class="card card-padding border-series-ux/30">
+          <h3 class="text-lg font-mono font-bold text-series-ux mb-4">Combo 2</h3>
 
           {/* Main Components */}
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>
-              <label for="compare-blade2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+              <label for="compare-blade2-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                 Blade
               </label>
-              <select id="compare-blade2-select" class="cyber-select w-full text-sm" disabled>
+              <select id="compare-blade2-select" class="select w-full text-sm" disabled>
                 <option value="">Loading...</option>
               </select>
             </div>
             <div>
-              <label for="compare-ratchet2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+              <label for="compare-ratchet2-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                 Ratchet
               </label>
-              <select id="compare-ratchet2-select" class="cyber-select w-full text-sm" disabled>
+              <select id="compare-ratchet2-select" class="select w-full text-sm" disabled>
                 <option value="">Loading...</option>
               </select>
             </div>
             <div>
-              <label for="compare-bit2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+              <label for="compare-bit2-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                 Bit
               </label>
-              <select id="compare-bit2-select" class="cyber-select w-full text-sm" disabled>
+              <select id="compare-bit2-select" class="select w-full text-sm" disabled>
                 <option value="">Loading...</option>
               </select>
             </div>
           </div>
 
           {/* CX-Only Components */}
-          <div id="compare-cx2-section" class="hidden border-t border-cyber-border pt-3 mt-3">
-            <p class="text-xs text-amber-400 font-mono mb-2">CX Parts</p>
+          <div id="compare-cx2-section" class="hidden border-t border-stroke pt-3 mt-3">
+            <p class="text-xs text-series-cx font-mono mb-2">CX Parts</p>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label for="compare-lockchip2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
-                  Lock Chip <span class="text-red-400">*</span>
+                <label for="compare-lockchip2-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
+                  Lock Chip <span class="text-negative">*</span>
                 </label>
-                <select id="compare-lockchip2-select" class="cyber-select w-full text-sm">
+                <select id="compare-lockchip2-select" class="select w-full text-sm">
                   <option value="">-- Select --</option>
                 </select>
               </div>
               <div>
-                <label for="compare-assist2-select" class="block text-xs font-mono uppercase tracking-wider text-cyber-muted mb-1">
+                <label for="compare-assist2-select" class="block text-xs font-mono uppercase tracking-wider text-fg-muted mb-1">
                   Assist
                 </label>
-                <select id="compare-assist2-select" class="cyber-select w-full text-sm">
+                <select id="compare-assist2-select" class="select w-full text-sm">
                   <option value="">-- None --</option>
                 </select>
               </div>
@@ -304,10 +304,10 @@ import Layout from '../layouts/Layout.astro';
 
       {/* VS Badge */}
       <div class="flex justify-center mb-8">
-        <div class="px-6 py-2 bg-cyber-card border border-cyber-border rounded-full font-mono text-xl font-bold">
-          <span class="text-cyber-cyan" id="compare-vs-combo1">?</span>
-          <span class="text-cyber-muted mx-4">VS</span>
-          <span class="text-cyber-pink" id="compare-vs-combo2">?</span>
+        <div class="px-6 py-2 bg-surface border border-stroke rounded-full font-mono text-xl font-bold">
+          <span class="text-accent" id="compare-vs-combo1">?</span>
+          <span class="text-fg-muted mx-4">VS</span>
+          <span class="text-series-ux" id="compare-vs-combo2">?</span>
         </div>
       </div>
 
@@ -316,72 +316,72 @@ import Layout from '../layouts/Layout.astro';
         {/* Stats Cards */}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Combo 1 Card */}
-          <div class="cyber-card border-cyber-cyan/30">
+          <div class="card card-padding border-accent/30">
             <div class="text-center mb-6">
-              <h3 id="compare-card1-name" class="text-xl font-mono font-bold text-cyber-cyan"></h3>
-              <p id="compare-card1-parts" class="text-sm text-cyber-muted mt-1"></p>
+              <h3 id="compare-card1-name" class="text-xl font-mono font-bold text-accent"></h3>
+              <p id="compare-card1-parts" class="text-sm text-fg-muted mt-1"></p>
             </div>
             <div class="space-y-4">
               <div class="flex justify-between items-center">
-                <span class="text-cyber-muted">Score</span>
-                <span id="compare-card1-score" class="font-mono text-2xl text-cyber-text"></span>
+                <span class="text-fg-muted">Score</span>
+                <span id="compare-card1-score" class="font-mono text-2xl text-fg"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-cyber-muted">Uses</span>
-                <span id="compare-card1-uses" class="font-mono text-xl text-cyber-text"></span>
+                <span class="text-fg-muted">Uses</span>
+                <span id="compare-card1-uses" class="font-mono text-xl text-fg"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-cyber-muted">Avg Place</span>
-                <span id="compare-card1-avgplace" class="font-mono text-xl text-cyber-text"></span>
+                <span class="text-fg-muted">Avg Place</span>
+                <span id="compare-card1-avgplace" class="font-mono text-xl text-fg"></span>
               </div>
-              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-cyber-border">
+              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-stroke">
                 <div class="text-center">
-                  <div id="compare-card1-first" class="text-amber-400 font-mono text-xl font-bold"></div>
-                  <div class="text-cyber-muted text-xs">1st</div>
+                  <div id="compare-card1-first" class="text-tier-ss font-mono text-xl font-bold"></div>
+                  <div class="text-fg-muted text-xs">1st</div>
                 </div>
                 <div class="text-center">
-                  <div id="compare-card1-second" class="text-gray-400 font-mono text-xl font-bold"></div>
-                  <div class="text-cyber-muted text-xs">2nd</div>
+                  <div id="compare-card1-second" class="text-fg-muted font-mono text-xl font-bold"></div>
+                  <div class="text-fg-muted text-xs">2nd</div>
                 </div>
                 <div class="text-center">
-                  <div id="compare-card1-third" class="text-amber-700 font-mono text-xl font-bold"></div>
-                  <div class="text-cyber-muted text-xs">3rd</div>
+                  <div id="compare-card1-third" class="text-tier-a font-mono text-xl font-bold"></div>
+                  <div class="text-fg-muted text-xs">3rd</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Combo 2 Card */}
-          <div class="cyber-card border-cyber-pink/30">
+          <div class="card card-padding border-series-ux/30">
             <div class="text-center mb-6">
-              <h3 id="compare-card2-name" class="text-xl font-mono font-bold text-cyber-pink"></h3>
-              <p id="compare-card2-parts" class="text-sm text-cyber-muted mt-1"></p>
+              <h3 id="compare-card2-name" class="text-xl font-mono font-bold text-series-ux"></h3>
+              <p id="compare-card2-parts" class="text-sm text-fg-muted mt-1"></p>
             </div>
             <div class="space-y-4">
               <div class="flex justify-between items-center">
-                <span class="text-cyber-muted">Score</span>
-                <span id="compare-card2-score" class="font-mono text-2xl text-cyber-text"></span>
+                <span class="text-fg-muted">Score</span>
+                <span id="compare-card2-score" class="font-mono text-2xl text-fg"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-cyber-muted">Uses</span>
-                <span id="compare-card2-uses" class="font-mono text-xl text-cyber-text"></span>
+                <span class="text-fg-muted">Uses</span>
+                <span id="compare-card2-uses" class="font-mono text-xl text-fg"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-cyber-muted">Avg Place</span>
-                <span id="compare-card2-avgplace" class="font-mono text-xl text-cyber-text"></span>
+                <span class="text-fg-muted">Avg Place</span>
+                <span id="compare-card2-avgplace" class="font-mono text-xl text-fg"></span>
               </div>
-              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-cyber-border">
+              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-stroke">
                 <div class="text-center">
-                  <div id="compare-card2-first" class="text-amber-400 font-mono text-xl font-bold"></div>
-                  <div class="text-cyber-muted text-xs">1st</div>
+                  <div id="compare-card2-first" class="text-tier-ss font-mono text-xl font-bold"></div>
+                  <div class="text-fg-muted text-xs">1st</div>
                 </div>
                 <div class="text-center">
-                  <div id="compare-card2-second" class="text-gray-400 font-mono text-xl font-bold"></div>
-                  <div class="text-cyber-muted text-xs">2nd</div>
+                  <div id="compare-card2-second" class="text-fg-muted font-mono text-xl font-bold"></div>
+                  <div class="text-fg-muted text-xs">2nd</div>
                 </div>
                 <div class="text-center">
-                  <div id="compare-card2-third" class="text-amber-700 font-mono text-xl font-bold"></div>
-                  <div class="text-cyber-muted text-xs">3rd</div>
+                  <div id="compare-card2-third" class="text-tier-a font-mono text-xl font-bold"></div>
+                  <div class="text-fg-muted text-xs">3rd</div>
                 </div>
               </div>
             </div>
@@ -389,97 +389,97 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         {/* Comparison Bars */}
-        <div class="cyber-card mb-8">
-          <h4 class="font-mono text-sm uppercase tracking-wider text-cyber-muted mb-6">Stat Comparison</h4>
+        <div class="card card-padding mb-8">
+          <h4 class="font-mono text-sm uppercase tracking-wider text-fg-muted mb-6">Stat Comparison</h4>
           <div class="space-y-6">
             <div>
               <div class="flex justify-between text-sm mb-2">
-                <span id="compare-bar-score1" class="text-cyber-cyan font-mono"></span>
-                <span class="text-cyber-muted">Score</span>
-                <span id="compare-bar-score2" class="text-cyber-pink font-mono"></span>
+                <span id="compare-bar-score1" class="text-accent font-mono"></span>
+                <span class="text-fg-muted">Score</span>
+                <span id="compare-bar-score2" class="text-series-ux font-mono"></span>
               </div>
-              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
-                <div id="compare-bar-score1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
-                <div id="compare-bar-score2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-between text-sm mb-2">
-                <span id="compare-bar-uses1" class="text-cyber-cyan font-mono"></span>
-                <span class="text-cyber-muted">Uses</span>
-                <span id="compare-bar-uses2" class="text-cyber-pink font-mono"></span>
-              </div>
-              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
-                <div id="compare-bar-uses1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
-                <div id="compare-bar-uses2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
+              <div class="flex h-4 rounded overflow-hidden bg-border-primary">
+                <div id="compare-bar-score1-fill" class="bg-accent/70 transition-all duration-700"></div>
+                <div id="compare-bar-score2-fill" class="bg-series-ux/70 transition-all duration-700"></div>
               </div>
             </div>
             <div>
               <div class="flex justify-between text-sm mb-2">
-                <span id="compare-bar-avgplace1" class="text-cyber-cyan font-mono"></span>
-                <span class="text-cyber-muted">Avg Place</span>
-                <span id="compare-bar-avgplace2" class="text-cyber-pink font-mono"></span>
+                <span id="compare-bar-uses1" class="text-accent font-mono"></span>
+                <span class="text-fg-muted">Uses</span>
+                <span id="compare-bar-uses2" class="text-series-ux font-mono"></span>
               </div>
-              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
-                <div id="compare-bar-avgplace1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
-                <div id="compare-bar-avgplace2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
+              <div class="flex h-4 rounded overflow-hidden bg-border-primary">
+                <div id="compare-bar-uses1-fill" class="bg-accent/70 transition-all duration-700"></div>
+                <div id="compare-bar-uses2-fill" class="bg-series-ux/70 transition-all duration-700"></div>
               </div>
             </div>
             <div>
               <div class="flex justify-between text-sm mb-2">
-                <span id="compare-bar-first1" class="text-cyber-cyan font-mono"></span>
-                <span class="text-cyber-muted">1st Place Finishes</span>
-                <span id="compare-bar-first2" class="text-cyber-pink font-mono"></span>
+                <span id="compare-bar-avgplace1" class="text-accent font-mono"></span>
+                <span class="text-fg-muted">Avg Place</span>
+                <span id="compare-bar-avgplace2" class="text-series-ux font-mono"></span>
               </div>
-              <div class="flex h-4 rounded overflow-hidden bg-cyber-border">
-                <div id="compare-bar-first1-fill" class="bg-cyber-cyan/70 transition-all duration-700"></div>
-                <div id="compare-bar-first2-fill" class="bg-cyber-pink/70 transition-all duration-700"></div>
+              <div class="flex h-4 rounded overflow-hidden bg-border-primary">
+                <div id="compare-bar-avgplace1-fill" class="bg-accent/70 transition-all duration-700"></div>
+                <div id="compare-bar-avgplace2-fill" class="bg-series-ux/70 transition-all duration-700"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span id="compare-bar-first1" class="text-accent font-mono"></span>
+                <span class="text-fg-muted">1st Place Finishes</span>
+                <span id="compare-bar-first2" class="text-series-ux font-mono"></span>
+              </div>
+              <div class="flex h-4 rounded overflow-hidden bg-border-primary">
+                <div id="compare-bar-first1-fill" class="bg-accent/70 transition-all duration-700"></div>
+                <div id="compare-bar-first2-fill" class="bg-series-ux/70 transition-all duration-700"></div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Head-to-Head Section */}
-        <div id="compare-h2h-section" class="cyber-card hidden">
-          <h4 class="font-mono text-sm uppercase tracking-wider text-cyber-muted mb-6">
+        <div id="compare-h2h-section" class="card card-padding hidden">
+          <h4 class="font-mono text-sm uppercase tracking-wider text-fg-muted mb-6">
             Head-to-Head (<span id="compare-h2h-tournaments">0</span> common tournaments)
           </h4>
           <div class="grid grid-cols-3 gap-4 text-center mb-6">
             <div>
-              <div id="compare-h2h-combo1-wins" class="text-cyber-cyan font-mono text-3xl font-bold">0</div>
-              <div id="compare-h2h-combo1-name" class="text-cyber-muted text-sm">Higher</div>
+              <div id="compare-h2h-combo1-wins" class="text-accent font-mono text-3xl font-bold">0</div>
+              <div id="compare-h2h-combo1-name" class="text-fg-muted text-sm">Higher</div>
             </div>
             <div>
-              <div id="compare-h2h-ties" class="text-cyber-muted font-mono text-3xl font-bold">0</div>
-              <div class="text-cyber-muted text-sm">Ties</div>
+              <div id="compare-h2h-ties" class="text-fg-muted font-mono text-3xl font-bold">0</div>
+              <div class="text-fg-muted text-sm">Ties</div>
             </div>
             <div>
-              <div id="compare-h2h-combo2-wins" class="text-cyber-pink font-mono text-3xl font-bold">0</div>
-              <div id="compare-h2h-combo2-name" class="text-cyber-muted text-sm">Higher</div>
+              <div id="compare-h2h-combo2-wins" class="text-series-ux font-mono text-3xl font-bold">0</div>
+              <div id="compare-h2h-combo2-name" class="text-fg-muted text-sm">Higher</div>
             </div>
           </div>
-          <div class="flex h-6 rounded overflow-hidden bg-cyber-border">
-            <div id="compare-h2h-bar1" class="bg-cyber-cyan/70 transition-all duration-700"></div>
-            <div id="compare-h2h-bar-tie" class="bg-cyber-muted/50 transition-all duration-700"></div>
-            <div id="compare-h2h-bar2" class="bg-cyber-pink/70 transition-all duration-700"></div>
+          <div class="flex h-6 rounded overflow-hidden bg-border-primary">
+            <div id="compare-h2h-bar1" class="bg-accent/70 transition-all duration-700"></div>
+            <div id="compare-h2h-bar-tie" class="bg-text-muted/50 transition-all duration-700"></div>
+            <div id="compare-h2h-bar2" class="bg-series-ux/70 transition-all duration-700"></div>
           </div>
         </div>
       </div>
 
       {/* Empty State */}
-      <div id="compare-empty-state" class="cyber-card text-center py-16">
-        <svg class="w-20 h-20 text-cyber-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div id="compare-empty-state" class="card card-padding text-center py-16">
+        <svg class="w-20 h-20 text-fg-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
-        <p class="text-cyber-muted text-lg mb-2">Build two combos to compare</p>
-        <p class="text-cyber-muted/60 text-sm">Select blade, ratchet, and bit for each combo to see a head-to-head comparison</p>
+        <p class="text-fg-muted text-lg mb-2">Build two combos to compare</p>
+        <p class="text-fg-muted/60 text-sm">Select blade, ratchet, and bit for each combo to see a head-to-head comparison</p>
       </div>
 
       {/* Loading State */}
       <div id="compare-loading-state" class="hidden">
-        <div class="cyber-card text-center py-16">
-          <div class="w-12 h-12 border-2 border-cyber-purple/30 border-t-cyber-purple rounded-full animate-spin mx-auto mb-4"></div>
-          <p class="text-cyber-purple font-mono">Comparing combos...</p>
+        <div class="card card-padding text-center py-16">
+          <div class="w-12 h-12 border-2 border-series-bx/30 border-t-series-bx rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-series-bx font-mono">Comparing combos...</p>
         </div>
       </div>
     </div>
@@ -488,13 +488,13 @@ import Layout from '../layouts/Layout.astro';
 
 <style>
   .tab-btn {
-    @apply text-cyber-muted border-cyber-border bg-cyber-card;
+    @apply text-fg-muted border-stroke bg-surface;
   }
   .tab-btn:hover {
-    @apply text-cyber-text border-cyber-purple/50;
+    @apply text-fg border-accent/50;
   }
   .tab-btn.active {
-    @apply text-cyber-purple border-cyber-purple bg-cyber-purple/10;
+    @apply text-accent border-accent bg-accent/10;
   }
 </style>
 
@@ -703,9 +703,9 @@ import Layout from '../layouts/Layout.astro';
         seriesBadge.classList.remove('hidden');
         seriesBadge.textContent = series;
         seriesBadge.className = 'px-3 py-1 text-sm font-mono rounded border';
-        if (series === 'BX') seriesBadge.classList.add('text-cyber-cyan', 'border-cyber-cyan/30', 'bg-cyber-cyan/10');
-        else if (series === 'CX') seriesBadge.classList.add('text-amber-400', 'border-amber-400/30', 'bg-amber-400/10');
-        else if (series === 'UX') seriesBadge.classList.add('text-cyber-pink', 'border-cyber-pink/30', 'bg-cyber-pink/10');
+        if (series === 'BX') seriesBadge.classList.add('text-series-bx', 'border-series-bx/30', 'bg-series-bx/10');
+        else if (series === 'CX') seriesBadge.classList.add('text-series-cx', 'border-series-cx/30', 'bg-series-cx/10');
+        else if (series === 'UX') seriesBadge.classList.add('text-series-ux', 'border-series-ux/30', 'bg-series-ux/10');
       } else if (seriesBadge) {
         seriesBadge.classList.add('hidden');
       }
@@ -742,21 +742,21 @@ import Layout from '../layouts/Layout.astro';
     if (!grid) return;
 
     grid.innerHTML = combos.map((combo, i) => `
-      <div class="cyber-card group cursor-pointer hover:border-cyber-purple/50 transition-all" data-blade="${combo.blade}" data-ratchet="${combo.ratchet}" data-bit="${combo.bit}">
+      <div class="card card-padding group cursor-pointer hover:border-accent/50 transition-all" data-blade="${combo.blade}" data-ratchet="${combo.ratchet}" data-bit="${combo.bit}">
         <div class="flex items-start gap-3">
           <span class="rank-number text-xl">${i + 1}</span>
           <div class="flex-grow">
-            <div class="font-mono font-bold text-cyber-text">${combo.combo}</div>
+            <div class="font-mono font-bold text-fg">${combo.combo}</div>
             <div class="flex items-center gap-2 mt-1 text-sm">
-              <span class="text-cyber-cyan">${combo.blade}</span>
-              <span class="text-cyber-muted">+</span>
-              <span class="text-cyber-pink">${combo.ratchet}</span>
-              <span class="text-cyber-purple">${combo.bit}</span>
+              <span class="text-accent">${combo.blade}</span>
+              <span class="text-fg-muted">+</span>
+              <span class="text-series-ux">${combo.ratchet}</span>
+              <span class="text-series-bx">${combo.bit}</span>
             </div>
             <div class="flex items-center gap-4 mt-2 text-sm">
-              <span class="text-cyber-pink font-mono">${combo.raw_score.toFixed(1)}</span>
-              <span class="text-cyber-muted">${combo.uses} uses</span>
-              <span class="text-amber-400">${combo.first} wins</span>
+              <span class="text-accent font-mono">${combo.raw_score.toFixed(1)}</span>
+              <span class="text-fg-muted">${combo.uses} uses</span>
+              <span class="text-tier-ss">${combo.first} wins</span>
             </div>
           </div>
         </div>

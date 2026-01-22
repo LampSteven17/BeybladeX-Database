@@ -42,7 +42,7 @@ CANONICAL_BLADES = {
     # CX Series
     "Cobalt Dragoon", "Cobalt Drake", "Steel Samurai", "Burn Wyvern", "Prominence Phoenix",
     # UX Series
-    "Soar Phoenix", "Whale Wave", "Knight Mail", "Leon Crest", "Wyvern Gale",
+    "Phoenix Wing", "Whale Wave", "Knight Mail", "Leon Crest", "Wyvern Gale",
     "Phoenix Feather", "Tusk Mammoth", "Phoenix Rudder", "Dranzer Spiral",
     # Newer blades
     "Pegasus Blast", "Wizard Arc", "Fox Brush", "Hells Blast", "Valkyrie Volt",

@@ -118,7 +118,7 @@ BLADE_SERIES = {
     "Dran Buster": "UX",       # UX-01
     "Hells Hammer": "UX",      # UX-02
     "Wizard Rod": "UX",        # UX-03
-    "Soar Phoenix": "UX",      # UX-04 Entry Set
+    # "Soar Phoenix" removed - same blade as "Phoenix Wing" (UX-04 Entry Set)
     "Leon Crest": "UX",        # UX-06
     "Knight Mail": "UX",       # UX-07
     "Silver Wolf": "UX",       # UX-08
@@ -471,6 +471,7 @@ BLADE_NORMALIZATIONS = {
     "Rock Golem": "Golem Rock",
     "[ ] Golem Rock": "Golem Rock",
     # Typos - Phoenix Wing
+    "Soar Phoenix": "Phoenix Wing",  # Old name -> correct name
     "Phoenix2ing": "Phoenix Wing",
     "phoenix": "Phoenix Wing",
     "Phoenix": "Phoenix Wing",
@@ -482,6 +483,10 @@ BLADE_NORMALIZATIONS = {
     "uster": "Dran Buster",
     "Silver Samurai": "Steel Samurai",
     "Fox Blast": "Fox Brush",
+    # Typos - Knight Mail
+    "Mail Knight": "Knight Mail",
+    # Typos - Tyranno Beat
+    "Beat Tyranno": "Tyranno Beat",
     # Parsing errors
     "|| KnightLance": "Knight Lance",
     "|| KnightShield": "Knight Shield",

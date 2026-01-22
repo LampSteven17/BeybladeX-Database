@@ -31,7 +31,7 @@ export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Viper Tail': 'BX',        // BX-14 Random Booster
   'Dran Dagger': 'BX',       // BX-14 Random Booster
   'Rhino Horn': 'BX',        // BX-19
-  'Phoenix Wing': 'BX',      // BX-23
+  'Phoenix Wing': 'BX',      // BX-23, also UX-04 Entry Set
   'Hells Chain': 'BX',       // BX-24 Random Booster
   'Unicorn Sting': 'BX',     // BX-26
   'Black Shell': 'BX',       // BX-24 Random Booster
@@ -68,7 +68,7 @@ export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Dran Buster': 'UX',       // UX-01
   'Hells Hammer': 'UX',      // UX-02
   'Wizard Rod': 'UX',        // UX-03
-  'Soar Phoenix': 'UX',      // UX-04 Entry Set
+  // 'Soar Phoenix' removed - same blade as 'Phoenix Wing' (UX-04 Entry Set)
   'Leon Crest': 'UX',        // UX-06
   'Knight Mail': 'UX',       // UX-07
   'Silver Wolf': 'UX',       // UX-08
@@ -126,6 +126,18 @@ export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Hells Blast': 'CX',
   'Might Blast': 'CX',
 };
+
+// Display name corrections (database name -> display name)
+const BLADE_DISPLAY_NAMES: Record<string, string> = {
+  'Soar Phoenix': 'Phoenix Wing',  // UX-04 should display as Phoenix Wing
+  'Mail Knight': 'Knight Mail',    // UX-07 correct name
+  'Beat Tyranno': 'Tyranno Beat',  // BX-24 correct name
+};
+
+// Normalize blade name for display
+function normalizeBladeDisplay(name: string): string {
+  return BLADE_DISPLAY_NAMES[name] || name;
+}
 
 // Singleton database instance
 let db: duckdb.AsyncDuckDB | null = null;
@@ -429,7 +441,7 @@ export async function getRankedBlades(limit = 20, minUses = 3, region?: Region):
   const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
 
   for (const row of rows) {
-    const blade = row.blade;
+    const blade = normalizeBladeDisplay(row.blade);
     if (!bladeScores[blade]) {
       bladeScores[blade] = {
         blade,
@@ -554,11 +566,12 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
   const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
 
   for (const row of rows) {
-    const key = `${row.blade}|${row.ratchet}|${row.bit}`;
+    const blade = normalizeBladeDisplay(row.blade);
+    const key = `${blade}|${row.ratchet}|${row.bit}`;
     if (!comboScores[key]) {
       comboScores[key] = {
-        combo: `${row.blade} ${row.ratchet} ${row.bit}`,
-        blade: row.blade,
+        combo: `${blade} ${row.ratchet} ${row.bit}`,
+        blade: blade,
         ratchet: row.ratchet,
         bit: row.bit,
         raw_score: 0,
@@ -1593,12 +1606,13 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     let totalPlacements = 0;
 
     for (const row of dataRows) {
-      const combo = `${row.blade} ${row.ratchet} ${row.bit}`;
+      const blade = normalizeBladeDisplay(row.blade);
+      const combo = `${blade} ${row.ratchet} ${row.bit}`;
       const points = getPlacementScore(row.place);
 
       if (!comboStats[combo]) {
         comboStats[combo] = {
-          blade: row.blade,
+          blade: blade,
           ratchet: row.ratchet,
           bit: row.bit,
           score: 0,
@@ -1735,11 +1749,12 @@ export async function getMetaDistribution(days = 30, topN = 6, region?: Region):
     const tournamentDate = new Date(row.tournament_date);
     if (tournamentDate < cutoff) continue;
 
-    if (!bladeStats[row.blade]) {
-      bladeStats[row.blade] = { uses: 0, wins: 0 };
+    const blade = normalizeBladeDisplay(row.blade);
+    if (!bladeStats[blade]) {
+      bladeStats[blade] = { uses: 0, wins: 0 };
     }
-    bladeStats[row.blade].uses++;
-    if (row.place === 1) bladeStats[row.blade].wins++;
+    bladeStats[blade].uses++;
+    if (row.place === 1) bladeStats[blade].wins++;
     total++;
   }
 
@@ -1824,7 +1839,8 @@ export async function getMetaShareData(months = 6, region?: Region): Promise<Met
   const monthlyTotals: number[] = new Array(months).fill(0);
 
   for (const row of rows) {
-    const combo = `${row.blade} ${row.ratchet} ${row.bit}`;
+    const blade = normalizeBladeDisplay(row.blade);
+    const combo = `${blade} ${row.ratchet} ${row.bit}`;
     const tournamentDate = new Date(row.tournament_date);
 
     // Find which month
@@ -1840,7 +1856,7 @@ export async function getMetaShareData(months = 6, region?: Region): Promise<Met
 
     if (!comboMonthlyUses[combo]) {
       comboMonthlyUses[combo] = {
-        blade: row.blade,
+        blade: blade,
         months: new Array(months).fill(0),
       };
     }

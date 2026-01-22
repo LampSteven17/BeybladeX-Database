@@ -8,14 +8,14 @@ interface Props {
 const { currentPath = '/' } = Astro.props;
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: 'chart' },
-  { href: '/combos', label: 'Combos', icon: 'ranking' },
-  { href: '/blades', label: 'Blades', icon: 'ranking' },
-  { href: '/ratchets', label: 'Ratchets', icon: 'ranking' },
-  { href: '/bits', label: 'Bits', icon: 'ranking' },
-  { href: '/assist', label: 'Assists', icon: 'ranking' },
-  { href: '/lockchips', label: 'Lock Chips', icon: 'ranking' },
-  { href: '/tools', label: 'Tools', icon: 'build' },
+  { href: '/', label: 'Dashboard' },
+  { href: '/combos', label: 'Combos' },
+  { href: '/blades', label: 'Blades' },
+  { href: '/ratchets', label: 'Ratchets' },
+  { href: '/bits', label: 'Bits' },
+  { href: '/assist', label: 'Assists' },
+  { href: '/lockchips', label: 'Lock Chips' },
+  { href: '/tools', label: 'Tools' },
 ];
 
 function isActive(href: string): boolean {
@@ -24,17 +24,17 @@ function isActive(href: string): boolean {
 }
 ---
 
-<nav class="fixed top-0 left-0 right-0 z-50 bg-cyber-bg/95 backdrop-blur-sm border-b border-cyber-border">
+<nav class="fixed top-0 left-0 right-0 z-50 bg-canvas/95 backdrop-blur-sm border-b border-stroke">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between h-16">
+    <div class="flex items-center justify-between h-14">
       <!-- Logo -->
-      <a href="/" class="flex items-center gap-3 group">
-        <div class="w-8 h-8 rounded bg-cyber-gradient flex items-center justify-center">
-          <span class="text-cyber-bg font-bold text-lg">X</span>
+      <a href="/" class="flex items-center gap-2 group">
+        <div class="w-7 h-7 rounded bg-accent flex items-center justify-center">
+          <span class="text-white font-bold text-sm">X</span>
         </div>
-        <span class="font-mono text-lg font-bold tracking-tight">
-          <span class="text-cyber-cyan">Beyblade</span><span class="text-cyber-pink">X</span>
-          <span class="text-cyber-muted ml-1 text-sm font-normal hidden sm:inline">Database</span>
+        <span class="font-semibold tracking-tight">
+          <span class="text-fg">BeybladeX</span>
+          <span class="text-fg-muted ml-1 text-sm font-normal hidden sm:inline">Database</span>
         </span>
       </a>
 
@@ -44,16 +44,16 @@ function isActive(href: string): boolean {
           <a
             href={item.href}
             class:list={[
-              'px-4 py-2 rounded-lg font-mono text-sm transition-all duration-200',
+              'px-3 py-1.5 rounded text-sm transition-all duration-150',
               isActive(item.href)
-                ? 'bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30'
-                : 'text-cyber-muted hover:text-cyber-text hover:bg-cyber-card',
+                ? 'bg-panel text-fg'
+                : 'text-fg-secondary hover:text-fg hover:bg-panel',
             ]}
           >
             {item.label}
           </a>
         ))}
-        <div class="ml-2 pl-2 border-l border-cyber-border">
+        <div class="ml-3 pl-3 border-l border-stroke">
           <RegionFilter />
         </div>
       </div>
@@ -61,10 +61,10 @@ function isActive(href: string): boolean {
       <!-- Mobile Menu Button -->
       <button
         id="mobile-menu-btn"
-        class="md:hidden p-2 rounded-lg text-cyber-muted hover:text-cyber-cyan hover:bg-cyber-card transition-colors"
+        class="md:hidden p-2 rounded text-fg-secondary hover:text-fg hover:bg-panel transition-colors"
         aria-label="Toggle menu"
       >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -72,22 +72,22 @@ function isActive(href: string): boolean {
   </div>
 
   <!-- Mobile Navigation -->
-  <div id="mobile-menu" class="hidden md:hidden border-t border-cyber-border bg-cyber-bg/95 backdrop-blur-sm">
+  <div id="mobile-menu" class="hidden md:hidden border-t border-stroke bg-canvas/95 backdrop-blur-sm">
     <div class="px-4 py-3 space-y-1">
       {navItems.map((item) => (
         <a
           href={item.href}
           class:list={[
-            'block px-4 py-3 rounded-lg font-mono text-sm transition-all duration-200',
+            'block px-4 py-2.5 rounded text-sm transition-all duration-150',
             isActive(item.href)
-              ? 'bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30'
-              : 'text-cyber-muted hover:text-cyber-text hover:bg-cyber-card',
+              ? 'bg-panel text-fg'
+              : 'text-fg-secondary hover:text-fg hover:bg-panel',
           ]}
         >
           {item.label}
         </a>
       ))}
-      <div class="pt-2 mt-2 border-t border-cyber-border">
+      <div class="pt-3 mt-3 border-t border-stroke">
         <RegionFilter class="justify-center" />
       </div>
     </div>

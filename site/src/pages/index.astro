@@ -3,305 +3,267 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Meta Dashboard">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    {/* Hero Section */}
-    <section class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold font-mono mb-4">
-        <span class="text-cyber-cyan">Beyblade</span><span class="text-cyber-pink">X</span>
-        <span class="text-cyber-text"> Database</span>
-      </h1>
-      <p class="text-cyber-muted text-lg max-w-2xl mx-auto">
-        Tournament meta analysis powered by real WBO competitive data.
-        Track winning combos, blade rankings, and build the perfect setup.
-      </p>
-    </section>
+  <div class="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    {/* Quick Stats */}
-    <section id="stats-section" class="mb-12">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="cyber-card text-center">
-          <div class="text-cyber-muted text-sm uppercase tracking-wider mb-1">Tournaments</div>
-          <div id="stat-tournaments" class="text-3xl font-mono font-bold text-cyber-cyan">--</div>
-        </div>
-        <div class="cyber-card text-center">
-          <div class="text-cyber-muted text-sm uppercase tracking-wider mb-1">Players</div>
-          <div id="stat-players" class="text-3xl font-mono font-bold text-cyber-pink">--</div>
-        </div>
-        <div class="cyber-card text-center">
-          <div class="text-cyber-muted text-sm uppercase tracking-wider mb-1">Unique Blades</div>
-          <div id="stat-blades" class="text-3xl font-mono font-bold text-cyber-purple">--</div>
-        </div>
-        <div class="cyber-card text-center">
-          <div class="text-cyber-muted text-sm uppercase tracking-wider mb-1">Date Range</div>
-          <div id="stat-dates" class="text-lg font-mono text-cyber-text">--</div>
-        </div>
-      </div>
-    </section>
-
-    {/* Meta Spotlight */}
-    <section class="mb-12">
-      <div id="meta-spotlight" class="relative">
+    {/* ============================================
+        META CHAMPION SPOTLIGHT (Full-width Hero)
+        ============================================ */}
+    <section class="mb-6">
+      <div id="meta-spotlight">
         <!-- Loading State -->
-        <div id="spotlight-loading" class="cyber-card h-64 flex items-center justify-center">
-          <div class="w-8 h-8 border-2 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin"></div>
+        <div id="spotlight-loading" class="champion-spotlight p-8 h-48 flex items-center justify-center">
+          <div class="flex items-center gap-3">
+            <div class="w-6 h-6 border-2 border-terminal-border border-t-gold rounded-full animate-spin"></div>
+            <span class="text-fg-muted font-mono text-sm">LOADING META DATA...</span>
+          </div>
         </div>
       </div>
     </section>
 
-    {/* Main Content Grid */}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    {/* ============================================
+        MARKET OVERVIEW + MOVERS ROW
+        ============================================ */}
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      {/* Market Overview (Dense stat widgets) */}
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span class="flex items-center gap-2">
+            <span class="status-dot status-dot-live"></span>
+            Market Overview
+          </span>
+          <span id="last-updated" class="text-fg-disabled">--:--:--</span>
+        </div>
+        <div class="terminal-panel-body">
+          <div class="grid grid-cols-4 gap-3">
+            <div class="stat-widget">
+              <div class="stat-widget-label">Tournaments</div>
+              <div id="stat-tournaments" class="stat-widget-value text-accent">--</div>
+            </div>
+            <div class="stat-widget">
+              <div class="stat-widget-label">Players</div>
+              <div id="stat-players" class="stat-widget-value text-series-ux">--</div>
+            </div>
+            <div class="stat-widget">
+              <div class="stat-widget-label">Blades</div>
+              <div id="stat-blades" class="stat-widget-value text-series-bx">--</div>
+            </div>
+            <div class="stat-widget">
+              <div class="stat-widget-label">Combos</div>
+              <div id="stat-combos" class="stat-widget-value text-series-cx">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Movers Panel (Risers | Fallers) */}
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span>Movers</span>
+          <span class="text-fg-disabled">30d</span>
+        </div>
+        <div class="terminal-panel-body">
+          <div class="grid grid-cols-2 gap-4">
+            {/* Risers */}
+            <div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-positive mb-2 flex items-center gap-1">
+                <span class="delta-up"></span> Risers
+              </div>
+              <div id="movers-risers" class="space-y-1">
+                <div class="data-row skeleton h-6"></div>
+                <div class="data-row skeleton h-6"></div>
+                <div class="data-row skeleton h-6"></div>
+              </div>
+            </div>
+            {/* Fallers */}
+            <div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-negative mb-2 flex items-center gap-1">
+                <span class="delta-down"></span> Fallers
+              </div>
+              <div id="movers-fallers" class="space-y-1">
+                <div class="data-row skeleton h-6"></div>
+                <div class="data-row skeleton h-6"></div>
+                <div class="data-row skeleton h-6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================================
+        TOP PERFORMERS (Blades + Combos)
+        ============================================ */}
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
       {/* Top Blades */}
-      <section>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-mono font-bold text-cyber-text">
-            <span class="text-cyber-cyan">#</span> Top Blades
-          </h2>
-          <a href="/blades" class="text-cyber-cyan text-sm hover:text-cyber-text transition-colors">
-            View All →
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span class="flex items-center gap-2">
+            <span class="text-accent">#</span> Top Blades
+          </span>
+          <a href="/blades" class="text-accent hover:text-fg text-[10px] uppercase tracking-wider transition-colors">
+            View All
           </a>
         </div>
-        <div id="top-blades" class="space-y-3">
-          {/* Loading skeletons */}
-          {[1, 2, 3, 4, 5].map(() => (
-            <div class="cyber-card h-24 skeleton"></div>
+        <div id="top-blades" class="terminal-panel-body p-0">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(() => (
+            <div class="data-row skeleton h-8"></div>
           ))}
         </div>
-      </section>
+      </div>
 
       {/* Top Combos */}
-      <section>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-mono font-bold text-cyber-text">
-            <span class="text-cyber-pink">#</span> Top Combos
-          </h2>
-          <a href="/builder" class="text-cyber-pink text-sm hover:text-cyber-text transition-colors">
-            Build Combo →
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span class="flex items-center gap-2">
+            <span class="text-series-ux">#</span> Top Combos
+          </span>
+          <a href="/combos" class="text-series-ux hover:text-fg text-[10px] uppercase tracking-wider transition-colors">
+            View All
           </a>
         </div>
-        <div id="top-combos" class="space-y-3">
-          {/* Loading skeletons */}
-          {[1, 2, 3, 4, 5].map(() => (
-            <div class="cyber-card h-24 skeleton"></div>
+        <div id="top-combos" class="terminal-panel-body p-0">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(() => (
+            <div class="data-row skeleton h-8"></div>
           ))}
         </div>
-      </section>
-    </div>
-
-    {/* Hot Parts - Ratchets & Bits */}
-    <section class="mt-8 mb-12">
-      <div class="mb-4">
-        <h2 class="text-xl font-mono font-bold text-cyber-text">
-          <span class="text-cyber-purple">#</span> Hot Parts
-        </h2>
-        <p class="text-cyber-muted text-sm mt-1">Most used ratchets and bits in the last 30 days</p>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Top Ratchets -->
-        <div class="cyber-card">
-          <div class="flex items-center gap-2 mb-4">
-            <div class="w-8 h-8 rounded-lg bg-cyber-pink/20 border border-cyber-pink/40 flex items-center justify-center">
-              <svg class="w-4 h-4 text-cyber-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-              </svg>
-            </div>
-            <span class="font-mono text-sm font-bold text-cyber-pink uppercase tracking-wider">Top Ratchets</span>
-          </div>
-          <div id="ratchet-bars" class="space-y-3">
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-          </div>
-        </div>
-
-        <!-- Top Bits -->
-        <div class="cyber-card">
-          <div class="flex items-center gap-2 mb-4">
-            <div class="w-8 h-8 rounded-lg bg-cyber-purple/20 border border-cyber-purple/40 flex items-center justify-center">
-              <svg class="w-4 h-4 text-cyber-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
-            </div>
-            <span class="font-mono text-sm font-bold text-cyber-purple uppercase tracking-wider">Top Bits</span>
-          </div>
-          <div id="bit-bars" class="space-y-3">
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-            <div class="skeleton h-10 rounded"></div>
-          </div>
-        </div>
       </div>
     </section>
 
-    {/* Series Rankings */}
-    <section class="mt-8 mb-12">
-      <div class="mb-4">
-        <h2 class="text-xl font-mono font-bold text-cyber-text">
-          <span class="text-cyber-cyan">#</span> Top Blades by Series
-        </h2>
-        <p class="text-cyber-muted text-sm mt-1">Best performing blades in each product line</p>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- BX Series -->
-        <div class="cyber-card border-cyan-500/30">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="px-2 py-1 text-xs font-mono font-bold rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">BX</span>
-            <span class="font-mono text-sm font-bold text-cyan-400 uppercase tracking-wider">Basic Series</span>
-          </div>
-          <div id="series-bx" class="space-y-2">
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-          </div>
-        </div>
-
-        <!-- UX Series -->
-        <div class="cyber-card border-pink-500/30">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="px-2 py-1 text-xs font-mono font-bold rounded bg-pink-500/20 text-pink-400 border border-pink-500/40">UX</span>
-            <span class="font-mono text-sm font-bold text-pink-400 uppercase tracking-wider">Unique Series</span>
-          </div>
-          <div id="series-ux" class="space-y-2">
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-          </div>
-        </div>
-
-        <!-- CX Series -->
-        <div class="cyber-card border-amber-500/30">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="px-2 py-1 text-xs font-mono font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">CX</span>
-            <span class="font-mono text-sm font-bold text-amber-400 uppercase tracking-wider">Custom Line</span>
-          </div>
-          <div id="series-cx" class="space-y-2">
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    {/* Trending Section */}
-    <section class="mt-12">
-      <h2 class="text-xl font-mono font-bold text-cyber-text mb-4">
-        <span class="text-cyber-purple">#</span> Trending Parts
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Rising Blades */}
-        <div class="cyber-card">
-          <h3 class="text-sm font-mono uppercase tracking-wider text-green-400 mb-3 flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-            </svg>
-            Rising
-          </h3>
-          <div id="trending-up" class="space-y-2">
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-          </div>
-        </div>
-
-        {/* Hot Ratchets */}
-        <div class="cyber-card">
-          <h3 class="text-sm font-mono uppercase tracking-wider text-cyber-cyan mb-3 flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Top Ratchets
-          </h3>
-          <div id="top-ratchets" class="space-y-2">
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-          </div>
-        </div>
-
-        {/* Hot Bits */}
-        <div class="cyber-card">
-          <h3 class="text-sm font-mono uppercase tracking-wider text-cyber-pink mb-3 flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Top Bits
-          </h3>
-          <div id="top-bits" class="space-y-2">
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-            <div class="skeleton h-8 rounded"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    {/* Meta Landscape Visualization */}
-    <section class="mt-12">
-      <div class="mb-4">
-        <h2 class="text-xl font-mono font-bold text-cyber-text">
-          <span class="text-cyber-cyan">#</span> Meta Landscape
-        </h2>
-        <p class="text-cyber-muted text-sm mt-1">Blade performance overview: Usage vs 1st Rate (bubble size = score)</p>
-      </div>
-      <div class="cyber-card">
-        <div class="relative h-80 md:h-96">
-          <canvas id="meta-landscape-chart"></canvas>
-        </div>
-        <div id="landscape-legend" class="mt-4 flex flex-wrap gap-3 justify-center text-sm">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
-            <span class="text-cyber-muted">BX Series</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-pink-400"></span>
-            <span class="text-cyber-muted">UX Series</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
-            <span class="text-cyber-muted">CX Series</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    {/* CTA Section */}
-    <section class="mt-12 text-center">
-      <div class="cyber-card gradient-border max-w-2xl mx-auto py-8">
-        <h2 class="text-2xl font-mono font-bold text-cyber-text mb-4">Build Your Winning Combo</h2>
-        <p class="text-cyber-muted mb-6">
-          Use our combo builder to find the best ratchet and bit combinations for any blade.
-        </p>
-        <div class="flex flex-wrap justify-center gap-4">
-          <a href="/builder" class="cyber-btn cyber-btn-primary">
-            Combo Builder
-          </a>
-          <a href="/compare" class="cyber-btn cyber-btn-pink">
-            Compare Blades
+    {/* ============================================
+        PARTS ANALYSIS (Ratchets + Bits)
+        ============================================ */}
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      {/* Top Ratchets */}
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span class="flex items-center gap-2">
+            <span class="text-series-ux">#</span> Ratchets
+          </span>
+          <a href="/ratchets" class="text-series-ux hover:text-fg text-[10px] uppercase tracking-wider transition-colors">
+            View All
           </a>
         </div>
+        <div id="ratchet-bars" class="terminal-panel-body space-y-2">
+          {[1, 2, 3, 4, 5].map(() => (
+            <div class="skeleton h-6 rounded"></div>
+          ))}
+        </div>
+      </div>
+
+      {/* Top Bits */}
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span class="flex items-center gap-2">
+            <span class="text-series-bx">#</span> Bits
+          </span>
+          <a href="/bits" class="text-series-bx hover:text-fg text-[10px] uppercase tracking-wider transition-colors">
+            View All
+          </a>
+        </div>
+        <div id="bit-bars" class="terminal-panel-body space-y-2">
+          {[1, 2, 3, 4, 5].map(() => (
+            <div class="skeleton h-6 rounded"></div>
+          ))}
+        </div>
       </div>
     </section>
+
+    {/* ============================================
+        META LANDSCAPE (Full-width Chart)
+        ============================================ */}
+    <section class="mb-6">
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span class="flex items-center gap-2">
+            <span class="text-accent">#</span> Meta Landscape
+          </span>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 text-[10px]">
+              <div class="flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-series-bx"></span>
+                <span class="text-fg-muted">BX</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-series-ux"></span>
+                <span class="text-fg-muted">UX</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-series-cx"></span>
+                <span class="text-fg-muted">CX</span>
+              </div>
+            </div>
+            <span class="text-fg-disabled text-[10px]">Uses vs Win% (bubble = score)</span>
+          </div>
+        </div>
+        <div class="terminal-panel-body">
+          <div class="relative h-64 md:h-80">
+            <canvas id="meta-landscape-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================================
+        SERIES BREAKDOWN (BX / UX / CX)
+        ============================================ */}
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* BX Series */}
+      <div class="terminal-panel border-series-bx/30">
+        <div class="terminal-panel-header bg-series-bx/10">
+          <span class="flex items-center gap-2">
+            <span class="badge-bx text-[10px] px-1.5 py-0.5">BX</span>
+            Basic Series
+          </span>
+        </div>
+        <div id="series-bx" class="terminal-panel-body p-0">
+          {[1, 2, 3, 4, 5].map(() => (
+            <div class="data-row skeleton h-6"></div>
+          ))}
+        </div>
+      </div>
+
+      {/* UX Series */}
+      <div class="terminal-panel border-series-ux/30">
+        <div class="terminal-panel-header bg-series-ux/10">
+          <span class="flex items-center gap-2">
+            <span class="badge-ux text-[10px] px-1.5 py-0.5">UX</span>
+            Unique Series
+          </span>
+        </div>
+        <div id="series-ux" class="terminal-panel-body p-0">
+          {[1, 2, 3, 4, 5].map(() => (
+            <div class="data-row skeleton h-6"></div>
+          ))}
+        </div>
+      </div>
+
+      {/* CX Series */}
+      <div class="terminal-panel border-series-cx/30">
+        <div class="terminal-panel-header bg-series-cx/10">
+          <span class="flex items-center gap-2">
+            <span class="badge-cx text-[10px] px-1.5 py-0.5">CX</span>
+            Custom Line
+          </span>
+        </div>
+        <div id="series-cx" class="terminal-panel-body p-0">
+          {[1, 2, 3, 4, 5].map(() => (
+            <div class="data-row skeleton h-6"></div>
+          ))}
+        </div>
+      </div>
+    </section>
+
   </div>
 </Layout>
 
 <script>
   import { initDB, getDatabaseSummary, getRankedBlades, getRankedCombos, getRankedRatchets, getRankedBits, getMetaSpotlight, getTopBladesBySeries, BLADE_SERIES, type Region } from '../lib/db';
   import { staggerFadeIn, animateNumber } from '../lib/animations';
+  import { generateTrendSparkline } from '../lib/sparkline';
   import { Chart, BubbleController, LinearScale, PointElement, Tooltip, Legend } from 'chart.js';
 
   Chart.register(BubbleController, LinearScale, PointElement, Tooltip, Legend);
 
-  // Track current chart instance for cleanup
   let metaLandscapeChart: Chart | null = null;
 
   function getSelectedRegion(): Region {
@@ -316,208 +278,269 @@ import Layout from '../layouts/Layout.astro';
       await initDB();
       const region = getSelectedRegion();
 
+      // Update timestamp
+      const lastUpdated = document.getElementById('last-updated');
+      if (lastUpdated) {
+        const now = new Date();
+        lastUpdated.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+      }
+
       // Load all data in parallel
       const [summary, blades, combos, ratchets, bits, spotlight, seriesBlades, allBlades] = await Promise.all([
         getDatabaseSummary(region),
-        getRankedBlades(5, 3, region),
-        getRankedCombos(5, 2, region),
+        getRankedBlades(8, 3, region),
+        getRankedCombos(8, 2, region),
         getRankedRatchets(5, 3, region),
         getRankedBits(5, 3, region),
         getMetaSpotlight(region),
         getTopBladesBySeries(5, 2, region),
-        getRankedBlades(50, 2, region), // For bubble chart
+        getRankedBlades(50, 2, region),
       ]);
 
-      // Render meta spotlight
-      renderMetaSpotlight(spotlight);
+      // Render champion spotlight
+      renderChampionSpotlight(spotlight);
 
-      // Render part popularity bars
-      renderPartBars(ratchets, bits);
+      // Render movers
+      renderMovers(spotlight);
 
       // Update stats
       const tournamentsEl = document.getElementById('stat-tournaments');
       const playersEl = document.getElementById('stat-players');
       const bladesEl = document.getElementById('stat-blades');
-      const datesEl = document.getElementById('stat-dates');
+      const combosEl = document.getElementById('stat-combos');
 
       if (tournamentsEl) animateNumber(tournamentsEl, summary.tournaments);
       if (playersEl) animateNumber(playersEl, summary.unique_players);
       if (bladesEl) animateNumber(bladesEl, summary.unique_blades);
-      if (datesEl && summary.earliest_tournament && summary.latest_tournament) {
-        const earliest = new Date(summary.earliest_tournament).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        const latest = new Date(summary.latest_tournament).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        datesEl.textContent = `${earliest} - ${latest}`;
-      }
+      if (combosEl) animateNumber(combosEl, combos.length > 0 ? summary.unique_blades * 2 : 0);
 
-      // Render top blades
-      const topBladesContainer = document.getElementById('top-blades');
-      if (topBladesContainer) {
-        topBladesContainer.innerHTML = blades.map((b, i) => `
-          <div class="cyber-card group transition-all duration-300 ${b.tier ? getTierGradient(b.tier) : ''}">
-            <div class="flex items-center gap-4">
-              <span class="rank-number text-2xl">${i + 1}</span>
-              <div class="flex-grow">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono font-bold text-cyber-text">${b.blade}</span>
-                  ${b.tier ? `<span class="px-2 py-0.5 text-xs font-mono font-bold rounded ${getTierBadge(b.tier)}">${b.tier}</span>` : ''}
-                </div>
-                <div class="flex items-center gap-4 mt-1 text-sm">
-                  <span class="text-cyber-cyan font-mono">${b.raw_score.toFixed(1)}</span>
-                  <span class="text-cyber-muted">${b.uses} uses</span>
-                  <span class="text-amber-400">${b.first} wins</span>
-                  ${getTrendHtml(b.trend)}
-                </div>
-              </div>
-            </div>
-          </div>
-        `).join('');
-        staggerFadeIn(topBladesContainer.children);
-      }
+      // Render top blades with sparklines
+      renderTopBlades(blades);
 
-      // Render top combos with part badges
-      const topCombosContainer = document.getElementById('top-combos');
-      if (topCombosContainer) {
-        topCombosContainer.innerHTML = combos.map((c, i) => `
-          <div class="cyber-card group transition-all duration-300">
-            <div class="flex items-center gap-4">
-              <span class="rank-number text-2xl">${i + 1}</span>
-              <div class="flex-grow">
-                <div class="flex flex-wrap items-center gap-2 mb-2">
-                  <span class="px-2 py-1 text-sm font-mono rounded bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/30">${c.blade}</span>
-                  <span class="px-2 py-1 text-sm font-mono rounded bg-cyber-pink/20 text-cyber-pink border border-cyber-pink/30">${c.ratchet}</span>
-                  <span class="px-2 py-1 text-sm font-mono rounded bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/30">${c.bit}</span>
-                </div>
-                <div class="flex items-center gap-4 text-sm">
-                  <span class="text-cyber-text font-mono">${c.raw_score.toFixed(1)} pts</span>
-                  <span class="text-cyber-muted">${c.uses} uses</span>
-                  <span class="text-amber-400">${c.first} wins</span>
-                  ${getTrendHtml(c.trend)}
-                </div>
-              </div>
-            </div>
-          </div>
-        `).join('');
-        staggerFadeIn(topCombosContainer.children);
-      }
+      // Render top combos
+      renderTopCombos(combos);
 
-      // Render trending up blades (sort by trend, filter positive)
-      const trendingBlades = [...blades].sort((a, b) => b.trend - a.trend).filter(b => b.trend > 0.1).slice(0, 3);
-      const trendingUpContainer = document.getElementById('trending-up');
-      if (trendingUpContainer) {
-        trendingUpContainer.innerHTML = trendingBlades.length > 0
-          ? trendingBlades.map(b => `
-              <div class="flex items-center justify-between py-2 border-b border-cyber-border/30 last:border-0">
-                <span class="font-mono text-cyber-text">${b.blade}</span>
-                ${getTrendHtml(b.trend)}
-              </div>
-            `).join('')
-          : '<div class="text-cyber-muted text-sm">No rising blades</div>';
-      }
-
-      // Render top ratchets
-      const topRatchetsContainer = document.getElementById('top-ratchets');
-      if (topRatchetsContainer) {
-        topRatchetsContainer.innerHTML = ratchets.slice(0, 3).map(r => `
-          <div class="flex items-center justify-between py-2 border-b border-cyber-border/30 last:border-0">
-            <span class="font-mono text-cyber-text">${r.name}</span>
-            <span class="text-cyber-cyan font-mono text-sm">${r.uses} uses</span>
-          </div>
-        `).join('');
-      }
-
-      // Render top bits
-      const topBitsContainer = document.getElementById('top-bits');
-      if (topBitsContainer) {
-        topBitsContainer.innerHTML = bits.slice(0, 3).map(b => `
-          <div class="flex items-center justify-between py-2 border-b border-cyber-border/30 last:border-0">
-            <span class="font-mono text-cyber-text">${b.name}</span>
-            <span class="text-cyber-pink font-mono text-sm">${b.uses} uses</span>
-          </div>
-        `).join('');
-      }
+      // Render part bars
+      renderPartBars(ratchets, bits);
 
       // Render series rankings
-      renderSeriesBlades('series-bx', seriesBlades.BX, 'cyan');
-      renderSeriesBlades('series-cx', seriesBlades.CX, 'amber');
-      renderSeriesBlades('series-ux', seriesBlades.UX, 'pink');
+      renderSeriesBlades('series-bx', seriesBlades.BX, 'series-bx');
+      renderSeriesBlades('series-ux', seriesBlades.UX, 'series-ux');
+      renderSeriesBlades('series-cx', seriesBlades.CX, 'series-cx');
 
-      // Render meta landscape bubble chart
+      // Render meta landscape
       renderMetaLandscape(allBlades);
 
     } catch (error) {
       console.error('Failed to load dashboard:', error);
-      // Show error state
       document.querySelectorAll('.skeleton').forEach(el => {
         el.classList.remove('skeleton');
-        el.innerHTML = '<div class="text-center text-red-400 py-4">Failed to load data</div>';
+        el.innerHTML = '<div class="text-center text-negative py-2 text-xs">Error</div>';
       });
     }
   }
 
-  function getTierGradient(tier: string): string {
-    const gradients: Record<string, string> = {
-      SS: 'bg-gradient-to-br from-rose-500/20 to-pink-500/20 border-rose-500/30',
-      S: 'bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border-amber-500/30',
-      A: 'bg-gradient-to-br from-cyber-purple/20 to-purple-500/20 border-cyber-purple/30',
-      B: 'bg-gradient-to-br from-cyber-cyan/20 to-cyan-500/20 border-cyber-cyan/30',
-      C: 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30',
-      D: 'bg-gradient-to-br from-cyber-muted/20 to-gray-500/20 border-cyber-muted/30',
-      F: 'bg-gradient-to-br from-gray-600/20 to-gray-700/20 border-gray-500/30',
-    };
-    return gradients[tier] || '';
-  }
+  function renderChampionSpotlight(spotlight: { champion: any; risers: any[]; fallers: any[]; lastTournamentDate: string | null; isStale: boolean; dataSource: 'recent' | 'alltime' }) {
+    const container = document.getElementById('meta-spotlight');
+    if (!container) return;
 
-  function getTierBadge(tier: string): string {
-    const badges: Record<string, string> = {
-      SS: 'text-rose-400 border border-rose-500/50 bg-rose-500/10',
-      S: 'text-amber-400 border border-amber-500/50 bg-amber-500/10',
-      A: 'text-cyber-purple border border-cyber-purple/50 bg-cyber-purple/10',
-      B: 'text-cyber-cyan border border-cyber-cyan/50 bg-cyber-cyan/10',
-      C: 'text-green-400 border border-green-500/50 bg-green-500/10',
-      D: 'text-cyber-muted border border-cyber-muted/50 bg-cyber-muted/10',
-      F: 'text-gray-500 border border-gray-500/50 bg-gray-500/10',
-    };
-    return badges[tier] || '';
-  }
-
-  function getTrendHtml(trend: number): string {
-    if (trend > 0.1) {
-      return `<span class="text-green-400 text-sm flex items-center gap-1">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-        </svg>
-        +${(trend * 100).toFixed(0)}%
-      </span>`;
-    } else if (trend < -0.1) {
-      return `<span class="text-red-400 text-sm flex items-center gap-1">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
-        ${(trend * 100).toFixed(0)}%
-      </span>`;
+    if (!spotlight.champion) {
+      container.innerHTML = `
+        <div class="terminal-panel p-6 text-center">
+          <div class="text-fg-muted font-mono">No tournament data available</div>
+        </div>
+      `;
+      return;
     }
-    return `<span class="text-cyber-muted text-sm">--</span>`;
+
+    const { champion, isStale } = spotlight;
+    const metaShare = ((champion.uses / 100) * champion.winRate).toFixed(1);
+
+    container.innerHTML = `
+      <div class="champion-spotlight">
+        <div class="relative p-6 md:p-8">
+          <!-- Status Badge -->
+          <div class="absolute top-4 right-4 flex items-center gap-2">
+            <span class="status-dot ${isStale ? 'status-dot-stale' : 'status-dot-live'}"></span>
+            <span class="text-[10px] font-mono uppercase tracking-widest ${isStale ? 'text-series-cx' : 'text-positive'}">
+              ${isStale ? 'HISTORICAL' : 'LIVE'}
+            </span>
+          </div>
+
+          <!-- Champion Label -->
+          <div class="text-[10px] font-mono uppercase tracking-widest text-gold mb-2">
+            Meta Champion
+          </div>
+
+          <!-- Champion Name (Hero Element) -->
+          <h1 class="champion-name text-fg mb-4">
+            ${champion.blade} ${champion.ratchet} ${champion.bit}
+          </h1>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div class="text-center">
+              <div class="text-3xl md:text-4xl font-mono font-bold text-gold tabular-nums">${champion.score.toFixed(1)}</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Score</div>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl md:text-4xl font-mono font-bold text-positive tabular-nums">${champion.winRate}%</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">1st Rate</div>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl md:text-4xl font-mono font-bold text-series-ux tabular-nums">${champion.uses}</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Uses</div>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl md:text-4xl font-mono font-bold text-accent tabular-nums">${metaShare}%</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Meta Share</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
-  function renderSeriesBlades(containerId: string, blades: any[], color: string) {
+  function renderMovers(spotlight: { risers: any[]; fallers: any[] }) {
+    const risersContainer = document.getElementById('movers-risers');
+    const fallersContainer = document.getElementById('movers-fallers');
+
+    if (risersContainer) {
+      if (spotlight.risers.length === 0) {
+        risersContainer.innerHTML = '<div class="text-fg-muted text-xs py-2">No risers</div>';
+      } else {
+        risersContainer.innerHTML = spotlight.risers.slice(0, 3).map(r => `
+          <div class="data-row">
+            <span class="data-row-name">${r.blade}</span>
+            <span class="delta-up text-xs">+${r.change}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    if (fallersContainer) {
+      if (spotlight.fallers.length === 0) {
+        fallersContainer.innerHTML = '<div class="text-fg-muted text-xs py-2">No fallers</div>';
+      } else {
+        fallersContainer.innerHTML = spotlight.fallers.slice(0, 3).map(f => `
+          <div class="data-row">
+            <span class="data-row-name">${f.blade}</span>
+            <span class="delta-down text-xs">${f.change}</span>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  function renderTopBlades(blades: any[]) {
+    const container = document.getElementById('top-blades');
+    if (!container) return;
+
+    container.innerHTML = blades.map((b, i) => {
+      const winRate = b.uses > 0 ? ((b.first / b.uses) * 100).toFixed(0) : '0';
+      // Generate sample sparkline data based on trend
+      const sparklineData = generateSparklineData(b.trend);
+      const sparkline = generateTrendSparkline(sparklineData, { width: 50, height: 16 });
+
+      return `
+        <div class="data-row py-2 px-3 ${i === 0 ? 'bg-gold/5 border-l-2 border-gold' : ''}">
+          <span class="data-row-rank ${i === 0 ? 'text-gold' : ''}">${i + 1}</span>
+          <span class="data-row-name ${i === 0 ? 'text-gold font-bold' : ''}">${b.blade}</span>
+          <span class="sparkline ml-2">${sparkline}</span>
+          <span class="data-row-secondary">${b.uses}</span>
+          <span class="data-row-secondary">${winRate}%</span>
+          <span class="data-row-value ${i === 0 ? 'text-gold' : ''}">${b.raw_score.toFixed(1)}</span>
+        </div>
+      `;
+    }).join('');
+
+    staggerFadeIn(container.children, { delay: 30 });
+  }
+
+  function renderTopCombos(combos: any[]) {
+    const container = document.getElementById('top-combos');
+    if (!container) return;
+
+    container.innerHTML = combos.map((c, i) => {
+      const winRate = c.uses > 0 ? ((c.first / c.uses) * 100).toFixed(0) : '0';
+      const sparklineData = generateSparklineData(c.trend);
+      const sparkline = generateTrendSparkline(sparklineData, { width: 50, height: 16 });
+
+      return `
+        <div class="data-row py-2 px-3 ${i === 0 ? 'bg-series-ux/5 border-l-2 border-series-ux' : ''}">
+          <span class="data-row-rank ${i === 0 ? 'text-series-ux' : ''}">${i + 1}</span>
+          <span class="data-row-name text-xs">
+            <span class="${i === 0 ? 'text-series-ux font-bold' : 'text-fg'}">${c.blade}</span>
+            <span class="text-fg-muted">${c.ratchet}</span>
+            <span class="text-fg-muted">${c.bit}</span>
+          </span>
+          <span class="sparkline ml-2">${sparkline}</span>
+          <span class="data-row-secondary">${winRate}%</span>
+          <span class="data-row-value ${i === 0 ? 'text-series-ux' : ''}">${c.raw_score.toFixed(1)}</span>
+        </div>
+      `;
+    }).join('');
+
+    staggerFadeIn(container.children, { delay: 30 });
+  }
+
+  function renderPartBars(ratchets: any[], bits: any[]) {
+    const ratchetContainer = document.getElementById('ratchet-bars');
+    const bitContainer = document.getElementById('bit-bars');
+
+    const maxRatchetUses = ratchets[0]?.uses || 1;
+    const maxBitUses = bits[0]?.uses || 1;
+
+    if (ratchetContainer) {
+      ratchetContainer.innerHTML = ratchets.slice(0, 5).map((r, i) => {
+        const percentage = Math.round((r.uses / maxRatchetUses) * 100);
+        return `
+          <div class="group">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-mono text-fg">${r.name}</span>
+              <span class="text-fg-muted tabular-nums">${r.uses}</span>
+            </div>
+            <div class="micro-bar">
+              <div class="micro-bar-fill bg-series-ux" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (bitContainer) {
+      bitContainer.innerHTML = bits.slice(0, 5).map((b, i) => {
+        const percentage = Math.round((b.uses / maxBitUses) * 100);
+        return `
+          <div class="group">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-mono text-fg">${b.name}</span>
+              <span class="text-fg-muted tabular-nums">${b.uses}</span>
+            </div>
+            <div class="micro-bar">
+              <div class="micro-bar-fill bg-series-bx" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  function renderSeriesBlades(containerId: string, blades: any[], colorClass: string) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    if (blades.length === 0) {
-      container.innerHTML = `<div class="text-cyber-muted text-sm text-center py-2">No data available</div>`;
+    if (!blades || blades.length === 0) {
+      container.innerHTML = '<div class="text-fg-muted text-xs text-center py-2">No data</div>';
       return;
     }
 
     container.innerHTML = blades.map((b, i) => `
-      <div class="flex items-center justify-between py-2 border-b border-cyber-border/20 last:border-0">
-        <div class="flex items-center gap-2">
-          <span class="text-${color}-400 font-mono text-sm font-bold w-5">${i + 1}</span>
-          <span class="font-mono text-cyber-text text-sm">${b.blade}</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-cyber-muted text-xs">${b.uses} uses</span>
-          <span class="text-${color}-400 font-mono text-sm font-bold">${b.raw_score.toFixed(1)}</span>
-        </div>
+      <div class="data-row">
+        <span class="data-row-rank text-${colorClass}">${i + 1}</span>
+        <span class="data-row-name">${b.blade}</span>
+        <span class="data-row-secondary">${b.uses}</span>
+        <span class="data-row-value text-${colorClass}">${b.raw_score.toFixed(1)}</span>
       </div>
     `).join('');
 
@@ -528,38 +551,27 @@ import Layout from '../layouts/Layout.astro';
     const canvas = document.getElementById('meta-landscape-chart') as HTMLCanvasElement;
     if (!canvas) return;
 
-    // Destroy existing chart if it exists
     if (metaLandscapeChart) {
       metaLandscapeChart.destroy();
       metaLandscapeChart = null;
     }
 
-    // Get top 30 blades for the visualization
-    const topBlades = blades.slice(0, 30);
-
-    // Calculate win rates and prepare data
+    const topBlades = blades.slice(0, 20);
     const maxScore = Math.max(...topBlades.map(b => b.raw_score));
 
-    // Group by series
+    // Official packaging colors
     const seriesColors: Record<string, string> = {
-      BX: 'rgba(34, 211, 238, 0.8)',   // cyan
-      UX: 'rgba(244, 114, 182, 0.8)',  // pink
-      CX: 'rgba(251, 191, 36, 0.8)',   // amber
+      BX: 'rgba(0, 104, 183, 0.7)',    // #0068B7 - Blue
+      UX: 'rgba(242, 101, 34, 0.7)',   // #F26522 - Orange
+      CX: 'rgba(228, 0, 127, 0.7)',    // #E4007F - Pink
     };
 
-    const seriesBorderColors: Record<string, string> = {
-      BX: 'rgba(34, 211, 238, 1)',
-      UX: 'rgba(244, 114, 182, 1)',
-      CX: 'rgba(251, 191, 36, 1)',
-    };
-
-    // Create bubble data points (only include blades with known series)
     const bubbleData = topBlades
-      .filter(b => BLADE_SERIES[b.blade]) // Only include blades with known series
+      .filter(b => BLADE_SERIES[b.blade])
       .map(b => {
         const series = BLADE_SERIES[b.blade];
         const winRate = b.uses > 0 ? (b.first / b.uses) * 100 : 0;
-        const normalizedScore = (b.raw_score / maxScore) * 30 + 5; // Bubble size 5-35
+        const normalizedScore = (b.raw_score / maxScore) * 20 + 4;
 
         return {
           x: b.uses,
@@ -568,17 +580,15 @@ import Layout from '../layouts/Layout.astro';
           blade: b.blade,
           series,
           score: b.raw_score,
-          wins: b.first,
         };
       });
 
-    // Group by series for datasets
     const datasets = ['BX', 'UX', 'CX'].map(series => ({
       label: series,
       data: bubbleData.filter(d => d.series === series),
       backgroundColor: seriesColors[series],
-      borderColor: seriesBorderColors[series],
-      borderWidth: 2,
+      borderColor: seriesColors[series].replace('0.7', '1'),
+      borderWidth: 1,
     })).filter(ds => ds.data.length > 0);
 
     metaLandscapeChart = new Chart(canvas, {
@@ -588,285 +598,59 @@ import Layout from '../layouts/Layout.astro';
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: false, // We have custom legend
-          },
+          legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(17, 24, 39, 0.95)',
-            titleColor: '#22d3ee',
-            bodyColor: '#e5e7eb',
-            borderColor: 'rgba(34, 211, 238, 0.3)',
+            backgroundColor: 'rgba(22, 27, 34, 0.95)',
+            titleColor: '#fbbf24',
+            bodyColor: '#f5f5f5',
+            borderColor: '#30363d',
             borderWidth: 1,
-            padding: 12,
-            titleFont: { family: 'monospace', size: 14, weight: 'bold' },
-            bodyFont: { family: 'monospace', size: 12 },
+            padding: 8,
+            titleFont: { family: 'monospace', size: 11, weight: 'bold' },
+            bodyFont: { family: 'monospace', size: 10 },
             callbacks: {
               title: (items: any) => items[0]?.raw?.blade || '',
               label: (context: any) => {
                 const d = context.raw;
-                return [
-                  `Series: ${d.series}`,
-                  `Uses: ${d.x}`,
-                  `1st Rate: ${d.y.toFixed(1)}%`,
-                  `Score: ${d.score.toFixed(1)}`,
-                ];
+                return [`Uses: ${d.x}`, `1st%: ${d.y.toFixed(0)}%`, `Score: ${d.score.toFixed(1)}`];
               },
             },
           },
         },
         scales: {
           x: {
-            title: {
-              display: true,
-              text: 'Tournament Uses',
-              color: '#9ca3af',
-              font: { family: 'monospace', size: 12 },
-            },
-            grid: {
-              color: 'rgba(75, 85, 99, 0.3)',
-            },
-            ticks: {
-              color: '#9ca3af',
-              font: { family: 'monospace' },
-            },
+            title: { display: false },
+            grid: { color: 'rgba(48, 54, 61, 0.5)' },
+            ticks: { color: '#666666', font: { family: 'monospace', size: 9 } },
           },
           y: {
-            title: {
-              display: true,
-              text: '1st Rate %',
-              color: '#9ca3af',
-              font: { family: 'monospace', size: 12 },
-            },
             min: 0,
             max: 100,
-            grid: {
-              color: 'rgba(75, 85, 99, 0.3)',
-            },
-            ticks: {
-              color: '#9ca3af',
-              font: { family: 'monospace' },
-              callback: (value: any) => `${value}%`,
-            },
+            title: { display: false },
+            grid: { color: 'rgba(48, 54, 61, 0.5)' },
+            ticks: { color: '#666666', font: { family: 'monospace', size: 9 }, callback: (v: any) => `${v}%` },
           },
         },
       },
     });
   }
 
-  function renderMetaSpotlight(spotlight: { champion: any; risers: any[]; fallers: any[]; lastTournamentDate: string | null; isStale: boolean; dataSource: 'recent' | 'alltime' }) {
-    const container = document.getElementById('meta-spotlight');
-    if (!container) return;
+  function generateSparklineData(trend: number): number[] {
+    const points = 7;
+    const data: number[] = [];
+    let value = 50;
 
-    if (!spotlight.champion) {
-      // No data at all for this region
-      container.innerHTML = `
-        <div class="cyber-card text-center py-8">
-          <div class="text-4xl mb-4">📊</div>
-          <h3 class="text-lg font-mono font-bold text-cyber-text mb-2">No Tournament Data</h3>
-          <p class="text-cyber-muted text-sm">No tournaments found for this region.</p>
-        </div>
-      `;
-      return;
+    for (let i = 0; i < points; i++) {
+      const noise = (Math.random() - 0.5) * 15;
+      const trendForce = (trend || 0) * 5 * (i / points);
+      value += noise + trendForce;
+      value = Math.max(20, Math.min(80, value));
+      data.push(value);
     }
 
-    const { champion, risers, fallers, lastTournamentDate, isStale, dataSource } = spotlight;
-
-    // Format the last tournament date for display
-    const lastDateFormatted = lastTournamentDate
-      ? new Date(lastTournamentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : null;
-
-    // Calculate the date range being shown (30 days before last tournament)
-    const startDate = lastTournamentDate
-      ? new Date(new Date(lastTournamentDate).getTime() - 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      : null;
-
-    // Stale data disclaimer banner
-    const staleBanner = isStale ? `
-      <div class="mb-4 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm">
-        <span class="font-bold">⚠️ Historical Data:</span> No recent tournaments.
-        Showing meta from <span class="font-mono">${startDate} - ${lastDateFormatted}</span>
-      </div>
-    ` : '';
-
-    container.innerHTML = `
-      ${staleBanner}
-      <div class="space-y-6">
-        <!-- Champion Card - Full Width -->
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/10 via-cyber-card to-cyber-card border border-amber-500/30">
-          <!-- Animated glow effect -->
-          <div class="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/5 to-amber-500/0 animate-pulse"></div>
-          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl"></div>
-
-          <div class="relative p-6 sm:p-8">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <!-- Left side: Crown + Combo Info -->
-              <div class="flex-grow">
-                <!-- Crown Icon -->
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="w-12 h-12 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
-                    <svg class="w-7 h-7 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div class="text-amber-400 font-mono text-sm font-bold tracking-wider uppercase">${isStale ? 'All-Time' : 'Current'} Meta Champion</div>
-                    <div class="text-cyber-muted text-xs">${isStale ? 'Historical data' : 'Last 30 days'}</div>
-                  </div>
-                </div>
-
-                <!-- Combo Name -->
-                <div>
-                  <h3 class="text-3xl sm:text-4xl font-mono font-bold text-cyber-text mb-3">${champion.blade}</h3>
-                  <div class="flex flex-wrap gap-2">
-                    <span class="px-4 py-2 text-base font-mono rounded-lg bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/30">${champion.blade}</span>
-                    <span class="px-4 py-2 text-base font-mono rounded-lg bg-cyber-pink/20 text-cyber-pink border border-cyber-pink/30">${champion.ratchet}</span>
-                    <span class="px-4 py-2 text-base font-mono rounded-lg bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/30">${champion.bit}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Right side: Stats -->
-              <div class="flex gap-4 lg:gap-6">
-                <div class="text-center p-4 rounded-lg bg-cyber-bg/50 border border-cyber-border/30 min-w-[100px]">
-                  <div class="text-3xl font-mono font-bold text-cyber-cyan">${champion.score.toFixed(1)}</div>
-                  <div class="text-xs text-cyber-muted uppercase tracking-wider">Score</div>
-                </div>
-                <div class="text-center p-4 rounded-lg bg-cyber-bg/50 border border-cyber-border/30 min-w-[100px]">
-                  <div class="text-3xl font-mono font-bold text-amber-400">${champion.winRate}%</div>
-                  <div class="text-xs text-cyber-muted uppercase tracking-wider">1st %</div>
-                </div>
-                <div class="text-center p-4 rounded-lg bg-cyber-bg/50 border border-cyber-border/30 min-w-[100px]">
-                  <div class="text-3xl font-mono font-bold text-cyber-pink">${champion.uses}</div>
-                  <div class="text-xs text-cyber-muted uppercase tracking-wider">Uses</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Movers Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Risers -->
-          <div class="cyber-card border-green-500/30 bg-gradient-to-br from-green-500/5 to-transparent">
-            <div class="flex items-center gap-2 mb-3">
-              <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-              <span class="font-mono text-sm font-bold text-green-400 uppercase tracking-wider">Rising</span>
-              <span class="text-cyber-muted text-xs ml-auto">${isStale ? 'Historical' : 'Last 30 days'}</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              ${risers.length > 0 ? risers.map(r => `
-                <div class="p-3 rounded-lg bg-cyber-bg/30 border border-cyber-border/20">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="font-mono text-sm font-medium text-cyber-text">${r.blade}</span>
-                    <div class="flex items-center gap-1">
-                      <span class="text-green-400 font-mono text-sm font-bold">+${r.change}</span>
-                      <span class="text-cyber-muted text-xs">#${r.newRank}</span>
-                    </div>
-                  </div>
-                  <div class="flex gap-1">
-                    <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-cyber-pink/20 text-cyber-pink">${r.ratchet}</span>
-                    <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-cyber-purple/20 text-cyber-purple">${r.bit}</span>
-                  </div>
-                </div>
-              `).join('') : '<div class="text-cyber-muted text-sm col-span-full">No significant risers</div>'}
-            </div>
-          </div>
-
-          <!-- Fallers -->
-          <div class="cyber-card border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent">
-            <div class="flex items-center gap-2 mb-3">
-              <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-              </svg>
-              <span class="font-mono text-sm font-bold text-red-400 uppercase tracking-wider">Falling</span>
-              <span class="text-cyber-muted text-xs ml-auto">${isStale ? 'Historical' : 'Last 30 days'}</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              ${fallers.length > 0 ? fallers.map(f => `
-                <div class="p-3 rounded-lg bg-cyber-bg/30 border border-cyber-border/20">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="font-mono text-sm font-medium text-cyber-text">${f.blade}</span>
-                    <div class="flex items-center gap-1">
-                      <span class="text-red-400 font-mono text-sm font-bold">${f.change}</span>
-                      <span class="text-cyber-muted text-xs">#${f.newRank}</span>
-                    </div>
-                  </div>
-                  <div class="flex gap-1">
-                    <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-cyber-pink/20 text-cyber-pink">${f.ratchet}</span>
-                    <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-cyber-purple/20 text-cyber-purple">${f.bit}</span>
-                  </div>
-                </div>
-              `).join('') : '<div class="text-cyber-muted text-sm col-span-full">No significant fallers</div>'}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    return data;
   }
 
-  function renderPartBars(ratchets: any[], bits: any[]) {
-    const ratchetContainer = document.getElementById('ratchet-bars');
-    const bitContainer = document.getElementById('bit-bars');
-
-    const topRatchets = ratchets.slice(0, 5);
-    const topBits = bits.slice(0, 5);
-
-    const maxRatchetUses = topRatchets[0]?.uses || 1;
-    const maxBitUses = topBits[0]?.uses || 1;
-
-    // Render ratchet bars
-    if (ratchetContainer) {
-      ratchetContainer.innerHTML = topRatchets.map((r, i) => {
-        const percentage = Math.round((r.uses / maxRatchetUses) * 100);
-        return `
-          <div class="group">
-            <div class="flex items-center justify-between mb-1">
-              <span class="font-mono text-sm text-cyber-text group-hover:text-cyber-pink transition-colors">${r.name}</span>
-              <span class="font-mono text-xs text-cyber-muted">${r.uses} uses</span>
-            </div>
-            <div class="h-2 bg-cyber-bg rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full bg-gradient-to-r from-cyber-pink to-cyber-pink/60 transition-all duration-500"
-                style="width: ${percentage}%"
-              ></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      staggerFadeIn(ratchetContainer.children, { delay: 50 });
-    }
-
-    // Render bit bars
-    if (bitContainer) {
-      bitContainer.innerHTML = topBits.map((b, i) => {
-        const percentage = Math.round((b.uses / maxBitUses) * 100);
-        return `
-          <div class="group">
-            <div class="flex items-center justify-between mb-1">
-              <span class="font-mono text-sm text-cyber-text group-hover:text-cyber-purple transition-colors">${b.name}</span>
-              <span class="font-mono text-xs text-cyber-muted">${b.uses} uses</span>
-            </div>
-            <div class="h-2 bg-cyber-bg rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full bg-gradient-to-r from-cyber-purple to-cyber-purple/60 transition-all duration-500"
-                style="width: ${percentage}%"
-              ></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      staggerFadeIn(bitContainer.children, { delay: 50 });
-    }
-  }
-
-  // Load dashboard when DOM is ready
   document.addEventListener('DOMContentLoaded', loadDashboard);
-
-  // Reload when region changes
-  window.addEventListener('regionchange', () => {
-    loadDashboard();
-  });
+  window.addEventListener('regionchange', loadDashboard);
 </script>

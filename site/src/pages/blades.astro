@@ -6,10 +6,10 @@ import Layout from '../layouts/Layout.astro';
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* Header */}
     <div class="mb-8">
-      <h1 class="text-3xl font-mono font-bold text-cyber-text mb-2">
-        <span class="text-cyber-cyan">#</span> Blade Rankings
+      <h1 class="text-3xl font-mono font-bold text-fg mb-2">
+        <span class="text-accent">#</span> Blade Rankings
       </h1>
-      <p class="text-cyber-muted">
+      <p class="text-fg-secondary">
         Blades ranked by weighted tournament performance. Recent results count more.
       </p>
     </div>
@@ -19,34 +19,34 @@ import Layout from '../layouts/Layout.astro';
       <div class="flex flex-wrap gap-2 mb-4">
         <button
           id="filter-all"
-          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 bg-cyber-cyan/10 text-cyber-cyan border-cyber-cyan/30"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 bg-accent/10 text-accent border-accent/30"
           data-series="all"
         >
           All Series
         </button>
         <button
           id="filter-bx"
-          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-cyber-muted border-cyber-border hover:text-cyan-400 hover:border-cyan-400/30"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-fg-muted border-stroke hover:text-series-bx hover:border-series-bx/30"
           data-series="BX"
         >
-          <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 mr-2"></span>
+          <span class="inline-block w-2 h-2 rounded-full bg-series-bx mr-2"></span>
           BX Series
         </button>
         <button
-          id="filter-cx"
-          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-cyber-muted border-cyber-border hover:text-amber-400 hover:border-amber-400/30"
-          data-series="CX"
-        >
-          <span class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
-          CX Custom
-        </button>
-        <button
           id="filter-ux"
-          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-cyber-muted border-cyber-border hover:text-pink-400 hover:border-pink-400/30"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-fg-muted border-stroke hover:text-series-ux hover:border-series-ux/30"
           data-series="UX"
         >
-          <span class="inline-block w-2 h-2 rounded-full bg-pink-400 mr-2"></span>
+          <span class="inline-block w-2 h-2 rounded-full bg-series-ux mr-2"></span>
           UX Unique
+        </button>
+        <button
+          id="filter-cx"
+          class="series-tab px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200 text-fg-muted border-stroke hover:text-series-cx hover:border-series-cx/30"
+          data-series="CX"
+        >
+          <span class="inline-block w-2 h-2 rounded-full bg-series-cx mr-2"></span>
+          CX Custom
         </button>
       </div>
     </div>
@@ -58,9 +58,9 @@ import Layout from '../layouts/Layout.astro';
           type="text"
           id="search-input"
           placeholder="Search blades..."
-          class="w-full md:w-80 px-4 py-2 pl-10 bg-cyber-card border border-cyber-border rounded-lg font-mono text-sm text-cyber-text placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan/50 transition-colors"
+          class="input w-full md:w-80 pl-10"
         />
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyber-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
@@ -68,23 +68,23 @@ import Layout from '../layouts/Layout.astro';
 
     {/* Tier Filter */}
     <div class="mb-6 flex flex-wrap gap-3 items-center">
-      <span class="text-cyber-muted text-sm">Filter by Tier:</span>
+      <span class="text-fg-muted text-sm">Filter by Tier:</span>
       <div class="flex flex-wrap gap-2">
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 bg-cyber-cyan/10 text-cyber-cyan border-cyber-cyan/30" data-tier="all">All</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-rose-400 border-rose-500/30 hover:bg-rose-500/10" data-tier="SS">SS</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-amber-400 border-amber-500/30 hover:bg-amber-500/10" data-tier="S">S</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-purple border-cyber-purple/30 hover:bg-cyber-purple/10" data-tier="A">A</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-cyan border-cyber-cyan/30 hover:bg-cyber-cyan/10" data-tier="B">B</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-green-400 border-green-500/30 hover:bg-green-500/10" data-tier="C">C</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-cyber-muted border-cyber-muted/30 hover:bg-cyber-muted/10" data-tier="D">D</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-gray-500 border-gray-500/30 hover:bg-gray-500/10" data-tier="F">F</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 bg-accent/10 text-accent border-accent/30" data-tier="all">All</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-ss border-tier-ss/30 hover:bg-tier-ss/10" data-tier="SS">SS</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-s border-tier-s/30 hover:bg-tier-s/10" data-tier="S">S</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-a border-tier-a/30 hover:bg-tier-a/10" data-tier="A">A</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-b border-tier-b/30 hover:bg-tier-b/10" data-tier="B">B</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-c border-tier-c/30 hover:bg-tier-c/10" data-tier="C">C</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-d border-tier-d/30 hover:bg-tier-d/10" data-tier="D">D</button>
+        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-f border-tier-f/30 hover:bg-tier-f/10" data-tier="F">F</button>
       </div>
     </div>
 
     {/* Blade Rankings Table */}
-    <div class="cyber-card">
+    <div class="card card-padding">
       <div class="overflow-x-auto">
-        <table class="cyber-table" id="rankings-table">
+        <table class="data-table" id="rankings-table">
           <thead>
             <tr>
               <th class="w-16">#</th>
@@ -116,13 +116,13 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     {/* Expanded Blade Detail Panel */}
-    <div id="blade-detail" class="hidden mt-6 cyber-card gradient-border">
+    <div id="blade-detail" class="hidden mt-6 card card-padding border-accent/30">
       <div class="flex justify-between items-start mb-4">
         <div>
-          <h2 id="detail-blade-name" class="text-2xl font-mono font-bold text-cyber-text"></h2>
-          <p class="text-cyber-muted text-sm">Best ratchet + bit combinations</p>
+          <h2 id="detail-blade-name" class="text-2xl font-mono font-bold text-fg"></h2>
+          <p class="text-fg-muted text-sm">Best ratchet + bit combinations</p>
         </div>
-        <button id="close-detail" class="text-cyber-muted hover:text-cyber-text transition-colors p-2">
+        <button id="close-detail" class="text-fg-muted hover:text-fg transition-colors p-2">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -168,7 +168,7 @@ import Layout from '../layouts/Layout.astro';
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="12" class="text-center text-red-400 py-8">
+            <td colspan="12" class="text-center text-negative py-8">
               Failed to load blade rankings. Please refresh the page.
             </td>
           </tr>
@@ -239,16 +239,16 @@ import Layout from '../layouts/Layout.astro';
   function updateTierStyles(activeTier: string) {
     document.querySelectorAll('.tier-filter').forEach(btn => {
       const tier = btn.getAttribute('data-tier');
-      btn.classList.remove('bg-cyber-cyan/10', 'bg-rose-500/10', 'bg-amber-500/10', 'bg-cyber-purple/10', 'bg-green-500/10', 'bg-cyber-muted/10', 'bg-gray-500/10');
+      btn.classList.remove('bg-accent/10', 'bg-tier-ss/10', 'bg-tier-s/10', 'bg-tier-a/10', 'bg-tier-b/10', 'bg-tier-c/10', 'bg-tier-d/10', 'bg-tier-f/10');
       if (tier === activeTier) {
-        if (tier === 'all') btn.classList.add('bg-cyber-cyan/10');
-        else if (tier === 'SS') btn.classList.add('bg-rose-500/10');
-        else if (tier === 'S') btn.classList.add('bg-amber-500/10');
-        else if (tier === 'A') btn.classList.add('bg-cyber-purple/10');
-        else if (tier === 'B') btn.classList.add('bg-cyber-cyan/10');
-        else if (tier === 'C') btn.classList.add('bg-green-500/10');
-        else if (tier === 'D') btn.classList.add('bg-cyber-muted/10');
-        else if (tier === 'F') btn.classList.add('bg-gray-500/10');
+        if (tier === 'all') btn.classList.add('bg-accent/10');
+        else if (tier === 'SS') btn.classList.add('bg-tier-ss/10');
+        else if (tier === 'S') btn.classList.add('bg-tier-s/10');
+        else if (tier === 'A') btn.classList.add('bg-tier-a/10');
+        else if (tier === 'B') btn.classList.add('bg-tier-b/10');
+        else if (tier === 'C') btn.classList.add('bg-tier-c/10');
+        else if (tier === 'D') btn.classList.add('bg-tier-d/10');
+        else if (tier === 'F') btn.classList.add('bg-tier-f/10');
       }
     });
   }
@@ -257,37 +257,36 @@ import Layout from '../layouts/Layout.astro';
     document.querySelectorAll('.series-tab').forEach(tab => {
       const series = tab.getAttribute('data-series');
       if (series === activeSeries) {
-        tab.classList.remove('text-cyber-muted', 'border-cyber-border');
+        tab.classList.remove('text-fg-muted', 'border-stroke');
         if (series === 'BX') {
-          tab.classList.add('bg-cyan-500/10', 'text-cyan-400', 'border-cyan-400/30');
+          tab.classList.add('bg-series-bx/10', 'text-series-bx', 'border-series-bx/30');
         } else if (series === 'CX') {
-          tab.classList.add('bg-amber-500/10', 'text-amber-400', 'border-amber-400/30');
+          tab.classList.add('bg-series-cx/10', 'text-series-cx', 'border-series-cx/30');
         } else if (series === 'UX') {
-          tab.classList.add('bg-pink-500/10', 'text-pink-400', 'border-pink-400/30');
+          tab.classList.add('bg-series-ux/10', 'text-series-ux', 'border-series-ux/30');
         } else {
-          tab.classList.add('bg-cyber-cyan/10', 'text-cyber-cyan', 'border-cyber-cyan/30');
+          tab.classList.add('bg-accent/10', 'text-accent', 'border-accent/30');
         }
       } else {
         tab.classList.remove(
-          'bg-cyber-cyan/10', 'text-cyber-cyan', 'border-cyber-cyan/30',
-          'bg-cyan-500/10', 'text-cyan-400', 'border-cyan-400/30',
-          'bg-amber-500/10', 'text-amber-400', 'border-amber-400/30',
-          'bg-pink-500/10', 'text-pink-400', 'border-pink-400/30'
+          'bg-accent/10', 'text-accent', 'border-accent/30',
+          'bg-series-bx/10', 'text-series-bx', 'border-series-bx/30',
+          'bg-series-cx/10', 'text-series-cx', 'border-series-cx/30',
+          'bg-series-ux/10', 'text-series-ux', 'border-series-ux/30'
         );
-        tab.classList.add('text-cyber-muted', 'border-cyber-border');
+        tab.classList.add('text-fg-muted', 'border-stroke');
       }
     });
   }
 
   function getSeriesBadge(series: string | undefined): string {
-    if (!series) return '<span class="text-cyber-muted text-xs">-</span>';
-    const colors: Record<string, { bg: string; text: string; border: string }> = {
-      'BX': { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/40' },
-      'CX': { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/40' },
-      'UX': { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/40' },
+    if (!series) return '<span class="text-fg-muted text-xs">-</span>';
+    const badgeClass: Record<string, string> = {
+      'BX': 'badge-bx',
+      'CX': 'badge-cx',
+      'UX': 'badge-ux',
     };
-    const color = colors[series] || { bg: 'bg-cyber-muted/20', text: 'text-cyber-muted', border: 'border-cyber-muted/30' };
-    return `<span class="px-2 py-0.5 text-xs font-mono font-bold rounded ${color.bg} ${color.text} border ${color.border}">${series}</span>`;
+    return `<span class="${badgeClass[series] || 'badge'}">${series}</span>`;
   }
 
   function renderTable(blades: BladeStats[]) {
@@ -297,7 +296,7 @@ import Layout from '../layouts/Layout.astro';
     if (blades.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="12" class="text-center text-cyber-muted py-8">
+          <td colspan="12" class="text-center text-fg-muted py-8">
             No blades found for the selected series.
           </td>
         </tr>
@@ -306,20 +305,20 @@ import Layout from '../layouts/Layout.astro';
     }
 
     tbody.innerHTML = blades.map((blade) => `
-      <tr class="ranking-row cursor-pointer hover:bg-cyber-card-light" data-blade="${blade.blade}">
+      <tr class="ranking-row cursor-pointer hover:bg-panel" data-blade="${blade.blade}">
         <td class="font-mono">
           <span class="rank-number text-lg">${blade.rank}</span>
         </td>
         <td>
-          ${blade.tier ? `<span class="tier-badge px-2 py-1 text-xs font-mono font-bold rounded cursor-pointer hover:ring-2 hover:ring-white/30 ${getTierClass(blade.tier)}" data-tier="${blade.tier}">${blade.tier}</span>` : ''}
+          ${blade.tier ? `<span class="${getTierClass(blade.tier)} cursor-pointer hover:ring-2 hover:ring-white/30" data-tier="${blade.tier}">${blade.tier}</span>` : ''}
         </td>
-        <td class="font-mono font-medium text-cyber-text">${blade.blade}</td>
+        <td class="font-mono font-medium text-fg">${blade.blade}</td>
         <td>${getSeriesBadge(blade.series)}</td>
-        <td class="text-right font-mono text-cyber-cyan">${blade.raw_score.toFixed(1)}</td>
+        <td class="text-right font-mono text-accent">${blade.raw_score.toFixed(1)}</td>
         <td class="text-right font-mono">${blade.uses}</td>
-        <td class="text-right font-mono text-amber-400">${blade.first}</td>
-        <td class="text-right font-mono text-gray-400">${blade.second}</td>
-        <td class="text-right font-mono text-amber-700">${blade.third}</td>
+        <td class="text-right font-mono text-tier-ss">${blade.first}</td>
+        <td class="text-right font-mono text-fg-muted">${blade.second}</td>
+        <td class="text-right font-mono text-tier-a">${blade.third}</td>
         <td class="text-right font-mono">
           ${blade.uses > 0 ? ((blade.first / blade.uses) * 100).toFixed(1) : '0.0'}%
         </td>
@@ -327,7 +326,7 @@ import Layout from '../layouts/Layout.astro';
           ${getTrendHtml(blade.trend)}
         </td>
         <td class="text-center">
-          <svg class="w-5 h-5 text-cyber-muted group-hover:text-cyber-cyan transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-fg-muted group-hover:text-accent transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </td>
@@ -367,7 +366,7 @@ import Layout from '../layouts/Layout.astro';
     if (!detailPanel || !nameEl || !combosEl) return;
 
     nameEl.textContent = bladeName;
-    combosEl.innerHTML = '<div class="col-span-full text-center py-4"><div class="w-8 h-8 border-2 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin mx-auto"></div></div>';
+    combosEl.innerHTML = '<div class="col-span-full text-center py-4"><div class="w-8 h-8 border-2 border-stroke border-t-accent rounded-full animate-spin mx-auto"></div></div>';
     detailPanel.classList.remove('hidden');
 
     // Scroll to panel
@@ -378,24 +377,24 @@ import Layout from '../layouts/Layout.astro';
       const combos = await getBestCombosForBlade(bladeName, 9, region);
 
       if (combos.length === 0) {
-        combosEl.innerHTML = '<div class="col-span-full text-center text-cyber-muted py-4">No combo data available</div>';
+        combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-4">No combo data available</div>';
         return;
       }
 
       combosEl.innerHTML = combos.map((combo, i) => `
-        <div class="cyber-card p-4">
+        <div class="card card-padding">
           <div class="flex items-start gap-3">
             <span class="rank-number text-xl">${i + 1}</span>
             <div class="flex-grow">
-              <div class="font-mono font-bold text-cyber-text">${combo.combo}</div>
+              <div class="font-mono font-bold text-fg">${combo.combo}</div>
               <div class="flex items-center gap-2 mt-1 text-sm">
-                <span class="text-cyber-pink">${combo.ratchet}</span>
-                <span class="text-cyber-purple">${combo.bit}</span>
+                <span class="text-series-ux">${combo.ratchet}</span>
+                <span class="text-series-bx">${combo.bit}</span>
               </div>
               <div class="flex items-center gap-4 mt-2 text-sm">
-                <span class="text-cyber-cyan font-mono">${combo.raw_score.toFixed(1)}</span>
-                <span class="text-cyber-muted">${combo.uses} uses</span>
-                <span class="text-amber-400">${combo.first} wins</span>
+                <span class="text-accent font-mono">${combo.raw_score.toFixed(1)}</span>
+                <span class="text-fg-muted">${combo.uses} uses</span>
+                <span class="text-tier-ss">${combo.first} wins</span>
               </div>
             </div>
           </div>
@@ -405,40 +404,40 @@ import Layout from '../layouts/Layout.astro';
       staggerFadeIn(combosEl.children, { delay: 50 });
     } catch (error) {
       console.error('Failed to load blade combos:', error);
-      combosEl.innerHTML = '<div class="col-span-full text-center text-red-400 py-4">Failed to load combos</div>';
+      combosEl.innerHTML = '<div class="col-span-full text-center text-negative py-4">Failed to load combos</div>';
     }
   }
 
   function getTierClass(tier: string): string {
     const classes: Record<string, string> = {
-      SS: 'text-rose-400 bg-rose-500/10',
-      S: 'text-amber-400 bg-amber-500/10',
-      A: 'text-cyber-purple bg-cyber-purple/10',
-      B: 'text-cyber-cyan bg-cyber-cyan/10',
-      C: 'text-green-400 bg-green-500/10',
-      D: 'text-cyber-muted bg-cyber-muted/10',
-      F: 'text-gray-500 bg-gray-500/10',
+      SS: 'tier-badge-ss',
+      S: 'tier-badge-s',
+      A: 'tier-badge-a',
+      B: 'tier-badge-b',
+      C: 'tier-badge-c',
+      D: 'tier-badge-d',
+      F: 'tier-badge-f',
     };
-    return classes[tier] || '';
+    return classes[tier] || 'tier-badge';
   }
 
   function getTrendHtml(trend: number): string {
     if (trend > 0.1) {
-      return `<span class="text-green-400 text-sm inline-flex items-center gap-1">
+      return `<span class="text-positive text-sm inline-flex items-center gap-1">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
         </svg>
         +${(trend * 100).toFixed(0)}%
       </span>`;
     } else if (trend < -0.1) {
-      return `<span class="text-red-400 text-sm inline-flex items-center gap-1">
+      return `<span class="text-negative text-sm inline-flex items-center gap-1">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
         ${(trend * 100).toFixed(0)}%
       </span>`;
     }
-    return '<span class="text-cyber-muted text-sm">--</span>';
+    return '<span class="text-fg-muted text-sm">--</span>';
   }
 
   // Close detail panel handler

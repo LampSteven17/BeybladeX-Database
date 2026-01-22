@@ -23,7 +23,7 @@ const regions = [
     <button
       data-region={region.value}
       title={region.label}
-      class="region-btn w-8 h-8 text-lg rounded-lg transition-all duration-200 hover:bg-cyber-card border border-transparent flex items-center justify-center opacity-50 hover:opacity-100"
+      class="region-btn w-7 h-7 text-base rounded transition-all duration-150 hover:bg-panel border border-transparent flex items-center justify-center opacity-50 hover:opacity-100"
     >
       <span class="leading-none">{region.icon}</span>
     </button>
@@ -55,10 +55,10 @@ const regions = [
       const btnRegion = btn.getAttribute('data-region');
       if (btnRegion === selected) {
         btn.classList.remove('opacity-50', 'border-transparent');
-        btn.classList.add('opacity-100', 'bg-cyber-cyan/10', 'border-cyber-cyan/30', 'ring-1', 'ring-cyber-cyan/50');
+        btn.classList.add('opacity-100', 'bg-panel', 'border-stroke-hover');
       } else {
         btn.classList.add('opacity-50', 'border-transparent');
-        btn.classList.remove('opacity-100', 'bg-cyber-cyan/10', 'border-cyber-cyan/30', 'ring-1', 'ring-cyber-cyan/50');
+        btn.classList.remove('opacity-100', 'bg-panel', 'border-stroke-hover');
       }
     });
   }

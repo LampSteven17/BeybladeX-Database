@@ -57,7 +57,7 @@ BLADE_TRANSLATIONS: dict[str, str] = {
     "ドランバスター": "Dran Buster",
     "ヘルズハンマー": "Hells Hammer",
     "ウィザードロッド": "Wizard Rod",
-    "ソアーフェニックス": "Soar Phoenix",
+    "ソアーフェニックス": "Phoenix Wing",  # UX-04 Entry Set (same blade as BX-23)
     "レオンクレスト": "Leon Crest",
     "ナイトメイル": "Knight Mail",
     "シルバーウルフ": "Silver Wolf",

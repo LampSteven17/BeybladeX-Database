@@ -565,7 +565,7 @@ def test_combo_parsing():
     test_cases = [
         "T. Rex 1-70B",
         "Wolf Blast F4-50H",
-        "Soar Phoenix 1-60RA",
+        "Phoenix Wing 1-60RA",
         "Shark Scale 1-60J",
         "Hover Wyvern 9-60K",
         "Wizard Rod 5-70H",
