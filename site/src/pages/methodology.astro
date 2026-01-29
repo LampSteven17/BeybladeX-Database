@@ -1,0 +1,347 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Scoring Methodology">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header */}
+    <div class="mb-8">
+      <h1 class="text-3xl font-mono font-bold text-fg mb-2">
+        <span class="text-accent">#</span> Scoring Methodology
+      </h1>
+      <p class="text-fg-secondary">
+        How we calculate blade, combo, and part rankings from tournament data.
+      </p>
+    </div>
+
+    {/* Overview */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">Overview</h2>
+      <p class="text-fg-secondary mb-4">
+        Our scoring system is designed to reflect competitive performance while emphasizing recent results
+        and rewarding consistency across tournament stages.
+        This approach ensures the meta rankings stay current and accurately represent what's winning in tournaments right now.
+      </p>
+      <div class="terminal-panel p-4">
+        <code class="text-accent font-mono text-sm">
+          Score = Σ (Placement Points × Stage Weight × Recency Weight)
+        </code>
+      </div>
+    </section>
+
+    {/* Placement Points */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">1.</span> Placement Points
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Each tournament placement earns points based on finishing position. Only top 3 placements are scored.
+      </p>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-3xl font-mono font-bold text-tier-ss mb-2">3</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">1st Place</div>
+        </div>
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-3xl font-mono font-bold text-fg-secondary mb-2">2</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">2nd Place</div>
+        </div>
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-3xl font-mono font-bold text-tier-a mb-2">1</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">3rd Place</div>
+        </div>
+      </div>
+    </section>
+
+    {/* Recency Weighting */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">2.</span> Recency Weighting
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Results are weighted using exponential decay with a <strong class="text-accent">30-day half-life</strong>.
+        This means a result from 30 days ago counts for half as much as a result from today.
+      </p>
+      <div class="terminal-panel p-4 mb-4">
+        <code class="text-accent font-mono text-sm">
+          Weight = 0.5 ^ (days_ago / 30)
+        </code>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-fg-secondary">Today</span>
+          <div class="flex items-center gap-2">
+            <div class="w-48 h-2 bg-terminal-border rounded-full overflow-hidden">
+              <div class="h-full bg-positive rounded-full" style="width: 100%"></div>
+            </div>
+            <span class="font-mono text-positive w-16 text-right">100%</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-fg-secondary">30 days ago</span>
+          <div class="flex items-center gap-2">
+            <div class="w-48 h-2 bg-terminal-border rounded-full overflow-hidden">
+              <div class="h-full bg-accent rounded-full" style="width: 50%"></div>
+            </div>
+            <span class="font-mono text-accent w-16 text-right">50%</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-fg-secondary">60 days ago</span>
+          <div class="flex items-center gap-2">
+            <div class="w-48 h-2 bg-terminal-border rounded-full overflow-hidden">
+              <div class="h-full bg-series-ux rounded-full" style="width: 25%"></div>
+            </div>
+            <span class="font-mono text-series-ux w-16 text-right">25%</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-fg-secondary">90 days ago</span>
+          <div class="flex items-center gap-2">
+            <div class="w-48 h-2 bg-terminal-border rounded-full overflow-hidden">
+              <div class="h-full bg-negative rounded-full" style="width: 12.5%"></div>
+            </div>
+            <span class="font-mono text-negative w-16 text-right">12.5%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* Stage Weighting */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">3.</span> Stage Weighting
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Tournament results are weighted based on which stage the combo was used in.
+        Combos proven in finals or across both stages receive higher scores.
+      </p>
+      <div class="grid grid-cols-3 gap-4 mb-4">
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-2xl font-mono font-bold text-tier-ss mb-2">115%</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">Both Stages</div>
+          <p class="text-fg-muted text-xs mt-2">Consistent across all rounds</p>
+        </div>
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-2xl font-mono font-bold text-fg-secondary mb-2">100%</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">Finals Only</div>
+          <p class="text-fg-muted text-xs mt-2">Proved in top cut</p>
+        </div>
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-2xl font-mono font-bold text-tier-c mb-2">50%</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">First Stage Only</div>
+          <p class="text-fg-muted text-xs mt-2">Easier competition</p>
+        </div>
+      </div>
+      <p class="text-fg-muted text-sm">
+        This rewards combos that players trust enough to run through the entire tournament, 
+        while reducing weight for combos only used in pools or Swiss rounds.
+      </p>
+    </section>
+
+    {/* Example Calculation */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">4.</span> Example Calculation
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Here's how a blade's score would be calculated with three tournament results:
+      </p>
+      <div class="terminal-panel p-4 space-y-3 font-mono text-sm">
+        <div class="flex justify-between text-fg-secondary">
+          <span>1st place, both stages (today)</span>
+          <span class="text-accent">3 pts × 1.15 × 1.00 = <span class="text-positive">3.45</span></span>
+        </div>
+        <div class="flex justify-between text-fg-secondary">
+          <span>2nd place, finals (15 days ago)</span>
+          <span class="text-accent">2 pts × 1.00 × 0.71 = <span class="text-positive">1.42</span></span>
+        </div>
+        <div class="flex justify-between text-fg-secondary">
+          <span>1st place, first stage (45 days ago)</span>
+          <span class="text-accent">3 pts × 0.50 × 0.35 = <span class="text-positive">0.53</span></span>
+        </div>
+        <div class="border-t border-terminal-border pt-3 flex justify-between text-fg">
+          <span>Total Score</span>
+          <span class="text-gold font-bold">5.40</span>
+        </div>
+      </div>
+    </section>
+
+    {/* Trend Calculation */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">5.</span> Trend Calculation
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Trends compare performance in the <strong class="text-accent">last 30 days</strong> versus
+        the <strong class="text-accent">previous 30 days</strong> (30-60 days ago).
+      </p>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="terminal-panel p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="delta-up"></span>
+            <span class="text-positive font-mono text-sm">Rising</span>
+          </div>
+          <p class="text-fg-muted text-xs">
+            Average score per use increased compared to previous period
+          </p>
+        </div>
+        <div class="terminal-panel p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="delta-down"></span>
+            <span class="text-negative font-mono text-sm">Falling</span>
+          </div>
+          <p class="text-fg-muted text-xs">
+            Average score per use decreased compared to previous period
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* Tier System */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">6.</span> Tier System
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Blades are assigned tiers based on their percentile rank using a bell curve distribution:
+      </p>
+      <div class="space-y-2">
+        <div class="flex items-center gap-3">
+          <span class="tier-badge-ss w-12 text-center">SS</span>
+          <span class="text-fg-secondary text-sm">Top 3% - Elite performers</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="tier-badge-s w-12 text-center">S</span>
+          <span class="text-fg-secondary text-sm">Top 3-13% - Excellent</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="tier-badge-a w-12 text-center">A</span>
+          <span class="text-fg-secondary text-sm">Top 13-30% - Above average</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="tier-badge-b w-12 text-center">B</span>
+          <span class="text-fg-secondary text-sm">Top 30-50% - Average</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="tier-badge-c w-12 text-center">C</span>
+          <span class="text-fg-secondary text-sm">Top 50-70% - Below average</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="tier-badge-d w-12 text-center">D</span>
+          <span class="text-fg-secondary text-sm">Top 70-97% - Poor performance</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="tier-badge-f w-12 text-center">F</span>
+          <span class="text-fg-secondary text-sm">Bottom 3% - Lowest performers</span>
+        </div>
+      </div>
+    </section>
+
+    {/* Minimum Usage */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">7.</span> Minimum Usage Threshold
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        To appear in rankings, blades and combos must meet minimum usage requirements:
+      </p>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-2xl font-mono font-bold text-series-bx mb-2">3</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">Min uses for Blades</div>
+        </div>
+        <div class="terminal-panel p-4 text-center">
+          <div class="text-2xl font-mono font-bold text-series-ux mb-2">2</div>
+          <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted">Min uses for Combos</div>
+        </div>
+      </div>
+      <p class="text-fg-muted text-sm mt-4">
+        This prevents one-off results from skewing rankings and ensures statistical significance.
+      </p>
+    </section>
+
+    {/* Data Sources */}
+    <section class="card card-padding mb-6">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">8.</span> Data Sources
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Tournament data is collected from multiple sources worldwide:
+      </p>
+      <div class="space-y-2 text-sm">
+        <div class="flex items-center gap-3">
+          <span class="px-2 py-1 rounded bg-series-bx/20 text-series-bx border border-series-bx/30 font-mono text-xs">NA</span>
+          <span class="text-fg-secondary">World Beyblade Organization (WBO)</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="px-2 py-1 rounded bg-series-ux/20 text-series-ux border border-series-ux/30 font-mono text-xs">EU</span>
+          <span class="text-fg-secondary">Blader League Germany, World Beyblade Organization</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="px-2 py-1 rounded bg-series-cx/20 text-series-cx border border-series-cx/30 font-mono text-xs">JP</span>
+          <span class="text-fg-secondary">okuyama3093.com, Hobby Watch</span>
+        </div>
+      </div>
+    </section>
+
+    {/* Credits & Acknowledgments */}
+    <section class="card card-padding">
+      <h2 class="text-xl font-mono font-bold text-fg mb-4">
+        <span class="text-tier-ss">9.</span> Credits & Acknowledgments
+      </h2>
+      <p class="text-fg-secondary mb-4">
+        Special thanks to the following creators for their ideas and inspiration:
+      </p>
+      <div class="space-y-4">
+        <div class="terminal-panel p-4">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-accent font-mono font-bold">Anti Wizard Wizard Club</span>
+          </div>
+          <p class="text-fg-muted text-sm mb-3">
+            Meta analysis and tournament data tracking that helped inspire this project.
+          </p>
+          <div class="flex flex-wrap gap-3 text-sm">
+            <a
+              href="https://www.youtube.com/@AntiWizardWizardClub"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-negative/20 text-negative hover:bg-negative/30 transition-colors"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube
+            </a>
+            <a
+              href="https://docs.google.com/spreadsheets/d/15wiNF1pTAUzohfu4mTglFeM1rgfL62C5-8nrp5u3CcQ/edit?gid=1343028006#gid=1343028006"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-positive/20 text-positive hover:bg-positive/30 transition-colors"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg>
+              Spreadsheet
+            </a>
+          </div>
+        </div>
+        <div class="terminal-panel p-4">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-accent font-mono font-bold">BeyMac</span>
+          </div>
+          <p class="text-fg-muted text-sm mb-3">
+            Beyblade X content and community insights.
+          </p>
+          <div class="flex flex-wrap gap-3 text-sm">
+            <a
+              href="https://www.youtube.com/@BeyMacX"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-negative/20 text-negative hover:bg-negative/30 transition-colors"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</Layout>

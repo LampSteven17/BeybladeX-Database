@@ -1,0 +1,37 @@
+# Python API service for scraping and bookmarklet uploads
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    cron \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast dependency management
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy project files
+COPY pyproject.toml uv.lock ./
+COPY scripts/ ./scripts/
+
+# Install Python dependencies
+RUN uv sync --frozen --no-dev
+
+# Copy API server
+COPY docker/api_server.py ./
+
+# Copy entrypoint
+COPY docker/api-entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+
+# Create data directories
+RUN mkdir -p /data /app/data
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+EXPOSE 8000
+
+ENTRYPOINT ["./entrypoint.sh"]

@@ -65,6 +65,24 @@ export default {
         'negative-muted': '#450a0a',    // Red muted bg
 
         // ===========================================
+        // Ratchet height colors (spectrum: green -> yellow -> pink -> red)
+        // ===========================================
+        'ratchet-50': '#22C55E',         // Green (lowest)
+        'ratchet-50-muted': '#14532d',
+        'ratchet-55': '#84CC16',         // Lime / Yellow-green
+        'ratchet-55-muted': '#365314',
+        'ratchet-60': '#FBBF24',         // Yellow / Amber
+        'ratchet-60-muted': '#451a03',
+        'ratchet-65': '#F97316',         // Orange
+        'ratchet-65-muted': '#431407',
+        'ratchet-70': '#EC4899',         // Pink
+        'ratchet-70-muted': '#500724',
+        'ratchet-80': '#F43F5E',         // Rose / Hot pink
+        'ratchet-80-muted': '#4c0519',
+        'ratchet-85': '#DC2626',         // Red (highest)
+        'ratchet-85-muted': '#450a0a',
+
+        // ===========================================
         // Tier/Rank colors (financial grade style)
         // ===========================================
         'tier-ss': '#fbbf24',           // Gold - SS tier (elite)

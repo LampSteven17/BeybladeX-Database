@@ -140,22 +140,48 @@ import Layout from '../layouts/Layout.astro';
   }
 
   // Color scheme based on bit type
+  // Blue = Attack, Green = Defence, Yellow = Stamina, Red = Balance
   function getBitColor(name: string): { bg: string; text: string; border: string } {
-    // Attack bits - aggressive movement
-    const attackBits = ['Flat', 'Rush', 'Accel', 'Low Flat', 'Low Rush', 'GearFlat', 'High Accel'];
-    // Stamina bits - defensive/spin time focused
-    const staminaBits = ['Ball', 'Orb', 'Needle', 'High Needle', 'GearBall', 'GearNeedle', 'Spike', 'Dot', 'Metal Needle', 'Low Needle', 'Disc Ball', 'Spiral Needle'];
-    // Balance bits - versatile
-    const balanceBits = ['Taper', 'Point', 'Unite', 'High Taper', 'GearPoint', 'Level', 'Elevate', 'Glide', 'Quake', 'Brake', 'Bound', 'Hexa', 'Cyclone', 'High Sword'];
+    // Attack bits - aggressive movement, flower patterns (Blue)
+    const attackBits = [
+      'Flat', 'Rush', 'Accel', 'Rush Accel', 'Rubber Accel',
+      'Low Flat', 'Low Rush', 'Under Flat',
+      'Gear Flat', 'Gear Rush',
+      'Jolt', 'Kick', 'Trans Kick', 'Zap', 'Vortex',
+    ];
+    
+    // Defence bits - stability focused, LAD (Green)
+    const defenceBits = [
+      'Ball', 'Orb', 'Free Ball', 'Disc Ball', 'Gear Ball', 'Wall Ball',
+      'Low Orb', 'Ball Spike',
+      'Unite', 'Vanguard',
+    ];
+    
+    // Stamina bits - spin time, low friction (Yellow)
+    const staminaBits = [
+      'Needle', 'High Needle', 'Under Needle', 'Gear Needle',
+      'Spike', 'Dot',
+      'Taper', 'High Taper',
+      'Point', 'Gear Point',
+    ];
+    
+    // Balance bits - versatile, hybrid (Red)
+    const balanceBits = [
+      'Level', 'Elevate', 'Glide', 'Quake',
+      'Hexa', 'Cyclone', 'Wedge',
+    ];
 
     if (attackBits.includes(name)) {
-      return { bg: 'bg-negative/20', text: 'text-negative', border: 'border-negative/40' };
+      return { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' };
+    } else if (defenceBits.includes(name)) {
+      return { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' };
     } else if (staminaBits.includes(name)) {
-      return { bg: 'bg-series-bx/20', text: 'text-series-bx', border: 'border-series-bx/40' };
+      return { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30' };
     } else if (balanceBits.includes(name)) {
-      return { bg: 'bg-positive/20', text: 'text-positive', border: 'border-positive/40' };
+      return { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' };
     }
-    return { bg: 'bg-accent/20', text: 'text-accent', border: 'border-accent/30' };
+    // Default/unknown - subtle gray
+    return { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' };
   }
 
   function renderTable(bits: Awaited<ReturnType<typeof getRankedBits>>) {

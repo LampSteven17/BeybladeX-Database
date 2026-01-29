@@ -21,17 +21,76 @@ import Layout from '../layouts/Layout.astro';
     </section>
 
     {/* ============================================
+        META EVOLUTION - Historical Timeline
+        ============================================ */}
+    <section class="mb-6">
+      <div class="terminal-panel">
+        <div class="terminal-panel-header">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-tier-ss" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Meta Evolution
+          </span>
+          <span class="text-fg-muted text-[10px]">How the meta changed over time</span>
+        </div>
+        <div class="terminal-panel-body">
+          {/* Era Timeline Visualization */}
+          <div id="meta-evolution-loading" class="flex items-center justify-center py-8">
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 border-2 border-terminal-border border-t-tier-ss rounded-full animate-spin"></div>
+              <span class="text-fg-muted font-mono text-sm">Loading meta history...</span>
+            </div>
+          </div>
+          
+          <div id="meta-evolution-content" class="hidden">
+            {/* Visual Timeline */}
+            <div id="meta-timeline" class="mb-6">
+              <div class="relative">
+                {/* Timeline bar */}
+                <div class="h-2 bg-surface rounded-full mb-4 overflow-hidden flex">
+                  <div id="era-bar-0" class="h-full bg-series-bx/60" style="width: 25%"></div>
+                  <div id="era-bar-1" class="h-full bg-series-ux/60" style="width: 25%"></div>
+                  <div id="era-bar-2" class="h-full bg-series-cx/60" style="width: 25%"></div>
+                  <div id="era-bar-3" class="h-full bg-tier-ss/60" style="width: 25%"></div>
+                </div>
+                
+                {/* Era cards */}
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="era-cards">
+                  {/* Populated by JS */}
+                </div>
+              </div>
+            </div>
+            
+            {/* Blade Journey Visualization */}
+            <div class="border-t border-stroke pt-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-mono text-fg-muted uppercase tracking-widest">Top Blade Rankings Over Time</span>
+              </div>
+              <div id="blade-journey-chart" class="h-40 relative">
+                {/* SVG journey lines rendered by JS */}
+              </div>
+              <div id="blade-journey-legend" class="flex flex-wrap gap-3 mt-2 text-xs">
+                {/* Legend populated by JS */}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================================
         MARKET OVERVIEW + MOVERS ROW
         ============================================ */}
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-      {/* Market Overview (Dense stat widgets) */}
+      {/* Database Statistics (Dense stat widgets) */}
       <div class="terminal-panel">
         <div class="terminal-panel-header">
           <span class="flex items-center gap-2">
             <span class="status-dot status-dot-live"></span>
-            Market Overview
+            Database Statistics
           </span>
-          <span id="last-updated" class="text-fg-disabled">--:--:--</span>
+          <span class="text-fg-muted text-[10px]">All Time</span>
         </div>
         <div class="terminal-panel-body">
           <div class="grid grid-cols-4 gap-3">
@@ -55,11 +114,11 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>
 
-      {/* Movers Panel (Risers | Fallers) */}
+      {/* 30-Day Trends Panel (Risers | Fallers) */}
       <div class="terminal-panel">
         <div class="terminal-panel-header">
-          <span>Movers</span>
-          <span class="text-fg-disabled">30d</span>
+          <span>30-Day Trends</span>
+          <span class="text-fg-muted text-[10px]">vs Previous 30d</span>
         </div>
         <div class="terminal-panel-body">
           <div class="grid grid-cols-2 gap-4">
@@ -257,7 +316,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getDatabaseSummary, getRankedBlades, getRankedCombos, getRankedRatchets, getRankedBits, getMetaSpotlight, getTopBladesBySeries, BLADE_SERIES, type Region } from '../lib/db';
+  import { initDB, getDatabaseSummary, getRankedBlades, getRankedCombos, getRankedRatchets, getRankedBits, getMetaSpotlight, getTopBladesBySeries, getBladesSparklineData, getCombosSparklineData, getMetaEvolution, BLADE_SERIES, type Region, type BladeStats, type ComboStats, type MetaEvolutionData } from '../lib/db';
   import { staggerFadeIn, animateNumber } from '../lib/animations';
   import { generateTrendSparkline } from '../lib/sparkline';
   import { Chart, BubbleController, LinearScale, PointElement, Tooltip, Legend } from 'chart.js';
@@ -278,13 +337,6 @@ import Layout from '../layouts/Layout.astro';
       await initDB();
       const region = getSelectedRegion();
 
-      // Update timestamp
-      const lastUpdated = document.getElementById('last-updated');
-      if (lastUpdated) {
-        const now = new Date();
-        lastUpdated.textContent = now.toLocaleTimeString('en-US', { hour12: false });
-      }
-
       // Load all data in parallel
       const [summary, blades, combos, ratchets, bits, spotlight, seriesBlades, allBlades] = await Promise.all([
         getDatabaseSummary(region),
@@ -295,6 +347,12 @@ import Layout from '../layouts/Layout.astro';
         getMetaSpotlight(region),
         getTopBladesBySeries(5, 2, region),
         getRankedBlades(50, 2, region),
+      ]);
+
+      // Fetch real sparkline data for top blades and combos
+      const [bladeSparklines, comboSparklines] = await Promise.all([
+        getBladesSparklineData(blades.map((b: BladeStats) => b.blade), 7, region),
+        getCombosSparklineData(combos.map((c: ComboStats) => ({ blade: c.blade, ratchet: c.ratchet, bit: c.bit })), 7, region),
       ]);
 
       // Render champion spotlight
@@ -314,11 +372,11 @@ import Layout from '../layouts/Layout.astro';
       if (bladesEl) animateNumber(bladesEl, summary.unique_blades);
       if (combosEl) animateNumber(combosEl, combos.length > 0 ? summary.unique_blades * 2 : 0);
 
-      // Render top blades with sparklines
-      renderTopBlades(blades);
+      // Render top blades with real sparklines
+      renderTopBlades(blades, bladeSparklines);
 
-      // Render top combos
-      renderTopCombos(combos);
+      // Render top combos with real sparklines
+      renderTopCombos(combos, comboSparklines);
 
       // Render part bars
       renderPartBars(ratchets, bits);
@@ -331,6 +389,9 @@ import Layout from '../layouts/Layout.astro';
       // Render meta landscape
       renderMetaLandscape(allBlades);
 
+      // Load and render meta evolution (async, non-blocking)
+      loadMetaEvolution(region);
+
     } catch (error) {
       console.error('Failed to load dashboard:', error);
       document.querySelectorAll('.skeleton').forEach(el => {
@@ -340,7 +401,7 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  function renderChampionSpotlight(spotlight: { champion: any; risers: any[]; fallers: any[]; lastTournamentDate: string | null; isStale: boolean; dataSource: 'recent' | 'alltime' }) {
+  function renderChampionSpotlight(spotlight: { champion: any; risers: any[]; fallers: any[]; lastTournamentDate: string | null; isStale: boolean; dataSource: 'recent' | 'extended' }) {
     const container = document.getElementById('meta-spotlight');
     if (!container) return;
 
@@ -369,7 +430,7 @@ import Layout from '../layouts/Layout.astro';
 
           <!-- Champion Label -->
           <div class="text-[10px] font-mono uppercase tracking-widest text-gold mb-2">
-            Meta Champion
+            Meta Champion <span class="text-fg-muted">(Last 30 Days)</span>
           </div>
 
           <!-- Champion Name (Hero Element) -->
@@ -411,7 +472,7 @@ import Layout from '../layouts/Layout.astro';
       } else {
         risersContainer.innerHTML = spotlight.risers.slice(0, 3).map(r => `
           <div class="data-row">
-            <span class="data-row-name">${r.blade}</span>
+            <span class="data-row-name text-xs">${r.blade} ${r.ratchet} ${r.bit}</span>
             <span class="delta-up text-xs">+${r.change}</span>
           </div>
         `).join('');
@@ -424,7 +485,7 @@ import Layout from '../layouts/Layout.astro';
       } else {
         fallersContainer.innerHTML = spotlight.fallers.slice(0, 3).map(f => `
           <div class="data-row">
-            <span class="data-row-name">${f.blade}</span>
+            <span class="data-row-name text-xs">${f.blade} ${f.ratchet} ${f.bit}</span>
             <span class="delta-down text-xs">${f.change}</span>
           </div>
         `).join('');
@@ -432,15 +493,15 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  function renderTopBlades(blades: any[]) {
+  function renderTopBlades(blades: any[], sparklineData: Record<string, number[]>) {
     const container = document.getElementById('top-blades');
     if (!container) return;
 
     container.innerHTML = blades.map((b, i) => {
       const winRate = b.uses > 0 ? ((b.first / b.uses) * 100).toFixed(0) : '0';
-      // Generate sample sparkline data based on trend
-      const sparklineData = generateSparklineData(b.trend);
-      const sparkline = generateTrendSparkline(sparklineData, { width: 50, height: 16 });
+      // Use real historical sparkline data
+      const data = sparklineData[b.blade] || [0, 0, 0, 0, 0, 0, 0];
+      const sparkline = generateTrendSparkline(data, { width: 50, height: 16 });
 
       return `
         <div class="data-row py-2 px-3 ${i === 0 ? 'bg-gold/5 border-l-2 border-gold' : ''}">
@@ -457,14 +518,16 @@ import Layout from '../layouts/Layout.astro';
     staggerFadeIn(container.children, { delay: 30 });
   }
 
-  function renderTopCombos(combos: any[]) {
+  function renderTopCombos(combos: any[], sparklineData: Record<string, number[]>) {
     const container = document.getElementById('top-combos');
     if (!container) return;
 
     container.innerHTML = combos.map((c, i) => {
       const winRate = c.uses > 0 ? ((c.first / c.uses) * 100).toFixed(0) : '0';
-      const sparklineData = generateSparklineData(c.trend);
-      const sparkline = generateTrendSparkline(sparklineData, { width: 50, height: 16 });
+      // Use real historical sparkline data
+      const comboKey = `${c.blade} ${c.ratchet} ${c.bit}`;
+      const data = sparklineData[comboKey] || [0, 0, 0, 0, 0, 0, 0];
+      const sparkline = generateTrendSparkline(data, { width: 50, height: 16 });
 
       return `
         <div class="data-row py-2 px-3 ${i === 0 ? 'bg-series-ux/5 border-l-2 border-series-ux' : ''}">
@@ -635,20 +698,147 @@ import Layout from '../layouts/Layout.astro';
     });
   }
 
-  function generateSparklineData(trend: number): number[] {
-    const points = 7;
-    const data: number[] = [];
-    let value = 50;
+  async function loadMetaEvolution(region: Region) {
+    try {
+      const evolution = await getMetaEvolution(region);
+      renderMetaEvolution(evolution);
+    } catch (error) {
+      console.error('Failed to load meta evolution:', error);
+      const loadingEl = document.getElementById('meta-evolution-loading');
+      if (loadingEl) {
+        loadingEl.innerHTML = '<div class="text-fg-muted text-sm text-center py-4">Unable to load meta history</div>';
+      }
+    }
+  }
 
-    for (let i = 0; i < points; i++) {
-      const noise = (Math.random() - 0.5) * 15;
-      const trendForce = (trend || 0) * 5 * (i / points);
-      value += noise + trendForce;
-      value = Math.max(20, Math.min(80, value));
-      data.push(value);
+  function renderMetaEvolution(data: MetaEvolutionData) {
+    const loadingEl = document.getElementById('meta-evolution-loading');
+    const contentEl = document.getElementById('meta-evolution-content');
+    const eraCardsEl = document.getElementById('era-cards');
+    const journeyChartEl = document.getElementById('blade-journey-chart');
+    const journeyLegendEl = document.getElementById('blade-journey-legend');
+
+    if (!data.eras.length) {
+      if (loadingEl) loadingEl.innerHTML = '<div class="text-fg-muted text-sm text-center py-4">Not enough data for meta evolution</div>';
+      return;
     }
 
-    return data;
+    // Colors for eras and blades - use static classes for Tailwind to detect
+    const eraStyles = [
+      { border: 'border-series-bx/30', bg: 'bg-series-bx', text: 'text-series-bx' },
+      { border: 'border-series-ux/30', bg: 'bg-series-ux', text: 'text-series-ux' },
+      { border: 'border-series-cx/30', bg: 'bg-series-cx', text: 'text-series-cx' },
+      { border: 'border-tier-ss/30', bg: 'bg-tier-ss', text: 'text-tier-ss' },
+    ];
+    const bladeColors = ['#22d3ee', '#4ade80', '#fbbf24', '#f472b6', '#a78bfa', '#fb923c', '#38bdf8', '#34d399', '#facc15', '#f87171'];
+
+    // Render era cards
+    if (eraCardsEl) {
+      eraCardsEl.innerHTML = data.eras.map((era, i) => {
+        const style = eraStyles[i % eraStyles.length];
+        return `
+        <div class="terminal-panel p-3 ${style.border}">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-2 h-2 rounded-full ${style.bg}"></div>
+            <span class="font-mono text-xs ${style.text} uppercase tracking-wider">${era.name}</span>
+          </div>
+          <div class="text-[10px] text-fg-muted mb-2">${era.startDate} → ${era.endDate}</div>
+          <div class="space-y-1">
+            ${era.topBlades.slice(0, 3).map((b, j) => `
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-mono text-fg truncate">${j + 1}. ${b.blade}</span>
+                <span class="text-fg-muted">${b.wins}W</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `}).join('');
+    }
+
+    // Render blade journey visualization (SVG bump chart)
+    if (journeyChartEl && data.bladeJourneys.length > 0) {
+      const months = data.timeline.map(t => t.month);
+      const width = journeyChartEl.clientWidth || 600;
+      const height = 160;
+      const padding = { top: 10, right: 20, bottom: 20, left: 30 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+
+      // Only show top 6 blades for clarity
+      const topJourneys = data.bladeJourneys.slice(0, 6);
+      const maxRank = 8; // Only show ranks 1-8
+
+      // Create SVG
+      let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">`;
+      
+      // Grid lines for ranks
+      for (let rank = 1; rank <= maxRank; rank++) {
+        const y = padding.top + ((rank - 1) / (maxRank - 1)) * chartHeight;
+        svg += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+        svg += `<text x="${padding.left - 5}" y="${y + 3}" fill="#6b7280" font-size="9" text-anchor="end" font-family="monospace">${rank}</text>`;
+      }
+
+      // Month labels (show every other month if many)
+      const step = months.length > 8 ? 2 : 1;
+      months.forEach((month, i) => {
+        if (i % step !== 0 && i !== months.length - 1) return;
+        const x = padding.left + (i / (months.length - 1)) * chartWidth;
+        const label = month.slice(2); // Just "24-01" format
+        svg += `<text x="${x}" y="${height - 5}" fill="#6b7280" font-size="8" text-anchor="middle" font-family="monospace">${label}</text>`;
+      });
+
+      // Draw journey lines
+      topJourneys.forEach((journey, idx) => {
+        const color = bladeColors[idx % bladeColors.length];
+        const points: string[] = [];
+        
+        journey.monthlyRanks.forEach((mr, i) => {
+          if (mr.rank !== null && mr.rank <= maxRank) {
+            const x = padding.left + (i / (months.length - 1)) * chartWidth;
+            const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
+            points.push(`${x},${y}`);
+          }
+        });
+
+        if (points.length > 1) {
+          // Draw line
+          svg += `<polyline points="${points.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>`;
+          
+          // Draw dots at each point
+          journey.monthlyRanks.forEach((mr, i) => {
+            if (mr.rank !== null && mr.rank <= maxRank) {
+              const x = padding.left + (i / (months.length - 1)) * chartWidth;
+              const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
+              svg += `<circle cx="${x}" cy="${y}" r="3" fill="${color}" stroke="#1a1a2e" stroke-width="1"/>`;
+            }
+          });
+        }
+      });
+
+      svg += '</svg>';
+      journeyChartEl.innerHTML = svg;
+    }
+
+    // Render legend
+    if (journeyLegendEl && data.bladeJourneys.length > 0) {
+      const topJourneys = data.bladeJourneys.slice(0, 6);
+      journeyLegendEl.innerHTML = topJourneys.map((journey, idx) => {
+        const color = bladeColors[idx % bladeColors.length];
+        const trendIcon = journey.trend === 'rising' ? '↑' : journey.trend === 'falling' ? '↓' : journey.trend === 'new' ? '★' : journey.trend === 'gone' ? '○' : '→';
+        const trendClass = journey.trend === 'rising' ? 'text-positive' : journey.trend === 'falling' ? 'text-negative' : journey.trend === 'new' ? 'text-tier-ss' : 'text-fg-muted';
+        return `
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-0.5 rounded" style="background-color: ${color}"></div>
+            <span class="font-mono text-fg">${journey.blade}</span>
+            <span class="${trendClass}">${trendIcon}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Show content
+    loadingEl?.classList.add('hidden');
+    contentEl?.classList.remove('hidden');
   }
 
   document.addEventListener('DOMContentLoaded', loadDashboard);

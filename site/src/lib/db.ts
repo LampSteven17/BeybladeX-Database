@@ -15,6 +15,16 @@ const RECENCY_HALF_LIFE_DAYS = 30; // Emphasize recent month more heavily
 const TREND_RECENT_DAYS = 30; // Compare last 30 days...
 const TREND_COMPARE_DAYS = 30; // ...vs previous 30 days (30-60 days ago)
 
+// Stage weighting: rewards consistency and finals performance
+// - 'both': Highest weight - combo proved itself across all competition levels
+// - 'final': Strong weight - performed in tougher top cut matches
+// - 'first': Reduced weight - easier competition in pools/Swiss
+const STAGE_MULTIPLIER: Record<string, number> = {
+  'first': 0.5,   // 50% - first stage only (easier competition)
+  'final': 1.0,   // 100% - finals only (tougher competition)
+  'both': 1.15,   // 115% - used in both stages (consistent performer, slight bonus)
+};
+
 // Blade series classification (matches Python db.py)
 // BX = Basic Line, UX = Unique Line, CX = Custom Line
 export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
@@ -134,9 +144,97 @@ const BLADE_DISPLAY_NAMES: Record<string, string> = {
   'Beat Tyranno': 'Tyranno Beat',  // BX-24 correct name
 };
 
+// CX main blade names that REQUIRE a lock chip to be valid
+// These are the base blade names stored in the database that need lock chip prepended
+const CX_BLADES_REQUIRING_LOCKCHIP = new Set([
+  'Brave', 'Arc', 'Dark', 'Reaper', 'Brush', 'Blast', 
+  'Eclipse', 'Hunt', 'Might', 'Flare', 'Volt', 'Storm', 'Emperor'
+]);
+
 // Normalize blade name for display
 function normalizeBladeDisplay(name: string): string {
   return BLADE_DISPLAY_NAMES[name] || name;
+}
+
+// Normalize ratchet - strip blade type prefixes (H, J, W, F, S, T, etc.)
+// These prefixes belong to the blade (Heavy, Jump, Wide, etc.), not the ratchet
+function normalizeRatchet(ratchet: string): string {
+  if (!ratchet) return ratchet;
+  // Match pattern: optional letter prefix + number + dash + number
+  // e.g., "H9-60" -> "9-60", "W3-60" -> "3-60", "9-60" -> "9-60"
+  const match = ratchet.match(/^[A-Za-z]*(\d+-\d+)$/);
+  return match ? match[1] : ratchet;
+}
+
+// Bit display names - abbreviations to full names
+const BIT_DISPLAY_NAMES: Record<string, string> = {
+  // Single letter abbreviations
+  'J': 'Jolt',
+  'W': 'Wedge',
+  'Z': 'Zap',
+  
+  // Two letter abbreviations
+  'BS': 'Ball Spike',
+  'FB': 'Free Ball',
+  'GR': 'Gear Rush',
+  'HN': 'High Needle',
+  'HT': 'High Taper',
+  'LF': 'Low Flat',
+  'LO': 'Low Orb',
+  'LR': 'Low Rush',
+  'RA': 'Rubber Accel',
+  'TK': 'Trans Kick',
+  'TP': 'Taper',
+  'UF': 'Under Flat',
+  'UN': 'Under Needle',
+  'WB': 'Wall Ball',
+  'GB': 'Gear Ball',
+  'GF': 'Gear Flat',
+  'GN': 'Gear Needle',
+  'GP': 'Gear Point',
+  'DB': 'Disc Ball',
+  
+  // Normalize inconsistent casing/spacing
+  'FreeBall': 'Free Ball',
+  'Freeball': 'Free Ball',
+  'RubberAccel': 'Rubber Accel',
+  'GearBall': 'Gear Ball',
+  'GearFlat': 'Gear Flat',
+  'GearNeedle': 'Gear Needle',
+  'GearPoint': 'Gear Point',
+  'LowOrb': 'Low Orb',
+  'High Needle': 'High Needle',
+  'High Taper': 'High Taper',
+  'Low Flat': 'Low Flat',
+  'Low Orb': 'Low Orb',
+  'Low Rush': 'Low Rush',
+  'Rush Accel': 'Rush Accel',
+  'Trans Kick': 'Trans Kick',
+  'Disc Ball': 'Disc Ball',
+};
+
+// Normalize bit name for display
+function normalizeBit(bit: string): string {
+  if (!bit) return bit;
+  return BIT_DISPLAY_NAMES[bit] || bit;
+}
+
+/**
+ * Get the full blade name, combining lock chip for CX blades.
+ * For CX blades: "Pegasus" + "Blast" = "Pegasus Blast"
+ * For incomplete CX data (missing lock chip): returns just the main blade name
+ */
+function getFullBladeName(baseBlade: string, lockChip: string | null): string {
+  const normalized = normalizeBladeDisplay(baseBlade);
+  
+  // If we have a lock chip, prepend it (CX blade format)
+  if (lockChip) {
+    return `${lockChip} ${normalized}`;
+  }
+  
+  // No lock chip - return normalized name as-is
+  // Note: If this is a CX main blade without lock chip, it's incomplete data
+  return normalized;
 }
 
 // Singleton database instance
@@ -156,10 +254,13 @@ function calculateRecencyWeight(tournamentDate: Date, referenceDate: Date = new 
 }
 
 /**
- * Get points for a placement.
+ * Get points for a placement, with optional stage weighting.
+ * First stage combos get reduced points (67%), final/both get full points.
  */
-function getPlacementScore(place: number): number {
-  return PLACEMENT_POINTS[place] || 0;
+function getPlacementScore(place: number, stage?: string | null): number {
+  const basePoints = PLACEMENT_POINTS[place] || 0;
+  const stageMultiplier = stage ? (STAGE_MULTIPLIER[stage] ?? 1.0) : 1.0;
+  return basePoints * stageMultiplier;
 }
 
 /**
@@ -213,7 +314,7 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
       // Attach the database
       await conn.query(`ATTACH 'beyblade.duckdb' AS beyblade (READ_ONLY)`);
 
-      // Create the combo_usage view in our session
+      // Create the combo_usage view in our session (includes stage for weighted scoring)
       await conn.query(`
         CREATE OR REPLACE VIEW combo_usage AS
         SELECT
@@ -226,7 +327,8 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.ratchet_1 as ratchet,
             p.bit_1 as bit,
             p.assist_1 as assist,
-            p.lock_chip_1 as lock_chip
+            p.lock_chip_1 as lock_chip,
+            p.stage_1 as stage
         FROM beyblade.placements p
         JOIN beyblade.tournaments t ON p.tournament_id = t.id
         UNION ALL
@@ -240,7 +342,8 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.ratchet_2,
             p.bit_2,
             p.assist_2,
-            p.lock_chip_2
+            p.lock_chip_2,
+            p.stage_2
         FROM beyblade.placements p
         JOIN beyblade.tournaments t ON p.tournament_id = t.id
         WHERE p.blade_2 IS NOT NULL
@@ -255,7 +358,8 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.ratchet_3,
             p.bit_3,
             p.assist_3,
-            p.lock_chip_3
+            p.lock_chip_3,
+            p.stage_3
         FROM beyblade.placements p
         JOIN beyblade.tournaments t ON p.tournament_id = t.id
         WHERE p.blade_3 IS NOT NULL
@@ -310,6 +414,7 @@ export interface ComboStats {
   blade: string;
   ratchet: string;
   bit: string;
+  lockChip?: string | null;  // Lock chip for CX blades
   raw_score: number;
   uses: number;
   first: number;
@@ -428,8 +533,9 @@ export async function getRankedBlades(limit = 20, minUses = 3, region?: Region):
     blade: string;
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT blade, place, tournament_date::VARCHAR as tournament_date
+    SELECT blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
     ORDER BY tournament_date DESC
@@ -457,7 +563,7 @@ export async function getRankedBlades(limit = 20, minUses = 3, region?: Region):
 
     const tournamentDate = new Date(row.tournament_date);
     const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place);
+    const points = getPlacementScore(row.place, row.stage);
     const weightedScore = points * weight;
 
     const stats = bladeScores[blade];
@@ -544,6 +650,7 @@ export async function getRankedBlades(limit = 20, minUses = 3, region?: Region):
 
 /**
  * Get ranked combos with weighted scores.
+ * For CX blades, lock chip is prepended to blade name (e.g., "Pegasus Blast").
  */
 export async function getRankedCombos(limit = 20, minUses = 2, region?: Region): Promise<ComboStats[]> {
   const regionFilter = getRegionWhereClause(region);
@@ -551,10 +658,12 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
     blade: string;
     ratchet: string;
     bit: string;
+    lock_chip: string | null;
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date
+    SELECT blade, ratchet, bit, lock_chip, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
     ORDER BY tournament_date DESC
@@ -566,14 +675,20 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
   const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
 
   for (const row of rows) {
-    const blade = normalizeBladeDisplay(row.blade);
-    const key = `${blade}|${row.ratchet}|${row.bit}`;
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const lockChip = row.lock_chip;
+    const blade = getFullBladeName(row.blade, lockChip);
+    const key = `${blade}|${ratchet}|${bit}`;
+    const comboStr = `${blade} ${ratchet} ${bit}`;
+    
     if (!comboScores[key]) {
       comboScores[key] = {
-        combo: `${blade} ${row.ratchet} ${row.bit}`,
+        combo: comboStr,
         blade: blade,
-        ratchet: row.ratchet,
-        bit: row.bit,
+        ratchet: ratchet,
+        bit: bit,
+        lockChip: lockChip,
         raw_score: 0,
         uses: 0,
         first: 0,
@@ -588,7 +703,7 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
 
     const tournamentDate = new Date(row.tournament_date);
     const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place);
+    const points = getPlacementScore(row.place, row.stage);
     const weightedScore = points * weight;
 
     const stats = comboScores[key];
@@ -681,8 +796,9 @@ async function getRankedParts(partType: 'ratchet' | 'bit', limit: number, minUse
     part: string;
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT ${partType} as part, place, tournament_date::VARCHAR as tournament_date
+    SELECT ${partType} as part, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
   `);
@@ -693,7 +809,7 @@ async function getRankedParts(partType: 'ratchet' | 'bit', limit: number, minUse
   const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
 
   for (const row of rows) {
-    const part = row.part;
+    const part = partType === 'ratchet' ? normalizeRatchet(row.part) : normalizeBit(row.part);
     if (!partScores[part]) {
       partScores[part] = {
         name: part,
@@ -711,7 +827,7 @@ async function getRankedParts(partType: 'ratchet' | 'bit', limit: number, minUse
 
     const tournamentDate = new Date(row.tournament_date);
     const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place);
+    const points = getPlacementScore(row.place, row.stage);
     const weightedScore = points * weight;
 
     const stats = partScores[part];
@@ -782,8 +898,9 @@ export async function getBestCombosForBlade(
     bit: string;
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT ratchet, bit, place, tournament_date::VARCHAR as tournament_date
+    SELECT ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE LOWER(blade) = LOWER('${bladeName.replace(/'/g, "''")}')${regionFilter}
   `);
@@ -795,12 +912,14 @@ export async function getBestCombosForBlade(
   const referenceDate = new Date();
 
   for (const row of rows) {
-    const key = `${row.ratchet}|${row.bit}`;
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const key = `${ratchet}|${bit}`;
     if (!comboScores[key]) {
       comboScores[key] = {
-        ratchet: row.ratchet,
-        bit: row.bit,
-        combo: `${row.ratchet} ${row.bit}`,
+        ratchet: ratchet,
+        bit: bit,
+        combo: `${ratchet} ${bit}`,
         raw_score: 0,
         uses: 0,
         first: 0,
@@ -811,7 +930,7 @@ export async function getBestCombosForBlade(
 
     const tournamentDate = new Date(row.tournament_date);
     const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place);
+    const points = getPlacementScore(row.place, row.stage);
 
     const stats = comboScores[key];
     stats.raw_score += points * weight;
@@ -833,13 +952,13 @@ export async function getBestCombosForBlade(
 export async function compareBlades(blade1: string, blade2: string, region?: Region): Promise<ComparisonResult> {
   const regionFilter = getRegionWhereClause(region);
   const [blade1Data, blade2Data] = await Promise.all([
-    query<{ place: number; tournament_date: string; tournament_id: number }>(`
-      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id
+    query<{ place: number; tournament_date: string; tournament_id: number; stage: string | null }>(`
+      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id, stage
       FROM combo_usage
       WHERE LOWER(blade) = LOWER('${blade1.replace(/'/g, "''")}')${regionFilter}
     `),
-    query<{ place: number; tournament_date: string; tournament_id: number }>(`
-      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id
+    query<{ place: number; tournament_date: string; tournament_id: number; stage: string | null }>(`
+      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id, stage
       FROM combo_usage
       WHERE LOWER(blade) = LOWER('${blade2.replace(/'/g, "''")}')${regionFilter}
     `),
@@ -847,11 +966,11 @@ export async function compareBlades(blade1: string, blade2: string, region?: Reg
 
   const referenceDate = new Date();
 
-  function calcBladeStats(data: { place: number; tournament_date: string; tournament_id: number }[]) {
+  function calcBladeStats(data: { place: number; tournament_date: string; tournament_id: number; stage: string | null }[]) {
     const stats = { raw_score: 0, uses: 0, first: 0, second: 0, third: 0, tournaments: new Set<number>() };
     for (const row of data) {
       const weight = calculateRecencyWeight(new Date(row.tournament_date), referenceDate);
-      const points = getPlacementScore(row.place);
+      const points = getPlacementScore(row.place, row.stage);
       stats.raw_score += points * weight;
       stats.uses += 1;
       stats.tournaments.add(row.tournament_id);
@@ -941,7 +1060,9 @@ export async function getAllRatchets(): Promise<string[]> {
   const rows = await query<{ ratchet: string }>(`
     SELECT DISTINCT ratchet FROM combo_usage WHERE ratchet IS NOT NULL ORDER BY ratchet
   `);
-  return rows.map((r) => r.ratchet);
+  // Normalize and deduplicate
+  const normalized = [...new Set(rows.map((r) => normalizeRatchet(r.ratchet)))];
+  return normalized.sort();
 }
 
 /**
@@ -951,7 +1072,9 @@ export async function getAllBits(): Promise<string[]> {
   const rows = await query<{ bit: string }>(`
     SELECT DISTINCT bit FROM combo_usage WHERE bit IS NOT NULL ORDER BY bit
   `);
-  return rows.map((r) => r.bit);
+  // Normalize and deduplicate
+  const normalized = [...new Set(rows.map((r) => normalizeBit(r.bit)))];
+  return normalized.sort();
 }
 
 /**
@@ -1006,8 +1129,9 @@ export async function getComboStats(
   const rows = await query<{
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT place, tournament_date::VARCHAR as tournament_date
+    SELECT place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE ${whereClause}
   `);
@@ -1022,7 +1146,7 @@ export async function getComboStats(
 
   for (const row of rows) {
     const weight = calculateRecencyWeight(new Date(row.tournament_date), referenceDate);
-    const points = getPlacementScore(row.place);
+    const points = getPlacementScore(row.place, row.stage);
     raw_score += points * weight;
 
     if (row.place === 1) first++;
@@ -1115,13 +1239,13 @@ export async function compareFullCombos(
   }
 
   const [combo1Data, combo2Data] = await Promise.all([
-    query<{ place: number; tournament_date: string; tournament_id: number }>(`
-      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id
+    query<{ place: number; tournament_date: string; tournament_id: number; stage: string | null }>(`
+      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id, stage
       FROM combo_usage
       WHERE ${buildWhereClause(combo1)}
     `),
-    query<{ place: number; tournament_date: string; tournament_id: number }>(`
-      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id
+    query<{ place: number; tournament_date: string; tournament_id: number; stage: string | null }>(`
+      SELECT place, tournament_date::VARCHAR as tournament_date, tournament_id, stage
       FROM combo_usage
       WHERE ${buildWhereClause(combo2)}
     `),
@@ -1129,11 +1253,11 @@ export async function compareFullCombos(
 
   const referenceDate = new Date();
 
-  function calcComboStats(data: { place: number; tournament_date: string; tournament_id: number }[]) {
+  function calcComboStats(data: { place: number; tournament_date: string; tournament_id: number; stage: string | null }[]) {
     const stats = { raw_score: 0, uses: 0, first: 0, second: 0, third: 0, tournaments: new Set<number>() };
     for (const row of data) {
       const weight = calculateRecencyWeight(new Date(row.tournament_date), referenceDate);
-      const points = getPlacementScore(row.place);
+      const points = getPlacementScore(row.place, row.stage);
       stats.raw_score += points * weight;
       stats.uses += 1;
       stats.tournaments.add(row.tournament_id);
@@ -1289,8 +1413,9 @@ export async function getRankedAssists(limit = 15, minUses = 2, region?: Region)
     assist: string;
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT assist, place, tournament_date::VARCHAR as tournament_date
+    SELECT assist, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE assist IS NOT NULL${regionFilter}
   `);
@@ -1319,7 +1444,7 @@ export async function getRankedAssists(limit = 15, minUses = 2, region?: Region)
 
     const tournamentDate = new Date(row.tournament_date);
     const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place);
+    const points = getPlacementScore(row.place, row.stage);
     const weightedScore = points * weight;
 
     const stats = assistScores[assist];
@@ -1378,8 +1503,9 @@ export async function getRankedLockChips(limit = 15, minUses = 2, region?: Regio
     lock_chip: string;
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT lock_chip, place, tournament_date::VARCHAR as tournament_date
+    SELECT lock_chip, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE lock_chip IS NOT NULL${regionFilter}
   `);
@@ -1408,7 +1534,7 @@ export async function getRankedLockChips(limit = 15, minUses = 2, region?: Regio
 
     const tournamentDate = new Date(row.tournament_date);
     const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place);
+    const points = getPlacementScore(row.place, row.stage);
     const weightedScore = points * weight;
 
     const stats = lockChipScores[lockChip];
@@ -1516,8 +1642,1730 @@ export async function getTopBladesBySeries(limitPerSeries = 5, minUses = 2, regi
   return result;
 }
 
+// ============================================================================
+// Rate My Deck System
+// ============================================================================
+
+export interface DeckCombo {
+  blade: string;
+  ratchet: string;
+  bit: string;
+}
+
+export interface ComboRating {
+  combo: string;
+  blade: string;
+  ratchet: string;
+  bit: string;
+  // Core stats
+  score: number;
+  uses: number;
+  wins: number;
+  avgPlace: number;
+  winRate: number;
+  // Individual scores (0-100 scale)
+  metaScore: number;        // How it compares to top meta
+  consistencyScore: number; // How reliable/consistent
+  upsideScore: number;      // High ceiling potential
+  synergyScore: number;     // How well parts work together
+  surpriseScore: number;    // Potential for unexpected wins (low usage + high win rate)
+  trendScore: number;       // Recent performance trend
+  // Tier based on overall score
+  tier: 'S' | 'A' | 'B' | 'C' | 'D' | 'F' | '?';
+  // Flags
+  isMetaPick: boolean;
+  isHiddenGem: boolean;
+  isRising: boolean;
+  hasData: boolean;
+}
+
+export interface DeckRating {
+  combos: ComboRating[];
+  // Deck-wide scores (0-100)
+  overallScore: number;
+  metaCoverage: number;      // How well deck covers the meta
+  diversityScore: number;    // Variety of strategies/types
+  consistencyScore: number;  // Overall reliability
+  upsideScore: number;       // Ceiling potential
+  surpriseScore: number;     // Upset potential
+  // Overall tier
+  tier: 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+  // Analysis text
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: string[];
+}
+
 /**
- * Meta spotlight data for the hero visualization.
+ * Rate a single combo based on tournament data.
+ */
+async function rateCombo(combo: DeckCombo, metaData: {
+  topCombos: Array<{ blade: string; ratchet: string; bit: string; score: number; uses: number; wins: number; avgPlace: number }>;
+  topScore: number;
+  avgScore: number;
+  partStats: { blades: Record<string, { score: number; uses: number; winRate: number }>; ratchets: Record<string, { score: number; uses: number; winRate: number }>; bits: Record<string, { score: number; uses: number; winRate: number }> };
+  trends: Record<string, number>;
+}, region?: Region): Promise<ComboRating> {
+  const blade = normalizeBladeDisplay(combo.blade);
+  const comboKey = `${blade} ${combo.ratchet} ${combo.bit}`;
+  
+  // Get combo stats - note: getComboStats uses (blade, ratchet, bit, lockChip?, assist?)
+  // For deck rating we don't use lock chip or assist
+  const stats = await getComboStats(blade, combo.ratchet, combo.bit);
+  
+  const hasData = stats !== null && stats.uses > 0;
+  
+  if (!hasData) {
+    // No data - evaluate based on part stats
+    const bladeStats = metaData.partStats.blades[blade];
+    const ratchetStats = metaData.partStats.ratchets[combo.ratchet];
+    const bitStats = metaData.partStats.bits[combo.bit];
+    
+    // Calculate theoretical scores based on parts
+    let partScore = 0;
+    let partCount = 0;
+    
+    if (bladeStats) {
+      partScore += bladeStats.winRate * 50 + Math.min(bladeStats.uses, 20) * 2;
+      partCount++;
+    }
+    if (ratchetStats) {
+      partScore += ratchetStats.winRate * 30 + Math.min(ratchetStats.uses, 20);
+      partCount++;
+    }
+    if (bitStats) {
+      partScore += bitStats.winRate * 30 + Math.min(bitStats.uses, 20);
+      partCount++;
+    }
+    
+    const theoreticalScore = partCount > 0 ? partScore / partCount : 0;
+    
+    return {
+      combo: comboKey,
+      blade,
+      ratchet: combo.ratchet,
+      bit: combo.bit,
+      score: 0,
+      uses: 0,
+      wins: 0,
+      avgPlace: 0,
+      winRate: 0,
+      metaScore: Math.min(theoreticalScore * 0.5, 50), // Cap at 50 for untested
+      consistencyScore: 0,
+      upsideScore: theoreticalScore * 0.6,
+      synergyScore: partCount === 3 ? theoreticalScore * 0.7 : 0,
+      surpriseScore: partCount === 3 ? 40 : 0, // Unknown = surprise potential
+      trendScore: 50, // Neutral
+      tier: '?',
+      isMetaPick: false,
+      isHiddenGem: false,
+      isRising: false,
+      hasData: false,
+    };
+  }
+  
+  // Use correct property names from getComboStats return type
+  const wins = stats.first; // first place = wins
+  const avgPlace = stats.avg_placement;
+  const score = stats.raw_score;
+  
+  // Calculate individual scores
+  const winRate = stats.uses > 0 ? wins / stats.uses : 0;
+  
+  // Meta Score: How does this compare to top meta combos? (0-100)
+  const metaScore = metaData.topScore > 0 
+    ? Math.min((score / metaData.topScore) * 100, 100)
+    : 50;
+  
+  // Consistency Score: Low variance in placements (0-100)
+  // Higher avg place = lower consistency, more uses = more reliable data
+  const avgPlaceScore = avgPlace > 0 ? Math.max(0, (4 - avgPlace) / 3) * 100 : 0;
+  const usageBonus = Math.min(stats.uses / 10, 1) * 20;
+  const consistencyScore = Math.min(avgPlaceScore * 0.8 + usageBonus, 100);
+  
+  // Upside Score: High ceiling potential (0-100)
+  // Based on wins and best possible outcomes
+  const winRateScore = winRate * 100;
+  const winsBonus = Math.min(wins * 10, 50);
+  const upsideScore = Math.min(winRateScore * 0.6 + winsBonus, 100);
+  
+  // Synergy Score: How well parts work together (0-100)
+  // Compare combo performance vs expected from parts
+  const bladeStats = metaData.partStats.blades[blade];
+  const ratchetStats = metaData.partStats.ratchets[combo.ratchet];
+  const bitStats = metaData.partStats.bits[combo.bit];
+  
+  let expectedWinRate = 0;
+  let partCount = 0;
+  if (bladeStats) { expectedWinRate += bladeStats.winRate; partCount++; }
+  if (ratchetStats) { expectedWinRate += ratchetStats.winRate; partCount++; }
+  if (bitStats) { expectedWinRate += bitStats.winRate; partCount++; }
+  expectedWinRate = partCount > 0 ? expectedWinRate / partCount : 0.25;
+  
+  // Synergy = actual performance vs expected
+  const synergyMultiplier = expectedWinRate > 0 ? winRate / expectedWinRate : 1;
+  const synergyScore = Math.min(Math.max((synergyMultiplier - 0.5) * 100, 0), 100);
+  
+  // Surprise Score: Low usage but high win rate = upset potential (0-100)
+  const usageRarity = Math.max(0, 1 - (stats.uses / 20)); // Rarer = higher
+  const performanceBonus = winRate > 0.3 ? (winRate - 0.3) * 100 : 0;
+  const surpriseScore = Math.min(usageRarity * 50 + performanceBonus, 100);
+  
+  // Trend Score: Is it rising or falling? (0-100, 50 = neutral)
+  const trend = metaData.trends[comboKey] || 0;
+  const trendScore = 50 + Math.max(-50, Math.min(50, trend * 10));
+  
+  // Calculate overall score (weighted average)
+  const overallScore = 
+    metaScore * 0.30 +       // Meta relevance
+    consistencyScore * 0.20 + // Reliability
+    upsideScore * 0.20 +      // Win potential
+    synergyScore * 0.15 +     // Part synergy
+    surpriseScore * 0.05 +    // Upset factor
+    trendScore * 0.10;        // Momentum
+  
+  // Determine tier
+  let tier: ComboRating['tier'];
+  if (overallScore >= 85) tier = 'S';
+  else if (overallScore >= 70) tier = 'A';
+  else if (overallScore >= 55) tier = 'B';
+  else if (overallScore >= 40) tier = 'C';
+  else if (overallScore >= 25) tier = 'D';
+  else tier = 'F';
+  
+  // Flags
+  const isMetaPick = metaData.topCombos.some(c => 
+    c.blade === blade && c.ratchet === combo.ratchet && c.bit === combo.bit
+  );
+  const isHiddenGem = stats.uses >= 2 && stats.uses <= 10 && winRate >= 0.3;
+  const isRising = trend > 2;
+  
+  return {
+    combo: comboKey,
+    blade,
+    ratchet: combo.ratchet,
+    bit: combo.bit,
+    score: score,
+    uses: stats.uses,
+    wins: wins,
+    avgPlace: avgPlace,
+    winRate: winRate * 100,
+    metaScore,
+    consistencyScore,
+    upsideScore,
+    synergyScore,
+    surpriseScore,
+    trendScore,
+    tier,
+    isMetaPick,
+    isHiddenGem,
+    isRising,
+    hasData: true,
+  };
+}
+
+/**
+ * Rate a full deck (3 combos) for tournament play.
+ */
+export async function rateDeck(
+  combos: [DeckCombo, DeckCombo, DeckCombo],
+  region?: Region
+): Promise<DeckRating> {
+  // Gather meta context data
+  const [topCombosRaw, rankedBlades, rankedRatchets, rankedBits] = await Promise.all([
+    getRankedCombos(20, 2, region),
+    getRankedBlades(30, 2, region),
+    getRankedRatchets(15, 2, region),
+    getRankedBits(15, 2, region),
+  ]);
+  
+  // Map to consistent property names for internal use
+  const topCombos = topCombosRaw.map(c => ({
+    blade: normalizeBladeDisplay(c.blade),
+    ratchet: c.ratchet,
+    bit: c.bit,
+    score: c.raw_score,
+    uses: c.uses,
+    wins: c.first,
+    avgPlace: c.avg_score, // avg_score is actually avg placement weighted score
+  }));
+  
+  const topScore = topCombos[0]?.score || 1;
+  const avgScore = topCombos.length > 0 
+    ? topCombos.reduce((sum, c) => sum + c.score, 0) / topCombos.length 
+    : 1;
+  
+  // Build part stats lookup - BladeStats has 'blade', PartStats has 'name'
+  const partStats = {
+    blades: {} as Record<string, { score: number; uses: number; winRate: number }>,
+    ratchets: {} as Record<string, { score: number; uses: number; winRate: number }>,
+    bits: {} as Record<string, { score: number; uses: number; winRate: number }>,
+  };
+  
+  for (const b of rankedBlades) {
+    // BladeStats: blade, raw_score, uses, first (wins)
+    const winRate = b.uses > 0 ? b.first / b.uses : 0;
+    partStats.blades[b.blade] = { score: b.raw_score, uses: b.uses, winRate };
+  }
+  for (const r of rankedRatchets) {
+    // PartStats: name, raw_score, uses, first (wins)
+    const winRate = r.uses > 0 ? r.first / r.uses : 0;
+    partStats.ratchets[r.name] = { score: r.raw_score, uses: r.uses, winRate };
+  }
+  for (const b of rankedBits) {
+    // PartStats: name, raw_score, uses, first (wins)
+    const winRate = b.uses > 0 ? b.first / b.uses : 0;
+    partStats.bits[b.name] = { score: b.raw_score, uses: b.uses, winRate };
+  }
+  
+  // Get trend data
+  const sparklineData = await getCombosSparklineData(
+    combos.map(c => ({ blade: c.blade, ratchet: c.ratchet, bit: c.bit })),
+    8,
+    region
+  );
+  
+  const trends: Record<string, number> = {};
+  for (const [key, values] of Object.entries(sparklineData)) {
+    if (values.length >= 4) {
+      const recent = values.slice(-4).reduce((a, b) => a + b, 0);
+      const older = values.slice(0, 4).reduce((a, b) => a + b, 0);
+      trends[key] = older > 0 ? ((recent - older) / older) * 10 : 0;
+    }
+  }
+  
+  const metaData = { topCombos, topScore, avgScore, partStats, trends };
+  
+  // Rate each combo
+  const comboRatings = await Promise.all(
+    combos.map(combo => rateCombo(combo, metaData, region))
+  );
+  
+  // Calculate deck-wide metrics
+  const validCombos = comboRatings.filter(c => c.hasData);
+  const hasAnyData = validCombos.length > 0;
+  
+  // Overall Score: Weighted average of combo scores
+  const comboScores = comboRatings.map(c => 
+    c.metaScore * 0.3 + c.consistencyScore * 0.2 + c.upsideScore * 0.2 + 
+    c.synergyScore * 0.15 + c.surpriseScore * 0.05 + c.trendScore * 0.1
+  );
+  const overallScore = comboScores.reduce((a, b) => a + b, 0) / 3;
+  
+  // Meta Coverage: Does deck have answers to top meta?
+  const topBlades = new Set(topCombos.slice(0, 10).map(c => c.blade));
+  const deckBlades = new Set(comboRatings.map(c => c.blade));
+  const metaOverlap = [...topBlades].filter(b => deckBlades.has(b)).length;
+  const metaCoverage = (metaOverlap / Math.min(topBlades.size, 3)) * 50 + 
+    (comboRatings.filter(c => c.isMetaPick).length / 3) * 50;
+  
+  // Diversity Score: Variety of blades/strategies
+  const uniqueBlades = new Set(comboRatings.map(c => c.blade)).size;
+  const uniqueRatchets = new Set(comboRatings.map(c => c.ratchet)).size;
+  const uniqueBits = new Set(comboRatings.map(c => c.bit)).size;
+  const diversityScore = ((uniqueBlades / 3) * 40 + (uniqueRatchets / 3) * 30 + (uniqueBits / 3) * 30);
+  
+  // Consistency Score: Average of combo consistencies
+  const consistencyScore = comboRatings.reduce((sum, c) => sum + c.consistencyScore, 0) / 3;
+  
+  // Upside Score: Best combo's upside + average
+  const maxUpside = Math.max(...comboRatings.map(c => c.upsideScore));
+  const avgUpside = comboRatings.reduce((sum, c) => sum + c.upsideScore, 0) / 3;
+  const upsideScore = maxUpside * 0.6 + avgUpside * 0.4;
+  
+  // Surprise Score: Upset potential
+  const hiddenGemCount = comboRatings.filter(c => c.isHiddenGem).length;
+  const avgSurprise = comboRatings.reduce((sum, c) => sum + c.surpriseScore, 0) / 3;
+  const surpriseScore = Math.min(avgSurprise + hiddenGemCount * 15, 100);
+  
+  // Determine tier
+  let tier: DeckRating['tier'];
+  if (overallScore >= 80) tier = 'S';
+  else if (overallScore >= 65) tier = 'A';
+  else if (overallScore >= 50) tier = 'B';
+  else if (overallScore >= 35) tier = 'C';
+  else if (overallScore >= 20) tier = 'D';
+  else tier = 'F';
+  
+  // Generate analysis
+  const strengths: string[] = [];
+  const weaknesses: string[] = [];
+  const suggestions: string[] = [];
+  
+  // Analyze strengths
+  if (metaCoverage >= 70) strengths.push('Strong meta coverage - your deck can compete with top combos');
+  if (consistencyScore >= 70) strengths.push('Highly consistent - reliable placements across tournaments');
+  if (upsideScore >= 70) strengths.push('High ceiling - capable of winning tournaments');
+  if (diversityScore >= 80) strengths.push('Good diversity - multiple strategies available');
+  if (surpriseScore >= 60) strengths.push('Upset potential - can catch opponents off guard');
+  if (comboRatings.some(c => c.isRising)) strengths.push('Rising picks - you have trending combos');
+  if (comboRatings.filter(c => c.tier === 'S' || c.tier === 'A').length >= 2) {
+    strengths.push('Multiple S/A tier combos - strong core lineup');
+  }
+  
+  // Analyze weaknesses
+  if (metaCoverage < 40) weaknesses.push('Limited meta coverage - may struggle vs top combos');
+  if (consistencyScore < 40) weaknesses.push('Inconsistent results - high variance in placements');
+  if (upsideScore < 40) weaknesses.push('Low ceiling - limited tournament winning potential');
+  if (diversityScore < 50) weaknesses.push('Lack of diversity - predictable strategies');
+  if (!hasAnyData) weaknesses.push('Untested combos - no tournament data available');
+  if (comboRatings.filter(c => c.tier === 'D' || c.tier === 'F' || c.tier === '?').length >= 2) {
+    weaknesses.push('Multiple weak/untested combos - consider replacements');
+  }
+  
+  // Generate suggestions
+  if (metaCoverage < 50 && topCombos.length > 0) {
+    const suggestedBlade = topCombos[0].blade;
+    if (!deckBlades.has(suggestedBlade)) {
+      suggestions.push(`Consider adding ${suggestedBlade} for better meta coverage`);
+    }
+  }
+  
+  const worstCombo = comboRatings.reduce((worst, c) => 
+    (c.metaScore + c.consistencyScore) < (worst.metaScore + worst.consistencyScore) ? c : worst
+  );
+  if (worstCombo.tier === 'D' || worstCombo.tier === 'F' || worstCombo.tier === '?') {
+    suggestions.push(`Consider replacing ${worstCombo.combo} with a more proven combo`);
+  }
+  
+  if (diversityScore < 50 && uniqueBlades < 3) {
+    suggestions.push('Try using different blade types for more strategic flexibility');
+  }
+  
+  if (consistencyScore < 50 && upsideScore > 60) {
+    suggestions.push('Your deck is boom-or-bust - consider adding consistent performers');
+  }
+  
+  if (surpriseScore < 30 && metaCoverage > 70) {
+    suggestions.push('Deck is predictable - consider a hidden gem for surprise factor');
+  }
+  
+  // Add default positive if no strengths found
+  if (strengths.length === 0 && hasAnyData) {
+    strengths.push('Solid tournament presence - your combos have been tested');
+  }
+  if (strengths.length === 0) {
+    strengths.push('Creative picks - experimenting with new combinations');
+  }
+  
+  return {
+    combos: comboRatings,
+    overallScore,
+    metaCoverage,
+    diversityScore,
+    consistencyScore,
+    upsideScore,
+    surpriseScore,
+    tier,
+    strengths,
+    weaknesses,
+    suggestions,
+  };
+}
+
+
+export interface RisingTrend {
+  name: string;
+  type: 'blade' | 'combo';
+  weeklyScores: number[];
+  weeklyUses: number[];
+  growthRate: number; // Percentage growth
+  momentum: number; // Acceleration of growth
+  projectedScore: number;
+}
+
+export interface PartAnalysis {
+  name: string;
+  type: 'blade' | 'ratchet' | 'bit';
+  uses: number;
+  winRate: number;
+  avgPlacement: number;
+  versatility: number; // How many different combos it appears in
+  synergyScore: number; // How well it pairs with top parts
+  consistency: number; // Low variance = high consistency
+}
+
+export interface VarianceData {
+  combo: string;
+  blade: string;
+  ratchet: string;
+  bit: string;
+  uses: number;
+  avgScore: number;
+  variance: number;
+  stdDev: number;
+  ceiling: number; // Best performance
+  floor: number; // Worst performance
+  highVariance: boolean;
+}
+
+// Legacy HiddenGem interface for backward compatibility
+export interface HiddenGem {
+  blade: string;
+  ratchet: string;
+  bit: string;
+  combo: string;
+  uses: number;
+  winRate: number;
+  avgScore: number;
+  potential: number;
+  recentTrend: 'up' | 'down' | 'stable';
+}
+
+// ============================================================================
+// Enhanced Hidden Gems System
+// ============================================================================
+
+export type GemCategory = 'underused' | 'forgotten' | 'rising' | 'counter-meta';
+export type MetaEra = 'early' | 'mid' | 'current';
+
+export interface EnhancedGem {
+  // Identity
+  blade: string;
+  ratchet: string;
+  bit: string;
+  lockChip?: string | null;
+  combo: string;
+  category: GemCategory;
+  
+  // Stats
+  totalUses: number;
+  wins: number;
+  winRate: number;
+  avgPlacement: number;
+  score: number;
+  
+  // Category-specific data
+  reason: string;           // Why this is a gem
+  insight: string;          // Actionable insight
+  dataQuality: 'strong' | 'moderate' | 'limited';  // Based on sample size
+  
+  // Historical context
+  peakEra?: MetaEra;
+  peakDate?: string;
+  peakRank?: number;
+  currentRank?: number;
+  
+  // Trend data
+  recentUses: number;       // Last 60 days
+  recentWinRate: number;
+  trend: 'rising' | 'falling' | 'stable' | 'returning';
+  
+  // For counter-meta
+  beatsTopMeta?: string[];  // Which top combos it has beaten
+}
+
+export interface HiddenGemsData {
+  underused: EnhancedGem[];
+  forgotten: EnhancedGem[];
+  rising: EnhancedGem[];
+  counterMeta: EnhancedGem[];
+  eraAnalysis: {
+    early: { start: string; end: string; topCombos: string[] };
+    mid: { start: string; end: string; topCombos: string[] };
+    current: { start: string; end: string; topCombos: string[] };
+  };
+}
+
+/**
+ * Build a combo display name, including lock chip for CX blades.
+ * Format: "[LockChip] [Blade] [Ratchet][Bit]" or "[Blade] [Ratchet][Bit]"
+ */
+function buildComboName(blade: string, ratchet: string, bit: string, lockChip?: string | null): string {
+  if (lockChip) {
+    return `${lockChip} ${blade} ${ratchet} ${bit}`;
+  }
+  return `${blade} ${ratchet} ${bit}`;
+}
+
+/**
+ * Find hidden gems - low usage combos with high win rates.
+ * These are combos that might break out if they get more exposure.
+ *
+ * Requirements for a "hidden gem":
+ * - At least 4 uses (enough for statistical meaning)
+ * - Not more than 20 uses (still "hidden", not mainstream)
+ * - At least 33% win rate (1st place finishes)
+ * - Good average placement
+ */
+export async function getHiddenGems(minUses = 4, maxUses = 20, region?: Region): Promise<HiddenGem[]> {
+  const regionFilter = getRegionWhereClause(region);
+  
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+    ORDER BY tournament_date DESC
+  `);
+
+  const now = new Date();
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  
+  // Aggregate combo stats
+  const comboStats: Record<string, {
+    uses: number;
+    wins: number;
+    topThree: number; // 1st, 2nd, or 3rd place finishes
+    totalScore: number;
+    recentUses: number;   // Last 60 days
+    recentScore: number;
+    olderUses: number;    // 60-90 days ago
+    olderScore: number;
+    placements: number[];
+    lastUsed: Date;
+  }> = {};
+
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const key = `${blade}|${ratchet}|${bit}`;
+    const tournamentDate = new Date(row.tournament_date);
+    
+    if (!comboStats[key]) {
+      comboStats[key] = { 
+        uses: 0, wins: 0, topThree: 0, totalScore: 0, 
+        recentUses: 0, recentScore: 0, olderUses: 0, olderScore: 0, 
+        placements: [], lastUsed: tournamentDate 
+      };
+    }
+    
+    const stats = comboStats[key];
+    const points = getPlacementScore(row.place, row.stage);
+    const weight = calculateRecencyWeight(tournamentDate, now);
+    
+    stats.uses++;
+    stats.totalScore += points * weight;
+    stats.placements.push(row.place);
+    if (row.place === 1) stats.wins++;
+    if (row.place <= 3) stats.topThree++;
+    if (tournamentDate > stats.lastUsed) stats.lastUsed = tournamentDate;
+    
+    // Track activity in different time windows for trend
+    if (tournamentDate >= sixtyDaysAgo) {
+      stats.recentUses++;
+      stats.recentScore += points;
+    } else if (tournamentDate >= ninetyDaysAgo) {
+      stats.olderUses++;
+      stats.olderScore += points;
+    }
+  }
+
+  // Calculate hidden gem potential
+  const gems: HiddenGem[] = [];
+  
+  for (const [key, stats] of Object.entries(comboStats)) {
+    if (stats.uses < minUses || stats.uses > maxUses) continue;
+    
+    const [blade, ratchet, bit] = key.split('|');
+    const winRate = stats.wins / stats.uses;
+    const topThreeRate = stats.topThree / stats.uses;
+    const avgScore = stats.totalScore / stats.uses;
+    
+    // Skip if win rate is too low - need at least 1 win in ~4 uses
+    if (winRate < 0.20) continue;
+    
+    // Skip if top-3 rate is poor (should place top 3 at least half the time)
+    if (topThreeRate < 0.40) continue;
+    
+    // Potential score formula:
+    // - Higher win rate = higher potential
+    // - Higher avg score = higher potential  
+    // - Fewer uses = higher "hidden" factor (but not too few)
+    // - Recent activity bonus
+    const hiddenFactor = Math.max(1, Math.log2(maxUses / stats.uses));
+    const recencyBonus = stats.recentUses > 0 ? 1.2 : 1.0;
+    const potential = (winRate * 40 + topThreeRate * 30 + avgScore * 5) * hiddenFactor * recencyBonus;
+    
+    // Trend: only show trend if we have enough data in both periods
+    // Otherwise show 'stable' to avoid misleading "falling" labels
+    let recentTrend: 'up' | 'down' | 'stable' = 'stable';
+    
+    if (stats.recentUses >= 2 && stats.olderUses >= 2) {
+      // Compare average score per use in each period
+      const recentAvg = stats.recentScore / stats.recentUses;
+      const olderAvg = stats.olderScore / stats.olderUses;
+      
+      if (recentAvg > olderAvg * 1.15) recentTrend = 'up';
+      else if (recentAvg < olderAvg * 0.85) recentTrend = 'down';
+    } else if (stats.recentUses >= 2 && stats.olderUses === 0) {
+      // New combo with recent activity - trending up
+      recentTrend = 'up';
+    }
+    // If no recent uses, keep as 'stable' rather than showing 'down'
+    
+    gems.push({
+      blade,
+      ratchet,
+      bit,
+      combo: `${blade} ${ratchet} ${bit}`,
+      uses: stats.uses,
+      winRate,
+      avgScore,
+      potential,
+      recentTrend,
+    });
+  }
+
+  // Sort by potential (highest first)
+  return gems
+    .sort((a, b) => b.potential - a.potential)
+    .slice(0, 20);
+}
+
+/**
+ * Get comprehensive hidden gems analysis across multiple categories.
+ * Analyzes all-time data and groups gems by type.
+ */
+export async function getEnhancedHiddenGems(region?: Region): Promise<HiddenGemsData> {
+  const regionFilter = getRegionWhereClause(region);
+  
+  // Get all tournament data (including lock_chip for CX blades)
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    lock_chip: string | null;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, lock_chip, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+    ORDER BY tournament_date ASC
+  `);
+
+  if (rows.length === 0) {
+    return {
+      underused: [],
+      forgotten: [],
+      rising: [],
+      counterMeta: [],
+      eraAnalysis: {
+        early: { start: '', end: '', topCombos: [] },
+        mid: { start: '', end: '', topCombos: [] },
+        current: { start: '', end: '', topCombos: [] },
+      },
+    };
+  }
+
+  const now = new Date();
+  const dates = rows.map(r => new Date(r.tournament_date));
+  const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())));
+  const latestDate = new Date(Math.max(...dates.map(d => d.getTime())));
+  
+  // Define eras based on data span
+  const totalDays = (latestDate.getTime() - earliestDate.getTime()) / (24 * 60 * 60 * 1000);
+  const eraLength = totalDays / 3;
+  
+  const earlyEnd = new Date(earliestDate.getTime() + eraLength * 24 * 60 * 60 * 1000);
+  const midEnd = new Date(earliestDate.getTime() + eraLength * 2 * 24 * 60 * 60 * 1000);
+  
+  // Time windows for analysis
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const oneEightyDaysAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+
+  // Aggregate all combo stats with era tracking
+  interface ComboData {
+    blade: string;
+    ratchet: string;
+    bit: string;
+    lockChip: string | null;
+    totalUses: number;
+    wins: number;
+    topThree: number;
+    totalScore: number;
+    placements: number[];
+    // Era data
+    earlyUses: number;
+    earlyWins: number;
+    earlyScore: number;
+    midUses: number;
+    midWins: number;
+    midScore: number;
+    currentUses: number;
+    currentWins: number;
+    currentScore: number;
+    // Recent data
+    last60Uses: number;
+    last60Wins: number;
+    last60Score: number;
+    last90Uses: number;
+    // First and last seen
+    firstSeen: Date;
+    lastSeen: Date;
+    peakDate: Date;
+    peakScore: number;
+  }
+
+  const comboData: Record<string, ComboData> = {};
+  const bladeData: Record<string, { uses: number; wins: number; score: number; recentUses: number; recentWins: number }> = {};
+
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const lockChip = row.lock_chip;
+    // Include lock_chip in key for CX blades
+    const key = lockChip ? `${lockChip}|${blade}|${ratchet}|${bit}` : `${blade}|${ratchet}|${bit}`;
+    const tournamentDate = new Date(row.tournament_date);
+    const points = getPlacementScore(row.place, row.stage);
+    const weight = calculateRecencyWeight(tournamentDate, now);
+    const weightedScore = points * weight;
+
+    // Initialize combo data
+    if (!comboData[key]) {
+      comboData[key] = {
+        blade,
+        ratchet: ratchet,
+        bit: bit,
+        lockChip: lockChip,
+        totalUses: 0,
+        wins: 0,
+        topThree: 0,
+        totalScore: 0,
+        placements: [],
+        earlyUses: 0, earlyWins: 0, earlyScore: 0,
+        midUses: 0, midWins: 0, midScore: 0,
+        currentUses: 0, currentWins: 0, currentScore: 0,
+        last60Uses: 0, last60Wins: 0, last60Score: 0,
+        last90Uses: 0,
+        firstSeen: tournamentDate,
+        lastSeen: tournamentDate,
+        peakDate: tournamentDate,
+        peakScore: weightedScore,
+      };
+    }
+
+    // Initialize blade data
+    if (!bladeData[blade]) {
+      bladeData[blade] = { uses: 0, wins: 0, score: 0, recentUses: 0, recentWins: 0 };
+    }
+
+    const combo = comboData[key];
+    const bladeStats = bladeData[blade];
+
+    // Update totals
+    combo.totalUses++;
+    combo.totalScore += weightedScore;
+    combo.placements.push(row.place);
+    bladeStats.uses++;
+    bladeStats.score += weightedScore;
+
+    if (row.place === 1) {
+      combo.wins++;
+      bladeStats.wins++;
+    }
+    if (row.place <= 3) combo.topThree++;
+
+    // Update dates
+    if (tournamentDate < combo.firstSeen) combo.firstSeen = tournamentDate;
+    if (tournamentDate > combo.lastSeen) combo.lastSeen = tournamentDate;
+    if (weightedScore > combo.peakScore) {
+      combo.peakScore = weightedScore;
+      combo.peakDate = tournamentDate;
+    }
+
+    // Era tracking
+    if (tournamentDate <= earlyEnd) {
+      combo.earlyUses++;
+      combo.earlyScore += points;
+      if (row.place === 1) combo.earlyWins++;
+    } else if (tournamentDate <= midEnd) {
+      combo.midUses++;
+      combo.midScore += points;
+      if (row.place === 1) combo.midWins++;
+    } else {
+      combo.currentUses++;
+      combo.currentScore += points;
+      if (row.place === 1) combo.currentWins++;
+    }
+
+    // Recent tracking
+    if (tournamentDate >= sixtyDaysAgo) {
+      combo.last60Uses++;
+      combo.last60Score += points;
+      bladeStats.recentUses++;
+      if (row.place === 1) {
+        combo.last60Wins++;
+        bladeStats.recentWins++;
+      }
+    }
+    if (tournamentDate >= ninetyDaysAgo) {
+      combo.last90Uses++;
+    }
+  }
+
+  // Get current top meta combos (for counter-meta analysis)
+  const currentTopCombos = Object.entries(comboData)
+    .filter(([_, c]) => c.currentUses >= 3)
+    .sort((a, b) => b[1].currentScore - a[1].currentScore)
+    .slice(0, 10)
+    .map(([key, _]) => key);
+
+  const topMetaBlades = new Set(currentTopCombos.map(k => k.split('|')[0]));
+
+  // Helper to determine peak era
+  const getPeakEra = (combo: ComboData): MetaEra => {
+    const scores = [
+      { era: 'early' as MetaEra, score: combo.earlyScore },
+      { era: 'mid' as MetaEra, score: combo.midScore },
+      { era: 'current' as MetaEra, score: combo.currentScore },
+    ];
+    return scores.sort((a, b) => b.score - a.score)[0].era;
+  };
+
+  // Helper to determine trend
+  const getTrend = (combo: ComboData): EnhancedGem['trend'] => {
+    const wasActive = combo.totalUses - combo.last90Uses > 0;
+    const isActive = combo.last60Uses > 0;
+    const wasStrong = (combo.earlyUses + combo.midUses) >= 3 && 
+                      (combo.earlyWins + combo.midWins) / (combo.earlyUses + combo.midUses) >= 0.25;
+    
+    if (!wasActive && isActive) return 'rising';
+    if (wasStrong && !isActive && combo.last90Uses > 0) return 'returning';
+    if (combo.last60Uses >= 2 && combo.currentScore > combo.midScore) return 'rising';
+    if (combo.last60Uses === 0 && combo.last90Uses === 0) return 'falling';
+    return 'stable';
+  };
+
+  // 1. UNDERUSED BLADES - Good blades that aren't seeing much current play
+  const underused: EnhancedGem[] = [];
+  for (const [blade, stats] of Object.entries(bladeData)) {
+    // Skip if it's already top meta
+    if (topMetaBlades.has(blade)) continue;
+    
+    // Need decent historical performance but low recent usage
+    const winRate = stats.uses > 0 ? stats.wins / stats.uses : 0;
+    if (stats.uses < 5 || winRate < 0.20) continue;
+    if (stats.recentUses > 5) continue; // Too much recent usage = not underused
+    
+    // Find best combo for this blade
+    const bladeCombos = Object.entries(comboData)
+      .filter(([_, c]) => c.blade === blade)
+      .sort((a, b) => b[1].totalScore - a[1].currentScore);
+    
+    if (bladeCombos.length === 0) continue;
+    const [bestKey, bestCombo] = bladeCombos[0];
+    
+    // Data quality based on sample size
+    const dataQuality: 'strong' | 'moderate' | 'limited' =
+      stats.uses >= 15 ? 'strong' : stats.uses >= 8 ? 'moderate' : 'limited';
+    
+    underused.push({
+      blade: bestCombo.blade,
+      ratchet: bestCombo.ratchet,
+      bit: bestCombo.bit,
+      lockChip: bestCombo.lockChip,
+      combo: buildComboName(bestCombo.blade, bestCombo.ratchet, bestCombo.bit, bestCombo.lockChip),
+      category: 'underused',
+      // Use blade-level stats for consistency with the reason text
+      totalUses: stats.uses,
+      wins: stats.wins,
+      winRate: winRate,
+      avgPlacement: bestCombo.placements.reduce((a, b) => a + b, 0) / bestCombo.placements.length,
+      score: stats.score,
+      reason: stats.recentUses === 0
+        ? `${blade} has ${(winRate * 100).toFixed(0)}% win rate with no recent appearances`
+        : `${blade} has ${(winRate * 100).toFixed(0)}% win rate but only ${stats.recentUses} recent appearance${stats.recentUses === 1 ? '' : 's'}`,
+      insight: `Best combo shown above. This blade is undervalued in current meta.`,
+      dataQuality,
+      peakEra: getPeakEra(bestCombo),
+      currentRank: undefined,
+      recentUses: stats.recentUses,
+      recentWinRate: stats.recentUses > 0 ? stats.recentWins / stats.recentUses : 0,
+      trend: getTrend(bestCombo),
+    });
+  }
+
+  // 2. FORGOTTEN CHAMPIONS - Combos that won before but fell off
+  const forgotten: EnhancedGem[] = [];
+  for (const [key, combo] of Object.entries(comboData)) {
+    // Must have won tournaments in early/mid era
+    const pastWins = combo.earlyWins + combo.midWins;
+    const pastUses = combo.earlyUses + combo.midUses;
+    if (pastWins < 1 || pastUses < 2) continue;
+    
+    // Must have little/no current presence
+    if (combo.currentUses > 3) continue;
+    
+    // Skip if it's active recently
+    if (combo.last60Uses > 2) continue;
+    
+    const pastWinRate = pastWins / pastUses;
+
+    // Data quality based on past sample size
+    const dataQuality: 'strong' | 'moderate' | 'limited' =
+      pastUses >= 8 ? 'strong' : pastUses >= 4 ? 'moderate' : 'limited';
+
+    forgotten.push({
+      blade: combo.blade,
+      ratchet: combo.ratchet,
+      bit: combo.bit,
+      lockChip: combo.lockChip,
+      combo: buildComboName(combo.blade, combo.ratchet, combo.bit, combo.lockChip),
+      category: 'forgotten',
+      // Show past-era stats (when they were champions) for consistency with reason text
+      totalUses: pastUses,
+      wins: pastWins,
+      winRate: pastWinRate,
+      avgPlacement: combo.placements.reduce((a, b) => a + b, 0) / combo.placements.length,
+      score: combo.totalScore,
+      reason: `Won ${pastWins} tournament${pastWins === 1 ? '' : 's'} in ${getPeakEra(combo)} era`,
+      insight: `Former champion with ${(pastWinRate * 100).toFixed(0)}% past win rate - meta may have moved on prematurely`,
+      dataQuality,
+      peakEra: getPeakEra(combo),
+      peakDate: combo.peakDate.toISOString().split('T')[0],
+      recentUses: combo.last60Uses,
+      recentWinRate: combo.last60Uses > 0 ? combo.last60Wins / combo.last60Uses : 0,
+      trend: combo.last90Uses > 0 ? 'returning' : 'stable',
+    });
+  }
+
+  // 3. RISING NEWCOMERS - Parts that just started appearing and performing well
+  const rising: EnhancedGem[] = [];
+  for (const [key, combo] of Object.entries(comboData)) {
+    // Must be relatively new (mostly current era)
+    const currentRatio = combo.currentUses / Math.max(1, combo.totalUses);
+    if (currentRatio < 0.6) continue;
+    
+    // Must have recent activity
+    if (combo.last60Uses < 2) continue;
+    
+    // Must have good recent performance
+    const recentWinRate = combo.last60Uses > 0 ? combo.last60Wins / combo.last60Uses : 0;
+    if (recentWinRate < 0.20 && combo.last60Wins < 1) continue;
+    
+    // Skip if already too mainstream
+    if (combo.totalUses > 15) continue;
+
+    // Data quality based on recent sample size (rising combos have less data by definition)
+    const dataQuality: 'strong' | 'moderate' | 'limited' =
+      combo.last60Uses >= 6 ? 'strong' : combo.last60Uses >= 3 ? 'moderate' : 'limited';
+
+    rising.push({
+      blade: combo.blade,
+      ratchet: combo.ratchet,
+      bit: combo.bit,
+      lockChip: combo.lockChip,
+      combo: buildComboName(combo.blade, combo.ratchet, combo.bit, combo.lockChip),
+      category: 'rising',
+      // Show recent stats since these are new/rising combos
+      totalUses: combo.last60Uses,
+      wins: combo.last60Wins,
+      winRate: recentWinRate,
+      avgPlacement: combo.placements.reduce((a, b) => a + b, 0) / combo.placements.length,
+      score: combo.last60Score,
+      reason: combo.last60Wins === 0
+        ? `New combo showing potential in last 60 days`
+        : `New combo with ${combo.last60Wins} win${combo.last60Wins === 1 ? '' : 's'} in last 60 days`,
+      insight: `Emerging pick gaining traction - could be next meta contender`,
+      dataQuality,
+      peakEra: 'current',
+      recentUses: combo.last60Uses,
+      recentWinRate,
+      trend: 'rising',
+    });
+  }
+
+  // 4. COUNTER-META PICKS - Combos that beat top meta when they face them
+  // This requires tournament-level data to know who faced who, which we don't have directly
+  // So we'll approximate: combos that do well but use different blades than top meta
+  const counterMeta: EnhancedGem[] = [];
+  for (const [key, combo] of Object.entries(comboData)) {
+    // Must not use a top meta blade
+    if (topMetaBlades.has(combo.blade)) continue;
+    
+    // Must have good current performance
+    if (combo.currentUses < 2) continue;
+    const currentWinRate = combo.currentUses > 0 ? combo.currentWins / combo.currentUses : 0;
+    if (currentWinRate < 0.25 && combo.currentWins < 1) continue;
+    
+    // Must be active recently
+    if (combo.last90Uses < 2) continue;
+    
+    // Confidence for counter-meta: needs proven results against the meta
+    // Data quality based on current era sample size
+    const dataQuality: 'strong' | 'moderate' | 'limited' =
+      combo.currentUses >= 6 ? 'strong' : combo.currentUses >= 3 ? 'moderate' : 'limited';
+
+    counterMeta.push({
+      blade: combo.blade,
+      ratchet: combo.ratchet,
+      bit: combo.bit,
+      lockChip: combo.lockChip,
+      combo: buildComboName(combo.blade, combo.ratchet, combo.bit, combo.lockChip),
+      category: 'counter-meta',
+      // Show current era stats since that's what makes them counter-meta
+      totalUses: combo.currentUses,
+      wins: combo.currentWins,
+      winRate: currentWinRate,
+      avgPlacement: combo.placements.reduce((a, b) => a + b, 0) / combo.placements.length,
+      score: combo.currentScore,
+      reason: combo.currentWins > 0
+        ? `Non-meta blade with ${combo.currentWins} win${combo.currentWins === 1 ? '' : 's'} in current era`
+        : `Non-meta blade placing well in current era`,
+      insight: `Could exploit weaknesses in popular meta choices`,
+      dataQuality,
+      beatsTopMeta: [...topMetaBlades].slice(0, 3), // Approximation
+      recentUses: combo.last60Uses,
+      recentWinRate: combo.last60Uses > 0 ? combo.last60Wins / combo.last60Uses : 0,
+      trend: getTrend(combo),
+    });
+  }
+
+  // Sort each category by relevant metrics
+  underused.sort((a, b) => b.winRate - a.winRate || b.totalUses - a.totalUses);
+  forgotten.sort((a, b) => b.wins - a.wins || b.winRate - a.winRate);
+  rising.sort((a, b) => b.recentWinRate - a.recentWinRate || b.recentUses - a.recentUses);
+  counterMeta.sort((a, b) => b.wins - a.wins || b.winRate - a.winRate);
+
+  // Get era top combos for context
+  const getEraTopCombos = (era: 'early' | 'mid' | 'current') => {
+    return Object.entries(comboData)
+      .filter(([_, c]) => {
+        if (era === 'early') return c.earlyUses >= 2;
+        if (era === 'mid') return c.midUses >= 2;
+        return c.currentUses >= 2;
+      })
+      .sort((a, b) => {
+        if (era === 'early') return b[1].earlyScore - a[1].earlyScore;
+        if (era === 'mid') return b[1].midScore - a[1].midScore;
+        return b[1].currentScore - a[1].currentScore;
+      })
+      .slice(0, 5)
+      .map(([_, c]) => buildComboName(c.blade, c.ratchet, c.bit, c.lockChip));
+  };
+
+  return {
+    underused: underused.slice(0, 8),
+    forgotten: forgotten.slice(0, 8),
+    rising: rising.slice(0, 8),
+    counterMeta: counterMeta.slice(0, 8),
+    eraAnalysis: {
+      early: {
+        start: earliestDate.toISOString().split('T')[0],
+        end: earlyEnd.toISOString().split('T')[0],
+        topCombos: getEraTopCombos('early'),
+      },
+      mid: {
+        start: earlyEnd.toISOString().split('T')[0],
+        end: midEnd.toISOString().split('T')[0],
+        topCombos: getEraTopCombos('mid'),
+      },
+      current: {
+        start: midEnd.toISOString().split('T')[0],
+        end: latestDate.toISOString().split('T')[0],
+        topCombos: getEraTopCombos('current'),
+      },
+    },
+  };
+}
+
+/**
+ * Meta evolution data for visualization
+ */
+export interface MetaEvolutionData {
+  eras: Array<{
+    name: string;
+    startDate: string;
+    endDate: string;
+    topBlades: Array<{ blade: string; score: number; wins: number; uses: number }>;
+    topCombos: Array<{ combo: string; score: number; wins: number; uses: number }>;
+  }>;
+  timeline: Array<{
+    month: string;
+    topBlade: string;
+    topCombo: string;
+    tournaments: number;
+  }>;
+  bladeJourneys: Array<{
+    blade: string;
+    monthlyRanks: Array<{ month: string; rank: number | null }>;
+    peakRank: number;
+    peakMonth: string;
+    currentRank: number | null;
+    trend: 'rising' | 'falling' | 'stable' | 'new' | 'gone';
+  }>;
+}
+
+/**
+ * Get meta evolution data showing how the meta changed over time.
+ * Divides history into eras and tracks blade popularity.
+ */
+export async function getMetaEvolution(region?: Region): Promise<MetaEvolutionData> {
+  const regionFilter = getRegionWhereClause(region);
+  
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+    ORDER BY tournament_date ASC
+  `);
+
+  if (rows.length === 0) {
+    return { eras: [], timeline: [], bladeJourneys: [] };
+  }
+
+  const now = new Date();
+  const dates = rows.map(r => new Date(r.tournament_date));
+  const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())));
+  const latestDate = new Date(Math.max(...dates.map(d => d.getTime())));
+  
+  // Divide into 4 eras for more granularity
+  const totalDays = (latestDate.getTime() - earliestDate.getTime()) / (24 * 60 * 60 * 1000);
+  const eraLength = totalDays / 4;
+  
+  const eraBoundaries = [
+    earliestDate,
+    new Date(earliestDate.getTime() + eraLength * 24 * 60 * 60 * 1000),
+    new Date(earliestDate.getTime() + eraLength * 2 * 24 * 60 * 60 * 1000),
+    new Date(earliestDate.getTime() + eraLength * 3 * 24 * 60 * 60 * 1000),
+    latestDate,
+  ];
+  
+  const eraNames = ['Early Meta', 'Rising Meta', 'Established Meta', 'Current Meta'];
+
+  // Track data by era
+  interface EraData {
+    blades: Record<string, { score: number; wins: number; uses: number }>;
+    combos: Record<string, { score: number; wins: number; uses: number }>;
+    tournaments: Set<string>;
+  }
+  
+  const eraData: EraData[] = Array.from({ length: 4 }, () => ({
+    blades: {},
+    combos: {},
+    tournaments: new Set(),
+  }));
+
+  // Track data by month for timeline
+  const monthlyData: Record<string, {
+    blades: Record<string, number>;
+    combos: Record<string, number>;
+    tournaments: Set<string>;
+  }> = {};
+
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const combo = `${blade} ${ratchet} ${bit}`;
+    const tournamentDate = new Date(row.tournament_date);
+    const points = getPlacementScore(row.place, row.stage);
+    const monthKey = `${tournamentDate.getFullYear()}-${String(tournamentDate.getMonth() + 1).padStart(2, '0')}`;
+    const tournamentKey = row.tournament_date;
+
+    // Determine era
+    let eraIndex = 0;
+    for (let i = 1; i < eraBoundaries.length; i++) {
+      if (tournamentDate <= eraBoundaries[i]) {
+        eraIndex = i - 1;
+        break;
+      }
+    }
+
+    const era = eraData[eraIndex];
+    
+    // Update era blade data
+    if (!era.blades[blade]) era.blades[blade] = { score: 0, wins: 0, uses: 0 };
+    era.blades[blade].score += points;
+    era.blades[blade].uses++;
+    if (row.place === 1) era.blades[blade].wins++;
+    
+    // Update era combo data
+    if (!era.combos[combo]) era.combos[combo] = { score: 0, wins: 0, uses: 0 };
+    era.combos[combo].score += points;
+    era.combos[combo].uses++;
+    if (row.place === 1) era.combos[combo].wins++;
+    
+    era.tournaments.add(tournamentKey);
+
+    // Update monthly data
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { blades: {}, combos: {}, tournaments: new Set() };
+    }
+    const month = monthlyData[monthKey];
+    month.blades[blade] = (month.blades[blade] || 0) + points;
+    month.combos[combo] = (month.combos[combo] || 0) + points;
+    month.tournaments.add(tournamentKey);
+  }
+
+  // Build eras array
+  const eras = eraData.map((era, i) => {
+    const topBlades = Object.entries(era.blades)
+      .sort((a, b) => b[1].score - a[1].score)
+      .slice(0, 5)
+      .map(([blade, data]) => ({ blade, ...data }));
+    
+    const topCombos = Object.entries(era.combos)
+      .sort((a, b) => b[1].score - a[1].score)
+      .slice(0, 3)
+      .map(([combo, data]) => ({ combo, ...data }));
+
+    return {
+      name: eraNames[i],
+      startDate: eraBoundaries[i].toISOString().split('T')[0],
+      endDate: eraBoundaries[i + 1].toISOString().split('T')[0],
+      topBlades,
+      topCombos,
+    };
+  });
+
+  // Build timeline
+  const sortedMonths = Object.keys(monthlyData).sort();
+  const timeline = sortedMonths.map(month => {
+    const data = monthlyData[month];
+    const topBlade = Object.entries(data.blades).sort((a, b) => b[1] - a[1])[0];
+    const topCombo = Object.entries(data.combos).sort((a, b) => b[1] - a[1])[0];
+    
+    return {
+      month,
+      topBlade: topBlade ? topBlade[0] : '',
+      topCombo: topCombo ? topCombo[0] : '',
+      tournaments: data.tournaments.size,
+    };
+  });
+
+  // Build blade journeys (track rank changes over time)
+  const allBlades = new Set<string>();
+  for (const month of sortedMonths) {
+    Object.keys(monthlyData[month].blades).forEach(b => allBlades.add(b));
+  }
+
+  // Get monthly rankings for each blade
+  const monthlyRankings: Record<string, Record<string, number>> = {};
+  for (const month of sortedMonths) {
+    const sorted = Object.entries(monthlyData[month].blades)
+      .sort((a, b) => b[1] - a[1]);
+    monthlyRankings[month] = {};
+    sorted.forEach(([blade], idx) => {
+      monthlyRankings[month][blade] = idx + 1;
+    });
+  }
+
+  // Track journeys for top blades (those that were ever in top 5)
+  const notableBlades = new Set<string>();
+  for (const month of sortedMonths) {
+    const topInMonth = Object.entries(monthlyData[month].blades)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([b]) => b);
+    topInMonth.forEach(b => notableBlades.add(b));
+  }
+
+  const bladeJourneys = [...notableBlades].map(blade => {
+    const monthlyRanks = sortedMonths.map(month => ({
+      month,
+      rank: monthlyRankings[month][blade] ?? null,
+    }));
+
+    // Find peak
+    const rankedMonths = monthlyRanks.filter(m => m.rank !== null);
+    const peakMonth = rankedMonths.length > 0
+      ? rankedMonths.reduce((best, curr) => (curr.rank! < (best.rank ?? 999) ? curr : best))
+      : { month: '', rank: null };
+    
+    const currentRank = monthlyRanks[monthlyRanks.length - 1]?.rank ?? null;
+    const previousRank = monthlyRanks.length > 1 ? monthlyRanks[monthlyRanks.length - 2]?.rank : null;
+
+    // Determine trend
+    let trend: 'rising' | 'falling' | 'stable' | 'new' | 'gone' = 'stable';
+    const firstAppearance = monthlyRanks.findIndex(m => m.rank !== null);
+    const lastAppearance = monthlyRanks.length - 1 - [...monthlyRanks].reverse().findIndex(m => m.rank !== null);
+    
+    if (firstAppearance === sortedMonths.length - 1 || firstAppearance === sortedMonths.length - 2) {
+      trend = 'new';
+    } else if (currentRank === null && lastAppearance < sortedMonths.length - 2) {
+      trend = 'gone';
+    } else if (currentRank !== null && previousRank !== null) {
+      if (currentRank < previousRank - 1) trend = 'rising';
+      else if (currentRank > previousRank + 1) trend = 'falling';
+    }
+
+    return {
+      blade,
+      monthlyRanks,
+      peakRank: peakMonth.rank ?? 99,
+      peakMonth: peakMonth.month,
+      currentRank,
+      trend,
+    };
+  }).sort((a, b) => a.peakRank - b.peakRank).slice(0, 10);
+
+  return { eras, timeline, bladeJourneys };
+}
+
+/**
+ * Get rising trends - parts/combos with accelerating performance.
+ */
+export async function getRisingTrends(weeks = 8, region?: Region): Promise<RisingTrend[]> {
+  const regionFilter = getRegionWhereClause(region);
+  
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+    ORDER BY tournament_date DESC
+  `);
+
+  const now = new Date();
+  
+  // Track weekly scores for blades
+  const bladeWeekly: Record<string, { scores: number[]; uses: number[] }> = {};
+  
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    const tournamentDate = new Date(row.tournament_date);
+    const weeksAgo = Math.floor((now.getTime() - tournamentDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    
+    if (weeksAgo < 0 || weeksAgo >= weeks) continue;
+    
+    if (!bladeWeekly[blade]) {
+      bladeWeekly[blade] = { 
+        scores: new Array(weeks).fill(0), 
+        uses: new Array(weeks).fill(0) 
+      };
+    }
+    
+    const weekIndex = weeks - 1 - weeksAgo;
+    const points = getPlacementScore(row.place, row.stage);
+    bladeWeekly[blade].scores[weekIndex] += points;
+    bladeWeekly[blade].uses[weekIndex]++;
+  }
+
+  const trends: RisingTrend[] = [];
+  
+  for (const [name, data] of Object.entries(bladeWeekly)) {
+    const totalUses = data.uses.reduce((a, b) => a + b, 0);
+    if (totalUses < 3) continue; // Need minimum data
+    
+    // Calculate growth rate (compare last 4 weeks to first 4 weeks)
+    const recentSum = data.scores.slice(-4).reduce((a, b) => a + b, 0);
+    const olderSum = data.scores.slice(0, 4).reduce((a, b) => a + b, 0);
+    
+    const growthRate = olderSum > 0 ? ((recentSum - olderSum) / olderSum) * 100 : 
+                       recentSum > 0 ? 100 : 0;
+    
+    // Calculate momentum (acceleration - is growth speeding up?)
+    const midSum = data.scores.slice(2, 6).reduce((a, b) => a + b, 0);
+    const earlyGrowth = midSum - olderSum;
+    const lateGrowth = recentSum - midSum;
+    const momentum = lateGrowth - earlyGrowth;
+    
+    // Project future score based on trend
+    const avgRecentScore = recentSum / 4;
+    const projectedScore = avgRecentScore * (1 + growthRate / 100);
+    
+    trends.push({
+      name,
+      type: 'blade',
+      weeklyScores: data.scores,
+      weeklyUses: data.uses,
+      growthRate,
+      momentum,
+      projectedScore,
+    });
+  }
+
+  // Sort by growth rate, filter for positive growth
+  return trends
+    .filter(t => t.growthRate > 10) // At least 10% growth
+    .sort((a, b) => b.growthRate - a.growthRate)
+    .slice(0, 15);
+}
+
+/**
+ * Analyze parts for undervalued potential.
+ */
+export async function getPartAnalysis(partType: 'blade' | 'ratchet' | 'bit', region?: Region): Promise<PartAnalysis[]> {
+  const regionFilter = getRegionWhereClause(region);
+  
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+  `);
+
+  const now = new Date();
+  
+  // Get top parts for synergy calculation
+  const partCounts: Record<string, number> = {};
+  for (const row of rows) {
+    const part = partType === 'blade' ? normalizeBladeDisplay(row.blade) : 
+                 partType === 'ratchet' ? normalizeRatchet(row.ratchet) : normalizeBit(row.bit);
+    partCounts[part] = (partCounts[part] || 0) + 1;
+  }
+  const topParts = Object.entries(partCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([name]) => name);
+
+  // Aggregate part stats
+  const partStats: Record<string, {
+    uses: number;
+    wins: number;
+    totalScore: number;
+    placements: number[];
+    combos: Set<string>;
+    topPartPairings: number;
+  }> = {};
+
+  for (const row of rows) {
+    const part = partType === 'blade' ? normalizeBladeDisplay(row.blade) : 
+                 partType === 'ratchet' ? normalizeRatchet(row.ratchet) : normalizeBit(row.bit);
+    const blade = normalizeBladeDisplay(row.blade);
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const comboKey = `${blade}|${ratchet}|${bit}`;
+    
+    if (!partStats[part]) {
+      partStats[part] = { 
+        uses: 0, wins: 0, totalScore: 0, placements: [], 
+        combos: new Set(), topPartPairings: 0 
+      };
+    }
+    
+    const stats = partStats[part];
+    const points = getPlacementScore(row.place, row.stage);
+    const weight = calculateRecencyWeight(new Date(row.tournament_date), now);
+    
+    stats.uses++;
+    stats.totalScore += points * weight;
+    stats.placements.push(row.place);
+    stats.combos.add(comboKey);
+    if (row.place === 1) stats.wins++;
+    
+    // Check if paired with top parts
+    const otherParts = partType === 'blade' ? [ratchet, bit] :
+                       partType === 'ratchet' ? [blade, bit] : [blade, ratchet];
+    if (otherParts.some(p => topParts.includes(p))) {
+      stats.topPartPairings++;
+    }
+  }
+
+  const analysis: PartAnalysis[] = [];
+  
+  for (const [name, stats] of Object.entries(partStats)) {
+    if (stats.uses < 3) continue;
+    
+    const winRate = stats.wins / stats.uses;
+    const avgPlacement = stats.placements.reduce((a, b) => a + b, 0) / stats.placements.length;
+    const versatility = stats.combos.size;
+    const synergyScore = stats.topPartPairings / stats.uses;
+    
+    // Calculate consistency (inverse of variance)
+    const mean = avgPlacement;
+    const variance = stats.placements.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / stats.placements.length;
+    const consistency = 1 / (1 + Math.sqrt(variance));
+    
+    analysis.push({
+      name,
+      type: partType,
+      uses: stats.uses,
+      winRate,
+      avgPlacement,
+      versatility,
+      synergyScore,
+      consistency,
+    });
+  }
+
+  return analysis.sort((a, b) => b.winRate - a.winRate);
+}
+
+/**
+ * Get variance analysis for combos - find high ceiling/high variance options.
+ */
+export async function getVarianceAnalysis(minUses = 3, region?: Region): Promise<VarianceData[]> {
+  const regionFilter = getRegionWhereClause(region);
+  
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+  `);
+
+  const now = new Date();
+  
+  // Aggregate combo scores
+  const comboScores: Record<string, number[]> = {};
+
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const key = `${blade}|${ratchet}|${bit}`;
+    const points = getPlacementScore(row.place, row.stage);
+    const weight = calculateRecencyWeight(new Date(row.tournament_date), now);
+    
+    if (!comboScores[key]) comboScores[key] = [];
+    comboScores[key].push(points * weight);
+  }
+
+  const varianceData: VarianceData[] = [];
+  
+  for (const [key, scores] of Object.entries(comboScores)) {
+    if (scores.length < minUses) continue;
+    
+    const [blade, ratchet, bit] = key.split('|');
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const variance = scores.reduce((sum, s) => sum + Math.pow(s - avgScore, 2), 0) / scores.length;
+    const stdDev = Math.sqrt(variance);
+    const ceiling = Math.max(...scores);
+    const floor = Math.min(...scores);
+    
+    varianceData.push({
+      combo: `${blade} ${ratchet} ${bit}`,
+      blade,
+      ratchet,
+      bit,
+      uses: scores.length,
+      avgScore,
+      variance,
+      stdDev,
+      ceiling,
+      floor,
+      highVariance: stdDev > avgScore * 0.5, // High variance if stdDev > 50% of mean
+    });
+  }
+
+  return varianceData.sort((a, b) => b.variance - a.variance);
+}
+
+/**
+ * Get correlation data between parts for heatmap.
+ */
+export async function getPartCorrelations(region?: Region): Promise<{
+  blades: string[];
+  ratchets: string[];
+  bits: string[];
+  bladeRatchetMatrix: number[][];
+  bladeBitMatrix: number[][];
+}> {
+  const regionFilter = getRegionWhereClause(region);
+  
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+  }>(`
+    SELECT blade, ratchet, bit, place
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+  `);
+
+  // Get top parts
+  const bladeCounts: Record<string, number> = {};
+  const ratchetCounts: Record<string, number> = {};
+  const bitCounts: Record<string, number> = {};
+  
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    bladeCounts[blade] = (bladeCounts[blade] || 0) + 1;
+    ratchetCounts[ratchet] = (ratchetCounts[ratchet] || 0) + 1;
+    bitCounts[bit] = (bitCounts[bit] || 0) + 1;
+  }
+
+  const topBlades = Object.entries(bladeCounts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n]) => n);
+  const topRatchets = Object.entries(ratchetCounts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([n]) => n);
+  const topBits = Object.entries(bitCounts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n]) => n);
+
+  // Build correlation matrices (win rate when paired)
+  const bladeRatchetWins: Record<string, { wins: number; total: number }> = {};
+  const bladeBitWins: Record<string, { wins: number; total: number }> = {};
+
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    if (!topBlades.includes(blade)) continue;
+    
+    if (topRatchets.includes(ratchet)) {
+      const key = `${blade}|${ratchet}`;
+      if (!bladeRatchetWins[key]) bladeRatchetWins[key] = { wins: 0, total: 0 };
+      bladeRatchetWins[key].total++;
+      if (row.place === 1) bladeRatchetWins[key].wins++;
+    }
+    
+    if (topBits.includes(bit)) {
+      const key = `${blade}|${bit}`;
+      if (!bladeBitWins[key]) bladeBitWins[key] = { wins: 0, total: 0 };
+      bladeBitWins[key].total++;
+      if (row.place === 1) bladeBitWins[key].wins++;
+    }
+  }
+
+  // Build matrices
+  const bladeRatchetMatrix = topBlades.map(blade => 
+    topRatchets.map(ratchet => {
+      const key = `${blade}|${ratchet}`;
+      const data = bladeRatchetWins[key];
+      return data ? data.wins / data.total : 0;
+    })
+  );
+
+  const bladeBitMatrix = topBlades.map(blade => 
+    topBits.map(bit => {
+      const key = `${blade}|${bit}`;
+      const data = bladeBitWins[key];
+      return data ? data.wins / data.total : 0;
+    })
+  );
+
+  return {
+    blades: topBlades,
+    ratchets: topRatchets,
+    bits: topBits,
+    bladeRatchetMatrix,
+    bladeBitMatrix,
+  };
+}
+
+
+/**
+ * Meta spotlight data - current champion and movers.
  */
 export interface MetaSpotlightData {
   champion: {
@@ -1528,27 +3376,27 @@ export interface MetaSpotlightData {
     score: number;
     uses: number;
     winRate: number;
-    dominance: number; // % of top placements
+    dominance: number;
   } | null;
-  risers: {
+  risers: Array<{
     combo: string;
     blade: string;
     ratchet: string;
     bit: string;
-    change: number; // positive
+    change: number;
     newRank: number;
-  }[];
-  fallers: {
+  }>;
+  fallers: Array<{
     combo: string;
     blade: string;
     ratchet: string;
     bit: string;
-    change: number; // negative
+    change: number;
     newRank: number;
-  }[];
-  lastTournamentDate: string | null; // Most recent tournament date for this region
-  isStale: boolean; // True if using all-time data because no recent tournaments
-  dataSource: 'recent' | 'alltime'; // Which data window is being used
+  }>;
+  lastTournamentDate: string | null;
+  isStale: boolean;
+  dataSource: 'recent' | 'extended';
 }
 
 /**
@@ -1563,8 +3411,9 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     bit: string;
     place: number;
     tournament_date: string;
+    stage: string | null;
   }>(`
-    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
     ORDER BY tournament_date DESC
@@ -1607,14 +3456,16 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
 
     for (const row of dataRows) {
       const blade = normalizeBladeDisplay(row.blade);
-      const combo = `${blade} ${row.ratchet} ${row.bit}`;
-      const points = getPlacementScore(row.place);
+      const ratchet = normalizeRatchet(row.ratchet);
+      const bit = normalizeBit(row.bit);
+      const combo = `${blade} ${ratchet} ${bit}`;
+      const points = getPlacementScore(row.place, row.stage);
 
       if (!comboStats[combo]) {
         comboStats[combo] = {
           blade: blade,
-          ratchet: row.ratchet,
-          bit: row.bit,
+          ratchet: ratchet,
+          bit: bit,
           score: 0,
           uses: 0,
           wins: 0,
@@ -1840,7 +3691,9 @@ export async function getMetaShareData(months = 6, region?: Region): Promise<Met
 
   for (const row of rows) {
     const blade = normalizeBladeDisplay(row.blade);
-    const combo = `${blade} ${row.ratchet} ${row.bit}`;
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const combo = `${blade} ${ratchet} ${bit}`;
     const tournamentDate = new Date(row.tournament_date);
 
     // Find which month
@@ -1949,4 +3802,167 @@ export async function getMetaShareData(months = 6, region?: Region): Promise<Met
     labels: monthBoundaries.map(m => m.label),
     combos: [othersEntry, ...comboData], // Others first so it's at the bottom
   };
+}
+
+/**
+ * Get weekly sparkline data for a blade (last 7 weeks).
+ * Returns an array of scores per week for sparkline visualization.
+ */
+export async function getBladeSparklineData(bladeName: string, weeks = 7, region?: Region): Promise<number[]> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE LOWER(blade) = LOWER('${bladeName.replace(/'/g, "''")}')${regionFilter}
+    ORDER BY tournament_date DESC
+  `);
+
+  const now = new Date();
+  const weekBuckets: number[] = new Array(weeks).fill(0);
+
+  for (const row of rows) {
+    const tournamentDate = new Date(row.tournament_date);
+    const weeksAgo = Math.floor((now.getTime() - tournamentDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+    if (weeksAgo >= 0 && weeksAgo < weeks) {
+      const points = getPlacementScore(row.place, row.stage);
+      // Index 0 = oldest week, index (weeks-1) = most recent
+      weekBuckets[weeks - 1 - weeksAgo] += points;
+    }
+  }
+
+  return weekBuckets;
+}
+
+/**
+ * Get weekly sparkline data for a combo (last 7 weeks).
+ */
+export async function getComboSparklineData(
+  blade: string,
+  ratchet: string,
+  bit: string,
+  weeks = 7,
+  region?: Region
+): Promise<number[]> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE LOWER(blade) = LOWER('${blade.replace(/'/g, "''")}')
+      AND LOWER(ratchet) = LOWER('${ratchet.replace(/'/g, "''")}')
+      AND LOWER(bit) = LOWER('${bit.replace(/'/g, "''")}')${regionFilter}
+    ORDER BY tournament_date DESC
+  `);
+
+  const now = new Date();
+  const weekBuckets: number[] = new Array(weeks).fill(0);
+
+  for (const row of rows) {
+    const tournamentDate = new Date(row.tournament_date);
+    const weeksAgo = Math.floor((now.getTime() - tournamentDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+    if (weeksAgo >= 0 && weeksAgo < weeks) {
+      const points = getPlacementScore(row.place, row.stage);
+      weekBuckets[weeks - 1 - weeksAgo] += points;
+    }
+  }
+
+  return weekBuckets;
+}
+
+/**
+ * Batch get sparkline data for multiple blades (more efficient than individual calls).
+ */
+export async function getBladesSparklineData(bladeNames: string[], weeks = 7, region?: Region): Promise<Record<string, number[]>> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    blade: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+    ORDER BY tournament_date DESC
+  `);
+
+  const now = new Date();
+  const result: Record<string, number[]> = {};
+
+  // Initialize all blades
+  for (const name of bladeNames) {
+    result[normalizeBladeDisplay(name)] = new Array(weeks).fill(0);
+  }
+
+  for (const row of rows) {
+    const blade = normalizeBladeDisplay(row.blade);
+    if (!result[blade]) continue;
+
+    const tournamentDate = new Date(row.tournament_date);
+    const weeksAgo = Math.floor((now.getTime() - tournamentDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+    if (weeksAgo >= 0 && weeksAgo < weeks) {
+      const points = getPlacementScore(row.place, row.stage);
+      result[blade][weeks - 1 - weeksAgo] += points;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Batch get sparkline data for multiple combos.
+ */
+export async function getCombosSparklineData(
+  combos: { blade: string; ratchet: string; bit: string }[],
+  weeks = 7,
+  region?: Region
+): Promise<Record<string, number[]>> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE 1=1${regionFilter}
+    ORDER BY tournament_date DESC
+  `);
+
+  const now = new Date();
+  const result: Record<string, number[]> = {};
+
+  // Initialize all combos
+  for (const c of combos) {
+    const key = `${normalizeBladeDisplay(c.blade)} ${normalizeRatchet(c.ratchet)} ${normalizeBit(c.bit)}`;
+    result[key] = new Array(weeks).fill(0);
+  }
+
+  for (const row of rows) {
+    const key = `${normalizeBladeDisplay(row.blade)} ${normalizeRatchet(row.ratchet)} ${normalizeBit(row.bit)}`;
+    if (!result[key]) continue;
+
+    const tournamentDate = new Date(row.tournament_date);
+    const weeksAgo = Math.floor((now.getTime() - tournamentDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+    if (weeksAgo >= 0 && weeksAgo < weeks) {
+      const points = getPlacementScore(row.place, row.stage);
+      result[key][weeks - 1 - weeksAgo] += points;
+    }
+  }
+
+  return result;
 }

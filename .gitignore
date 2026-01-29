@@ -20,6 +20,10 @@ node_modules/
 site/dist/
 site/.astro/
 
+# Database files (regeneratable)
+data/beyblade.duckdb
+site/public/data/beyblade.duckdb
+
 # OS
 .DS_Store
 Thumbs.db
@@ -30,3 +34,12 @@ npm-debug.log*
 
 # Instagram scraper cache
 bladerleaguegermany/
+
+# Downloaded HTML pages (large, regeneratable)
+data/wbo_pages/
+data/wbo_pages.json
+data/wbo_cookies.json
+data/wbo_data.json
+
+# Docker volumes (local data)
+docker-data/

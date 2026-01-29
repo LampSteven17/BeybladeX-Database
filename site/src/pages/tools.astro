@@ -2,23 +2,30 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Tools">
+<Layout title="Rate My Deck | Tools">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* Header */}
     <div class="mb-8">
       <h1 class="text-3xl font-mono font-bold text-fg mb-2">
-        <span class="text-series-bx">#</span> Tools
+        <span class="text-tier-ss">#</span> Rate My Deck
       </h1>
       <p class="text-fg-secondary">
-        Build optimal combos and compare blades head-to-head.
+        Analyze your tournament deck, build combos, and compare performance.
       </p>
     </div>
 
     {/* Tab Navigation */}
-    <div class="flex gap-2 mb-8">
+    <div class="flex flex-wrap gap-2 mb-8">
+      <button
+        id="tab-ratedeck"
+        class="tab-btn px-6 py-3 font-mono text-sm rounded-lg transition-all border active"
+        data-tab="ratedeck"
+      >
+        Rate My Deck
+      </button>
       <button
         id="tab-builder"
-        class="tab-btn px-6 py-3 font-mono text-sm rounded-lg transition-all border active"
+        class="tab-btn px-6 py-3 font-mono text-sm rounded-lg transition-all border"
         data-tab="builder"
       >
         Combo Builder
@@ -33,7 +40,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     {/* ========== BUILDER TAB ========== */}
-    <div id="panel-builder" class="tab-panel">
+    <div id="panel-builder" class="tab-panel hidden">
       {/* Component Selectors */}
       <div class="card card-padding mb-8">
         <h3 class="text-lg font-mono font-bold text-fg mb-4">
@@ -483,6 +490,344 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>
     </div>
+
+    {/* ========== RATE MY DECK TAB ========== */}
+    <div id="panel-ratedeck" class="tab-panel">
+      {/* Intro */}
+      <div class="card card-padding mb-8 border-tier-ss/30">
+        <div class="flex items-start gap-4">
+          <div class="p-3 rounded-lg bg-tier-ss/10">
+            <svg class="w-8 h-8 text-tier-ss" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-mono font-bold text-fg mb-2">Rate My Deck</h3>
+            <p class="text-fg-secondary text-sm">
+              Enter your 3-combo tournament deck and get a comprehensive analysis. We evaluate meta relevance, 
+              consistency, upside potential, synergy, and surprise factor to give you actionable insights.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Deck Input */}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        {/* Combo 1 */}
+        <div class="card card-padding">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-8 h-8 rounded-full bg-tier-ss/20 text-tier-ss flex items-center justify-center font-mono font-bold text-sm">1</span>
+            <h4 class="font-mono font-bold text-fg">First Combo</h4>
+          </div>
+          <div class="space-y-3">
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-blade1" class="input w-full text-sm" placeholder="Search blade (or CX combo)..." autocomplete="off" />
+              <div id="deck-blade1-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div id="deck-lockchip1-wrapper" class="autocomplete-wrapper relative hidden">
+              <input type="text" id="deck-lockchip1" class="input w-full text-sm border-series-cx/50" placeholder="Lock chip (for CX blades)..." autocomplete="off" />
+              <div id="deck-lockchip1-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-ratchet1" class="input w-full text-sm" placeholder="Search ratchet..." autocomplete="off" />
+              <div id="deck-ratchet1-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-bit1" class="input w-full text-sm" placeholder="Search bit..." autocomplete="off" />
+              <div id="deck-bit1-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+          </div>
+          <div id="deck-combo1-preview" class="mt-4 pt-4 border-t border-stroke hidden">
+            <div class="flex items-center justify-between">
+              <span id="deck-combo1-tier" class="font-mono font-bold text-lg">--</span>
+              <span id="deck-combo1-name" class="text-fg-muted text-sm truncate ml-2"></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Combo 2 */}
+        <div class="card card-padding">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-mono font-bold text-sm">2</span>
+            <h4 class="font-mono font-bold text-fg">Second Combo</h4>
+          </div>
+          <div class="space-y-3">
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-blade2" class="input w-full text-sm" placeholder="Search blade (or CX combo)..." autocomplete="off" />
+              <div id="deck-blade2-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div id="deck-lockchip2-wrapper" class="autocomplete-wrapper relative hidden">
+              <input type="text" id="deck-lockchip2" class="input w-full text-sm border-series-cx/50" placeholder="Lock chip (for CX blades)..." autocomplete="off" />
+              <div id="deck-lockchip2-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-ratchet2" class="input w-full text-sm" placeholder="Search ratchet..." autocomplete="off" />
+              <div id="deck-ratchet2-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-bit2" class="input w-full text-sm" placeholder="Search bit..." autocomplete="off" />
+              <div id="deck-bit2-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+          </div>
+          <div id="deck-combo2-preview" class="mt-4 pt-4 border-t border-stroke hidden">
+            <div class="flex items-center justify-between">
+              <span id="deck-combo2-tier" class="font-mono font-bold text-lg">--</span>
+              <span id="deck-combo2-name" class="text-fg-muted text-sm truncate ml-2"></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Combo 3 */}
+        <div class="card card-padding">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-8 h-8 rounded-full bg-series-ux/20 text-series-ux flex items-center justify-center font-mono font-bold text-sm">3</span>
+            <h4 class="font-mono font-bold text-fg">Third Combo</h4>
+          </div>
+          <div class="space-y-3">
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-blade3" class="input w-full text-sm" placeholder="Search blade (or CX combo)..." autocomplete="off" />
+              <div id="deck-blade3-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div id="deck-lockchip3-wrapper" class="autocomplete-wrapper relative hidden">
+              <input type="text" id="deck-lockchip3" class="input w-full text-sm border-series-cx/50" placeholder="Lock chip (for CX blades)..." autocomplete="off" />
+              <div id="deck-lockchip3-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-ratchet3" class="input w-full text-sm" placeholder="Search ratchet..." autocomplete="off" />
+              <div id="deck-ratchet3-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div class="autocomplete-wrapper relative">
+              <input type="text" id="deck-bit3" class="input w-full text-sm" placeholder="Search bit..." autocomplete="off" />
+              <div id="deck-bit3-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+          </div>
+          <div id="deck-combo3-preview" class="mt-4 pt-4 border-t border-stroke hidden">
+            <div class="flex items-center justify-between">
+              <span id="deck-combo3-tier" class="font-mono font-bold text-lg">--</span>
+              <span id="deck-combo3-name" class="text-fg-muted text-sm truncate ml-2"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rate Button */}
+      <div class="flex justify-center mb-8">
+        <button id="rate-deck-btn" class="btn btn-primary px-8 py-3 font-mono text-lg" disabled>
+          Rate My Deck
+        </button>
+      </div>
+
+      {/* Results Section */}
+      <div id="deck-results" class="hidden">
+        {/* Overall Score Card */}
+        <div class="card card-padding mb-8">
+          <div class="flex flex-col lg:flex-row gap-8">
+            {/* Main Score */}
+            <div class="flex-shrink-0 text-center lg:text-left">
+              <div class="inline-flex flex-col items-center lg:items-start">
+                <span class="text-fg-muted text-sm font-mono uppercase tracking-widest mb-2">Overall Rating</span>
+                <div class="flex items-baseline gap-3">
+                  <span id="deck-overall-tier" class="text-6xl font-mono font-bold">--</span>
+                  <span id="deck-overall-score" class="text-2xl font-mono text-fg-muted">--/100</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Score Bars */}
+            <div class="flex-grow grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-fg-muted">Meta Coverage</span>
+                  <span id="deck-meta-score" class="font-mono text-fg">--</span>
+                </div>
+                <div class="h-2 bg-surface rounded-full overflow-hidden">
+                  <div id="deck-meta-bar" class="h-full bg-tier-ss rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-fg-muted">Consistency</span>
+                  <span id="deck-consistency-score" class="font-mono text-fg">--</span>
+                </div>
+                <div class="h-2 bg-surface rounded-full overflow-hidden">
+                  <div id="deck-consistency-bar" class="h-full bg-positive rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-fg-muted">Upside</span>
+                  <span id="deck-upside-score" class="font-mono text-fg">--</span>
+                </div>
+                <div class="h-2 bg-surface rounded-full overflow-hidden">
+                  <div id="deck-upside-bar" class="h-full bg-accent rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-fg-muted">Diversity</span>
+                  <span id="deck-diversity-score" class="font-mono text-fg">--</span>
+                </div>
+                <div class="h-2 bg-surface rounded-full overflow-hidden">
+                  <div id="deck-diversity-bar" class="h-full bg-series-ux rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-fg-muted">Surprise Factor</span>
+                  <span id="deck-surprise-score" class="font-mono text-fg">--</span>
+                </div>
+                <div class="h-2 bg-surface rounded-full overflow-hidden">
+                  <div id="deck-surprise-bar" class="h-full bg-series-cx rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Combo Breakdown */}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+          <div id="deck-combo1-card" class="card card-padding">
+            <div class="flex items-center justify-between mb-4">
+              <span id="deck-combo1-result-name" class="font-mono font-bold text-fg truncate"></span>
+              <span id="deck-combo1-result-tier" class="text-2xl font-mono font-bold">--</span>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Uses</span>
+                <span id="deck-combo1-uses" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Win Rate</span>
+                <span id="deck-combo1-winrate" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Meta Score</span>
+                <span id="deck-combo1-meta" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Synergy</span>
+                <span id="deck-combo1-synergy" class="font-mono">--</span>
+              </div>
+            </div>
+            <div id="deck-combo1-badges" class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stroke"></div>
+          </div>
+
+          <div id="deck-combo2-card" class="card card-padding">
+            <div class="flex items-center justify-between mb-4">
+              <span id="deck-combo2-result-name" class="font-mono font-bold text-fg truncate"></span>
+              <span id="deck-combo2-result-tier" class="text-2xl font-mono font-bold">--</span>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Uses</span>
+                <span id="deck-combo2-uses" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Win Rate</span>
+                <span id="deck-combo2-winrate" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Meta Score</span>
+                <span id="deck-combo2-meta" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Synergy</span>
+                <span id="deck-combo2-synergy" class="font-mono">--</span>
+              </div>
+            </div>
+            <div id="deck-combo2-badges" class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stroke"></div>
+          </div>
+
+          <div id="deck-combo3-card" class="card card-padding">
+            <div class="flex items-center justify-between mb-4">
+              <span id="deck-combo3-result-name" class="font-mono font-bold text-fg truncate"></span>
+              <span id="deck-combo3-result-tier" class="text-2xl font-mono font-bold">--</span>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Uses</span>
+                <span id="deck-combo3-uses" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Win Rate</span>
+                <span id="deck-combo3-winrate" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Meta Score</span>
+                <span id="deck-combo3-meta" class="font-mono">--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-fg-muted">Synergy</span>
+                <span id="deck-combo3-synergy" class="font-mono">--</span>
+              </div>
+            </div>
+            <div id="deck-combo3-badges" class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stroke"></div>
+          </div>
+        </div>
+
+        {/* Analysis */}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Strengths */}
+          <div class="card card-padding border-positive/30">
+            <h4 class="font-mono font-bold text-positive mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Strengths
+            </h4>
+            <ul id="deck-strengths" class="space-y-2 text-sm text-fg-secondary">
+              <li class="text-fg-muted">No analysis yet</li>
+            </ul>
+          </div>
+
+          {/* Weaknesses */}
+          <div class="card card-padding border-negative/30">
+            <h4 class="font-mono font-bold text-negative mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Weaknesses
+            </h4>
+            <ul id="deck-weaknesses" class="space-y-2 text-sm text-fg-secondary">
+              <li class="text-fg-muted">No analysis yet</li>
+            </ul>
+          </div>
+
+          {/* Suggestions */}
+          <div class="card card-padding border-accent/30">
+            <h4 class="font-mono font-bold text-accent mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              Suggestions
+            </h4>
+            <ul id="deck-suggestions" class="space-y-2 text-sm text-fg-secondary">
+              <li class="text-fg-muted">No suggestions yet</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Empty State */}
+      <div id="deck-empty-state" class="card card-padding text-center py-16">
+        <svg class="w-20 h-20 text-fg-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <p class="text-fg-muted text-lg mb-2">Build your tournament deck</p>
+        <p class="text-fg-muted/60 text-sm max-w-md mx-auto">
+          Select three combos to get a comprehensive analysis of your deck's tournament potential, 
+          including meta coverage, consistency, and surprise factor ratings.
+        </p>
+      </div>
+
+      {/* Loading State */}
+      <div id="deck-loading-state" class="hidden">
+        <div class="card card-padding text-center py-16">
+          <div class="w-12 h-12 border-2 border-tier-ss/30 border-t-tier-ss rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-tier-ss font-mono">Analyzing your deck...</p>
+        </div>
+      </div>
+    </div>
   </div>
 </Layout>
 
@@ -495,6 +840,53 @@ import Layout from '../layouts/Layout.astro';
   }
   .tab-btn.active {
     @apply text-accent border-accent bg-accent/10;
+  }
+
+  /* Autocomplete styles */
+  .autocomplete-wrapper {
+    position: relative;
+  }
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-stroke);
+    border-radius: 0.5rem;
+    margin-top: 4px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  .autocomplete-dropdown.hidden {
+    display: none;
+  }
+  .autocomplete-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+  }
+  .autocomplete-item:hover,
+  .autocomplete-item.selected {
+    background: var(--color-accent);
+    color: white;
+  }
+  .autocomplete-item-highlight {
+    font-weight: bold;
+    color: var(--color-accent);
+  }
+  .autocomplete-item:hover .autocomplete-item-highlight,
+  .autocomplete-item.selected .autocomplete-item-highlight {
+    color: white;
+  }
+  .input {
+    @apply px-3 py-2 bg-surface border border-stroke rounded-lg text-fg placeholder-fg-muted focus:outline-none focus:border-accent transition-colors;
+  }
+  .input.valid {
+    @apply border-positive bg-positive/5;
   }
 </style>
 
@@ -511,8 +903,11 @@ import Layout from '../layouts/Layout.astro';
     getComboStats,
     compareFullCombos,
     getBladeSeries,
+    rateDeck,
     BLADE_SERIES,
-    type FullComboComparisonResult
+    type FullComboComparisonResult,
+    type DeckRating,
+    type ComboRating
   } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
 
@@ -1031,9 +1426,14 @@ import Layout from '../layouts/Layout.astro';
   }
 
   // ========== INIT ==========
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
-    initBuilder();
+
+    // Initialize Rate My Deck first (it's the first tab now)
+    await initRateDeck();
+
+    // Then initialize other tabs
+    await initBuilder();
 
     // Builder events
     const builderBladeSelect = document.getElementById('builder-blade-select') as HTMLSelectElement;
@@ -1122,4 +1522,478 @@ import Layout from '../layouts/Layout.astro';
       runComparison();
     });
   });
+
+  // ========== RATE MY DECK ==========
+
+  // CX blade definitions - main blades that require a lock chip
+  const CX_MAIN_BLADES = ['Brave', 'Arc', 'Dark', 'Reaper', 'Brush', 'Blast', 'Eclipse', 'Hunt', 'Might', 'Flare', 'Volt'];
+
+  // Known lock chips
+  const CX_LOCK_CHIPS = ['Dran', 'Emperor', 'Wizard', 'Perseus', 'Hells', 'Fox', 'Pegasus', 'Cerberus', 'Wolf', 'Valkyrie', 'Sol', 'Phoenix', 'Whale', 'Kraken'];
+
+  // Known CX combos (lock chip + main blade)
+  const CX_BLADE_COMBOS = [
+    'Dran Brave', 'Emperor Brave',
+    'Wizard Arc',
+    'Perseus Dark',
+    'Hells Reaper',
+    'Fox Brush',
+    'Pegasus Blast', 'Cerberus Blast', 'Hells Blast', 'Emperor Blast', 'Wolf Blast', 'Dran Blast', 'Valkyrie Blast', 'Sol Blast', 'Kraken Blast', 'Fox Blast',
+    'Sol Eclipse', 'Emperor Eclipse', 'Hells Eclipse',
+    'Wolf Hunt', 'Emperor Hunt', 'Perseus Hunt',
+    'Emperor Might', 'Cerberus Might', 'Dran Might', 'Whale Might',
+    'Phoenix Flare',
+    'Valkyrie Volt',
+  ];
+
+  interface DeckComboState {
+    blade: string;
+    lockChip: string;
+    ratchet: string;
+    bit: string;
+  }
+
+  const deckCombos: [DeckComboState, DeckComboState, DeckComboState] = [
+    { blade: '', lockChip: '', ratchet: '', bit: '' },
+    { blade: '', lockChip: '', ratchet: '', bit: '' },
+    { blade: '', lockChip: '', ratchet: '', bit: '' },
+  ];
+
+  function isCXMainBlade(blade: string): boolean {
+    return CX_MAIN_BLADES.includes(blade);
+  }
+
+  function showLockChipInput(comboIndex: number, show: boolean) {
+    const wrapper = document.getElementById(`deck-lockchip${comboIndex}-wrapper`);
+    if (wrapper) {
+      if (show) {
+        wrapper.classList.remove('hidden');
+      } else {
+        wrapper.classList.add('hidden');
+        // Clear lock chip when hiding
+        const input = document.getElementById(`deck-lockchip${comboIndex}`) as HTMLInputElement;
+        if (input) {
+          input.value = '';
+          input.classList.remove('valid');
+        }
+        deckCombos[comboIndex - 1].lockChip = '';
+      }
+    }
+  }
+
+  // Autocomplete helper
+  function setupAutocomplete(
+    inputId: string,
+    dropdownId: string,
+    options: string[],
+    onSelect: (value: string) => void
+  ) {
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    const dropdown = document.getElementById(dropdownId) as HTMLDivElement;
+    if (!input || !dropdown) return;
+
+    let selectedIndex = -1;
+
+    function showDropdown(filtered: string[], query: string) {
+      if (filtered.length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      dropdown.innerHTML = filtered.slice(0, 10).map((opt, i) => {
+        // Highlight matching text
+        const lowerOpt = opt.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+        const idx = lowerOpt.indexOf(lowerQuery);
+        let html = opt;
+        if (idx >= 0 && query) {
+          html = opt.substring(0, idx) +
+                 `<span class="autocomplete-item-highlight">${opt.substring(idx, idx + query.length)}</span>` +
+                 opt.substring(idx + query.length);
+        }
+        return `<div class="autocomplete-item" data-value="${opt}" data-index="${i}">${html}</div>`;
+      }).join('');
+
+      dropdown.classList.remove('hidden');
+      selectedIndex = -1;
+    }
+
+    function hideDropdown() {
+      dropdown.classList.add('hidden');
+      selectedIndex = -1;
+    }
+
+    function selectItem(value: string) {
+      input.value = value;
+      input.classList.add('valid');
+      hideDropdown();
+      onSelect(value);
+    }
+
+    // Input events
+    input.addEventListener('input', () => {
+      const query = input.value.trim();
+      input.classList.remove('valid');
+
+      if (query.length === 0) {
+        showDropdown(options.slice(0, 10), '');
+      } else {
+        const filtered = options.filter(opt =>
+          opt.toLowerCase().includes(query.toLowerCase())
+        );
+        showDropdown(filtered, query);
+      }
+
+      // Clear selection if input doesn't match any option exactly
+      const exactMatch = options.find(opt => opt.toLowerCase() === query.toLowerCase());
+      if (exactMatch) {
+        input.classList.add('valid');
+        onSelect(exactMatch);
+      } else {
+        onSelect('');
+      }
+    });
+
+    input.addEventListener('focus', () => {
+      const query = input.value.trim();
+      if (query.length === 0) {
+        showDropdown(options.slice(0, 10), '');
+      } else {
+        const filtered = options.filter(opt =>
+          opt.toLowerCase().includes(query.toLowerCase())
+        );
+        showDropdown(filtered, query);
+      }
+    });
+
+    input.addEventListener('blur', () => {
+      // Delay to allow click on dropdown item
+      setTimeout(() => hideDropdown(), 150);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const items = dropdown.querySelectorAll('.autocomplete-item');
+      if (items.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+        updateSelection(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, 0);
+        updateSelection(items);
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        const item = items[selectedIndex] as HTMLElement;
+        selectItem(item.dataset.value || '');
+      } else if (e.key === 'Escape') {
+        hideDropdown();
+      }
+    });
+
+    function updateSelection(items: NodeListOf<Element>) {
+      items.forEach((item, i) => {
+        if (i === selectedIndex) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
+    // Dropdown click
+    dropdown.addEventListener('click', (e) => {
+      const item = (e.target as HTMLElement).closest('.autocomplete-item') as HTMLElement;
+      if (item && item.dataset.value) {
+        selectItem(item.dataset.value);
+      }
+    });
+  }
+
+  async function initRateDeck() {
+    // Wait for DB to be initialized and load data
+    await initDB();
+
+    // Load data if not already loaded
+    if (allBlades.length === 0) {
+      const [blades, ratchets, bits, assists, lockChips] = await Promise.all([
+        getAllBlades(),
+        getAllRatchets(),
+        getAllBits(),
+        getAllAssists(),
+        getAllLockChips(),
+      ]);
+      allBlades = blades;
+      allRatchets = ratchets;
+      allBits = bits;
+      allAssists = assists;
+      allLockChips = lockChips;
+    }
+
+    // Build combined blade options: regular blades + CX main blades + CX combos
+    const bladeOptions = [
+      ...allBlades,
+      ...CX_MAIN_BLADES.filter(b => !allBlades.includes(b)),
+      ...CX_BLADE_COMBOS.filter(c => !allBlades.includes(c)),
+    ].sort();
+
+    // Build lock chip options from database + known chips
+    const lockChipOptions = [
+      ...new Set([...allLockChips, ...CX_LOCK_CHIPS])
+    ].sort();
+
+    // Setup autocomplete for each combo
+    for (let i = 1; i <= 3; i++) {
+      setupAutocomplete(
+        `deck-blade${i}`,
+        `deck-blade${i}-dropdown`,
+        bladeOptions,
+        (value) => {
+          deckCombos[i - 1].blade = value;
+
+          // Check if this is a CX main blade that needs a lock chip
+          if (isCXMainBlade(value)) {
+            showLockChipInput(i, true);
+          } else {
+            showLockChipInput(i, false);
+            // Check if it's a CX combo (e.g., "Pegasus Blast") and extract lock chip
+            const parts = value.split(' ');
+            if (parts.length === 2 && CX_LOCK_CHIPS.includes(parts[0]) && CX_MAIN_BLADES.includes(parts[1])) {
+              deckCombos[i - 1].lockChip = parts[0];
+              deckCombos[i - 1].blade = parts[1];
+            }
+          }
+
+          updateDeckComboPreview(i);
+          updateRateDeckButton();
+        }
+      );
+
+      setupAutocomplete(
+        `deck-lockchip${i}`,
+        `deck-lockchip${i}-dropdown`,
+        lockChipOptions,
+        (value) => {
+          deckCombos[i - 1].lockChip = value;
+          updateDeckComboPreview(i);
+          updateRateDeckButton();
+        }
+      );
+
+      setupAutocomplete(
+        `deck-ratchet${i}`,
+        `deck-ratchet${i}-dropdown`,
+        allRatchets,
+        (value) => {
+          deckCombos[i - 1].ratchet = value;
+          updateDeckComboPreview(i);
+          updateRateDeckButton();
+        }
+      );
+
+      setupAutocomplete(
+        `deck-bit${i}`,
+        `deck-bit${i}-dropdown`,
+        allBits,
+        (value) => {
+          deckCombos[i - 1].bit = value;
+          updateDeckComboPreview(i);
+          updateRateDeckButton();
+        }
+      );
+    }
+
+    // Rate button
+    document.getElementById('rate-deck-btn')?.addEventListener('click', runDeckRating);
+  }
+
+  function updateDeckComboPreview(comboNum: number) {
+    const combo = deckCombos[comboNum - 1];
+    const preview = document.getElementById(`deck-combo${comboNum}-preview`);
+    const tierEl = document.getElementById(`deck-combo${comboNum}-tier`);
+    const nameEl = document.getElementById(`deck-combo${comboNum}-name`);
+
+    if (combo.blade && combo.ratchet && combo.bit) {
+      preview?.classList.remove('hidden');
+      // Build combo name including lock chip for CX blades
+      let bladeName = combo.blade;
+      if (combo.lockChip && isCXMainBlade(combo.blade)) {
+        bladeName = `${combo.lockChip} ${combo.blade}`;
+      }
+      if (nameEl) nameEl.textContent = `${bladeName} ${combo.ratchet}${combo.bit}`;
+      if (tierEl) tierEl.textContent = '...';
+    } else {
+      preview?.classList.add('hidden');
+    }
+  }
+
+  function updateRateDeckButton() {
+    const btn = document.getElementById('rate-deck-btn') as HTMLButtonElement;
+    // Check if all combos are complete (CX blades need lock chip)
+    const allComplete = deckCombos.every(c => {
+      const hasBasic = c.blade && c.ratchet && c.bit;
+      // If it's a CX main blade, also require lock chip
+      if (isCXMainBlade(c.blade)) {
+        return hasBasic && c.lockChip;
+      }
+      return hasBasic;
+    });
+    if (btn) {
+      btn.disabled = !allComplete;
+    }
+  }
+
+  function getTierColor(tier: string): string {
+    switch (tier) {
+      case 'S': return 'text-tier-ss';
+      case 'A': return 'text-tier-a';
+      case 'B': return 'text-positive';
+      case 'C': return 'text-fg';
+      case 'D': return 'text-fg-muted';
+      case 'F': return 'text-negative';
+      case '?': return 'text-series-cx';
+      default: return 'text-fg';
+    }
+  }
+
+  function getTierBgColor(tier: string): string {
+    switch (tier) {
+      case 'S': return 'border-tier-ss/50';
+      case 'A': return 'border-tier-a/50';
+      case 'B': return 'border-positive/50';
+      case 'C': return 'border-fg/30';
+      case 'D': return 'border-fg-muted/30';
+      case 'F': return 'border-negative/50';
+      case '?': return 'border-series-cx/50';
+      default: return 'border-stroke';
+    }
+  }
+
+  async function runDeckRating() {
+    const emptyState = document.getElementById('deck-empty-state');
+    const loadingState = document.getElementById('deck-loading-state');
+    const results = document.getElementById('deck-results');
+
+    emptyState?.classList.add('hidden');
+    results?.classList.add('hidden');
+    loadingState?.classList.remove('hidden');
+
+    try {
+      const rating = await rateDeck([
+        { blade: deckCombos[0].blade, ratchet: deckCombos[0].ratchet, bit: deckCombos[0].bit },
+        { blade: deckCombos[1].blade, ratchet: deckCombos[1].ratchet, bit: deckCombos[1].bit },
+        { blade: deckCombos[2].blade, ratchet: deckCombos[2].ratchet, bit: deckCombos[2].bit },
+      ]);
+
+      displayDeckResults(rating);
+    } catch (error) {
+      console.error('Error rating deck:', error);
+    } finally {
+      loadingState?.classList.add('hidden');
+    }
+  }
+
+  function displayDeckResults(rating: DeckRating) {
+    const results = document.getElementById('deck-results');
+    results?.classList.remove('hidden');
+
+    // Overall score and tier
+    const overallTier = document.getElementById('deck-overall-tier');
+    const overallScore = document.getElementById('deck-overall-score');
+    
+    if (overallTier) {
+      overallTier.textContent = rating.tier;
+      overallTier.className = `text-6xl font-mono font-bold ${getTierColor(rating.tier)}`;
+    }
+    if (overallScore) {
+      overallScore.textContent = `${Math.round(rating.overallScore)}/100`;
+    }
+
+    // Score bars
+    const scores = [
+      { id: 'meta', value: rating.metaCoverage },
+      { id: 'consistency', value: rating.consistencyScore },
+      { id: 'upside', value: rating.upsideScore },
+      { id: 'diversity', value: rating.diversityScore },
+      { id: 'surprise', value: rating.surpriseScore },
+    ];
+
+    for (const s of scores) {
+      const scoreEl = document.getElementById(`deck-${s.id}-score`);
+      const barEl = document.getElementById(`deck-${s.id}-bar`);
+      if (scoreEl) scoreEl.textContent = Math.round(s.value).toString();
+      if (barEl) barEl.style.width = `${s.value}%`;
+    }
+
+    // Combo cards
+    for (let i = 0; i < 3; i++) {
+      const combo = rating.combos[i];
+      const cardEl = document.getElementById(`deck-combo${i + 1}-card`);
+      
+      // Update preview tier
+      const previewTier = document.getElementById(`deck-combo${i + 1}-tier`);
+      if (previewTier) {
+        previewTier.textContent = combo.tier;
+        previewTier.className = `font-mono font-bold text-lg ${getTierColor(combo.tier)}`;
+      }
+
+      // Update card
+      const nameEl = document.getElementById(`deck-combo${i + 1}-result-name`);
+      const tierEl = document.getElementById(`deck-combo${i + 1}-result-tier`);
+      const usesEl = document.getElementById(`deck-combo${i + 1}-uses`);
+      const winrateEl = document.getElementById(`deck-combo${i + 1}-winrate`);
+      const metaEl = document.getElementById(`deck-combo${i + 1}-meta`);
+      const synergyEl = document.getElementById(`deck-combo${i + 1}-synergy`);
+      const badgesEl = document.getElementById(`deck-combo${i + 1}-badges`);
+
+      if (nameEl) nameEl.textContent = combo.combo;
+      if (tierEl) {
+        tierEl.textContent = combo.tier;
+        tierEl.className = `text-2xl font-mono font-bold ${getTierColor(combo.tier)}`;
+      }
+      if (usesEl) usesEl.textContent = combo.hasData ? combo.uses.toString() : 'No data';
+      if (winrateEl) winrateEl.textContent = combo.hasData ? `${combo.winRate.toFixed(0)}%` : '--';
+      if (metaEl) metaEl.textContent = `${Math.round(combo.metaScore)}/100`;
+      if (synergyEl) synergyEl.textContent = `${Math.round(combo.synergyScore)}/100`;
+
+      // Update card border
+      if (cardEl) {
+        cardEl.className = `card card-padding ${getTierBgColor(combo.tier)}`;
+      }
+
+      // Badges
+      if (badgesEl) {
+        const badges: string[] = [];
+        if (combo.isMetaPick) badges.push('<span class="px-2 py-1 text-xs font-mono rounded bg-tier-ss/20 text-tier-ss">Meta Pick</span>');
+        if (combo.isHiddenGem) badges.push('<span class="px-2 py-1 text-xs font-mono rounded bg-series-cx/20 text-series-cx">Hidden Gem</span>');
+        if (combo.isRising) badges.push('<span class="px-2 py-1 text-xs font-mono rounded bg-positive/20 text-positive">Rising</span>');
+        if (!combo.hasData) badges.push('<span class="px-2 py-1 text-xs font-mono rounded bg-fg-muted/20 text-fg-muted">Untested</span>');
+        badgesEl.innerHTML = badges.join('');
+      }
+    }
+
+    // Analysis sections
+    const strengthsEl = document.getElementById('deck-strengths');
+    const weaknessesEl = document.getElementById('deck-weaknesses');
+    const suggestionsEl = document.getElementById('deck-suggestions');
+
+    if (strengthsEl) {
+      strengthsEl.innerHTML = rating.strengths.length > 0
+        ? rating.strengths.map(s => `<li class="flex items-start gap-2"><span class="text-positive mt-1">+</span> ${s}</li>`).join('')
+        : '<li class="text-fg-muted">No major strengths identified</li>';
+    }
+
+    if (weaknessesEl) {
+      weaknessesEl.innerHTML = rating.weaknesses.length > 0
+        ? rating.weaknesses.map(w => `<li class="flex items-start gap-2"><span class="text-negative mt-1">-</span> ${w}</li>`).join('')
+        : '<li class="text-fg-muted">No major weaknesses identified</li>';
+    }
+
+    if (suggestionsEl) {
+      suggestionsEl.innerHTML = rating.suggestions.length > 0
+        ? rating.suggestions.map(s => `<li class="flex items-start gap-2"><span class="text-accent mt-1">*</span> ${s}</li>`).join('')
+        : '<li class="text-fg-muted">Your deck looks solid!</li>';
+    }
+  }
 </script>

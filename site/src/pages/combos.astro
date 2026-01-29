@@ -108,11 +108,16 @@ import Layout from '../layouts/Layout.astro';
     return 'ALL';
   }
 
+  let allCombosWithRare: ComboStats[] = []; // Includes 1-use combos for search
+
   async function loadRankings() {
     try {
       await initDB();
       const region = getSelectedRegion();
-      allCombos = await getRankedCombos(200, 2, region);
+      // Load combos with 2+ uses for main display
+      allCombos = await getRankedCombos(500, 2, region);
+      // Also load rare combos (1 use) for search functionality
+      allCombosWithRare = await getRankedCombos(2000, 1, region);
       filteredCombos = allCombos;
       renderTable(filteredCombos.slice(0, displayedCount));
       updateLoadMoreButton();
@@ -180,7 +185,8 @@ import Layout from '../layouts/Layout.astro';
   }
 
   function applyFilters() {
-    let filtered = allCombos;
+    // Use rare combos dataset when searching, regular dataset otherwise
+    let filtered = searchQuery ? allCombosWithRare : allCombos;
 
     // Apply search filter
     if (searchQuery) {

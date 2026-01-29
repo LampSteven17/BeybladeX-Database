@@ -63,6 +63,20 @@
   }
 
   /* ===========================================
+   * Filter Buttons
+   * =========================================== */
+  .filter-btn {
+    @apply px-4 py-2 text-sm font-mono rounded-lg border transition-all duration-200;
+    @apply text-fg-muted border-stroke bg-transparent;
+    @apply hover:bg-panel hover:border-stroke-hover;
+    @apply flex items-center;
+  }
+
+  .filter-btn.active {
+    @apply bg-accent/10 text-accent border-accent/30;
+  }
+
+  /* ===========================================
    * Series Badges (BX/UX/CX)
    * =========================================== */
   .badge {

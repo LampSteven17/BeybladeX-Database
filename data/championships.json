@@ -1,0 +1,187 @@
+{
+  "tournaments": [
+    {
+      "id": "wc2025_regular",
+      "name": "Beyblade X World Championship 2025 - Regular Class",
+      "date": "2025-10-12",
+      "location": "Tokyo, Japan",
+      "region": "JAPAN",
+      "format": "3on3 Battle, First to 4 points",
+      "class": "Regular (Ages 6-12)",
+      "placements": [
+        {
+          "place": 1,
+          "player": "Leobardo",
+          "player_region": "Mexico City, Mexico",
+          "combos": [
+            {
+              "blade": "Aero Pegasus",
+              "ratchet": "7-60",
+              "bit": "Level"
+            },
+            {
+              "blade": "Wizard Rod",
+              "ratchet": "1-60",
+              "bit": "Hexa"
+            },
+            {
+              "blade": "Shark Scale",
+              "ratchet": "3-60",
+              "bit": "Low Rush"
+            }
+          ]
+        },
+        {
+          "place": 2,
+          "player": "Balya",
+          "player_region": "Jakarta, Indonesia",
+          "combos": [
+            {
+              "blade": "Cobalt Dragoon",
+              "ratchet": "5-60",
+              "bit": "Elevate"
+            },
+            {
+              "blade": "Wizard Rod",
+              "ratchet": "1-60",
+              "bit": "Hexa"
+            },
+            {
+              "blade": "Shark Scale",
+              "ratchet": "1-70",
+              "bit": "Low Rush"
+            }
+          ]
+        },
+        {
+          "place": 3,
+          "player": "Berguiny",
+          "player_region": "Paris, France",
+          "combos": [
+            {
+              "blade": "Hover Wyvern",
+              "ratchet": "7-60",
+              "bit": "Low Rush"
+            },
+            {
+              "blade": "Wizard Rod",
+              "ratchet": "9-70",
+              "bit": "Ball"
+            },
+            {
+              "blade": "Valkyrie Blast Wheel",
+              "ratchet": "9-60",
+              "bit": "Free Ball",
+              "lock_chip": "Valkyrie"
+            }
+          ]
+        },
+        {
+          "place": 4,
+          "player": "Kim Jung U",
+          "player_region": "Seoul, South Korea",
+          "combos": []
+        }
+      ]
+    },
+    {
+      "id": "wc2025_open",
+      "name": "Beyblade X World Championship 2025 - Open Class",
+      "date": "2025-10-12",
+      "location": "Tokyo, Japan",
+      "region": "JAPAN",
+      "format": "3on3 Battle, First to 4 points",
+      "class": "Open (Ages 6+)",
+      "placements": [
+        {
+          "place": 1,
+          "player": "Fahreddin",
+          "player_region": "Istanbul, Turkey",
+          "combos": []
+        },
+        {
+          "place": 2,
+          "player": "Kyle",
+          "player_region": "Hong Kong",
+          "combos": []
+        },
+        {
+          "place": 3,
+          "player": "Omanju King",
+          "player_region": "Tokyo, Japan",
+          "combos": []
+        },
+        {
+          "place": 4,
+          "player": "Yoo Ha Jun",
+          "player_region": "Seoul, South Korea",
+          "combos": []
+        }
+      ]
+    },
+    {
+      "id": "asia2024_regular",
+      "name": "Beyblade X Asia Championship 2024 - Regular Class",
+      "date": "2024-12-01",
+      "location": "Tokyo, Japan",
+      "region": "JAPAN",
+      "format": "3on3 Battle, First to 4 points",
+      "class": "Regular (Ages 6-12)",
+      "placements": [
+        {
+          "place": 1,
+          "player": "Sousuke",
+          "player_region": "Tokyo, Japan",
+          "combos": []
+        },
+        {
+          "place": 2,
+          "player": "Emmanuel Marcelino",
+          "player_region": "Manila, Philippines",
+          "combos": []
+        },
+        {
+          "place": 3,
+          "player": "Min Seo Jo",
+          "player_region": "Seoul, South Korea",
+          "combos": []
+        }
+      ]
+    },
+    {
+      "id": "asia2024_open",
+      "name": "Beyblade X Asia Championship 2024 - Open Class",
+      "date": "2024-12-01",
+      "location": "Tokyo, Japan",
+      "region": "JAPAN",
+      "format": "3on3 Battle, First to 4 points",
+      "class": "Open (Ages 6+)",
+      "placements": [
+        {
+          "place": 1,
+          "player": "Zane",
+          "player_region": "Singapore",
+          "combos": [
+            {
+              "blade": "Wizard Rod",
+              "ratchet": "9-60",
+              "bit": "Free Ball"
+            }
+          ]
+        },
+        {
+          "place": 2,
+          "player": "Mi Hee Youn",
+          "player_region": "Seoul, South Korea",
+          "combos": []
+        },
+        {
+          "place": 3,
+          "player": "Jerry",
+          "player_region": "Taipei, Taiwan",
+          "combos": []
+        }
+      ]
+    }
+  ]
+}

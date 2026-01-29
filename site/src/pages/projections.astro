@@ -1,0 +1,318 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Meta Projections">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header */}
+    <div class="mb-8">
+      <h1 class="text-3xl font-mono font-bold text-fg mb-2">
+        <span class="text-accent">#</span> Hidden Gems & Projections
+      </h1>
+      <p class="text-fg-secondary">
+        Deep analysis of tournament history to find undervalued combos, forgotten champions, and emerging picks.
+      </p>
+    </div>
+
+    {/* Loading State */}
+    <div id="projections-loading" class="card card-padding text-center py-16">
+      <div class="w-12 h-12 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-accent font-mono">Analyzing tournament history...</p>
+      <p class="text-fg-muted text-sm mt-2">This may take a moment</p>
+    </div>
+
+    {/* Content (hidden until loaded) */}
+    <div id="projections-content" class="hidden">
+      
+      {/* Era Context */}
+      <section id="era-context" class="card card-padding mb-8">
+        <h2 class="text-lg font-mono font-bold text-fg mb-4">
+          <span class="text-accent">#</span> Meta Eras
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div id="early-era" class="terminal-panel p-4">
+            <div class="text-xs font-mono text-fg-muted uppercase tracking-widest mb-2">Early Meta</div>
+            <div id="early-era-dates" class="text-sm text-fg-muted mb-2"></div>
+            <div id="early-era-combos" class="space-y-1"></div>
+          </div>
+          <div id="mid-era" class="terminal-panel p-4">
+            <div class="text-xs font-mono text-fg-muted uppercase tracking-widest mb-2">Mid Meta</div>
+            <div id="mid-era-dates" class="text-sm text-fg-muted mb-2"></div>
+            <div id="mid-era-combos" class="space-y-1"></div>
+          </div>
+          <div id="current-era" class="terminal-panel p-4 border-accent/30">
+            <div class="text-xs font-mono text-accent uppercase tracking-widest mb-2">Current Meta</div>
+            <div id="current-era-dates" class="text-sm text-fg-muted mb-2"></div>
+            <div id="current-era-combos" class="space-y-1"></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Underused Blades */}
+      <section class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-lg bg-series-ux/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-series-ux" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-mono font-bold text-fg">Underused Blades</h2>
+            <p class="text-fg-muted text-sm">Strong blades not seeing much current play</p>
+          </div>
+        </div>
+        <div id="underused-gems" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="card card-padding skeleton h-40"></div>
+          <div class="card card-padding skeleton h-40"></div>
+        </div>
+      </section>
+
+      {/* Forgotten Champions */}
+      <section class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-lg bg-tier-ss/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-tier-ss" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-mono font-bold text-fg">Forgotten Champions</h2>
+            <p class="text-fg-muted text-sm">Past winners that fell off the radar</p>
+          </div>
+        </div>
+        <div id="forgotten-gems" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="card card-padding skeleton h-40"></div>
+          <div class="card card-padding skeleton h-40"></div>
+        </div>
+      </section>
+
+      {/* Rising Newcomers */}
+      <section class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-lg bg-positive/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-positive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-mono font-bold text-fg">Rising Newcomers</h2>
+            <p class="text-fg-muted text-sm">New combos gaining traction</p>
+          </div>
+        </div>
+        <div id="rising-gems" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="card card-padding skeleton h-40"></div>
+          <div class="card card-padding skeleton h-40"></div>
+        </div>
+      </section>
+
+      {/* Counter-Meta Picks */}
+      <section class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-lg bg-negative/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-negative" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-mono font-bold text-fg">Counter-Meta Picks</h2>
+            <p class="text-fg-muted text-sm">Non-meta blades winning in current meta</p>
+          </div>
+        </div>
+        <div id="counter-meta-gems" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="card card-padding skeleton h-40"></div>
+          <div class="card card-padding skeleton h-40"></div>
+        </div>
+      </section>
+
+      {/* Methodology Note */}
+      <section class="card card-padding">
+        <h2 class="text-lg font-mono font-bold text-fg mb-3">How We Find Hidden Gems</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+          <div>
+            <h3 class="font-mono text-series-ux mb-2">Underused Blades</h3>
+            <p class="text-fg-muted">Blades with 20%+ win rate historically but fewer than 5 uses in the last 60 days. These have proven results but aren't part of current meta conversations.</p>
+          </div>
+          <div>
+            <h3 class="font-mono text-tier-ss mb-2">Forgotten Champions</h3>
+            <p class="text-fg-muted">Combos that won tournaments in early/mid eras but have 3 or fewer uses in the current era. The meta may have moved on prematurely.</p>
+          </div>
+          <div>
+            <h3 class="font-mono text-positive mb-2">Rising Newcomers</h3>
+            <p class="text-fg-muted">Combos where 60%+ of uses are in the current era, with at least 2 recent uses and 20%+ win rate. These are emerging picks to watch.</p>
+          </div>
+          <div>
+            <h3 class="font-mono text-negative mb-2">Counter-Meta Picks</h3>
+            <p class="text-fg-muted">Combos using non-meta blades that are winning in the current era. These could exploit weaknesses in popular choices.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  {/* Client-side data loading */}
+  <script>
+    import { 
+      initDB,
+      getEnhancedHiddenGems,
+      type EnhancedGem,
+      type HiddenGemsData
+    } from '../lib/db';
+
+    function getTrendBadge(trend: EnhancedGem['trend']): string {
+      switch (trend) {
+        case 'rising': return '<span class="px-2 py-0.5 text-xs font-mono rounded bg-positive/20 text-positive">Rising</span>';
+        case 'falling': return '<span class="px-2 py-0.5 text-xs font-mono rounded bg-negative/20 text-negative">Falling</span>';
+        case 'returning': return '<span class="px-2 py-0.5 text-xs font-mono rounded bg-tier-ss/20 text-tier-ss">Returning</span>';
+        default: return '<span class="px-2 py-0.5 text-xs font-mono rounded bg-fg-muted/20 text-fg-muted">Stable</span>';
+      }
+    }
+
+    function getDataQualityBadge(quality: EnhancedGem['dataQuality']): string {
+      switch (quality) {
+        case 'strong': return '<span class="px-2 py-1 text-xs font-mono rounded bg-positive/20 text-positive">Strong Data</span>';
+        case 'moderate': return '<span class="px-2 py-1 text-xs font-mono rounded bg-tier-ss/20 text-tier-ss">Moderate Data</span>';
+        default: return '<span class="px-2 py-1 text-xs font-mono rounded bg-fg-muted/20 text-fg-muted">Limited Data</span>';
+      }
+    }
+
+    function renderGemCard(gem: EnhancedGem, accentColor: string): string {
+      const winRatePct = (gem.winRate * 100).toFixed(0);
+
+      return `
+        <div class="card card-padding border-${accentColor}/30 hover:border-${accentColor}/50 transition-colors">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="font-mono font-bold text-fg text-lg">${gem.combo}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                ${getTrendBadge(gem.trend)}
+                ${gem.peakEra ? `<span class="text-xs text-fg-muted">Peak: ${gem.peakEra} era</span>` : ''}
+              </div>
+            </div>
+            <div class="text-right">
+              ${getDataQualityBadge(gem.dataQuality)}
+            </div>
+          </div>
+
+          <p class="text-fg-secondary text-sm mb-3">${gem.reason}</p>
+
+          <div class="grid grid-cols-4 gap-2 mb-3 text-center">
+            <div class="terminal-panel p-2">
+              <div class="font-mono text-fg font-bold">${gem.totalUses}</div>
+              <div class="text-xs text-fg-muted">Uses</div>
+            </div>
+            <div class="terminal-panel p-2">
+              <div class="font-mono text-positive font-bold">${gem.wins}</div>
+              <div class="text-xs text-fg-muted">Wins</div>
+            </div>
+            <div class="terminal-panel p-2">
+              <div class="font-mono text-accent font-bold">${winRatePct}%</div>
+              <div class="text-xs text-fg-muted">Win Rate</div>
+            </div>
+            <div class="terminal-panel p-2">
+              <div class="font-mono text-fg font-bold">${gem.recentUses}</div>
+              <div class="text-xs text-fg-muted">Recent</div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-stroke">
+            <p class="text-xs text-fg-muted italic">${gem.insight}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderEmptyState(message: string): string {
+      return `
+        <div class="col-span-2 card card-padding text-center py-8">
+          <p class="text-fg-muted">${message}</p>
+        </div>
+      `;
+    }
+
+    function renderEraSection(eraId: string, era: { start: string; end: string; topCombos: string[] }) {
+      const datesEl = document.getElementById(`${eraId}-dates`);
+      const combosEl = document.getElementById(`${eraId}-combos`);
+      
+      if (datesEl) {
+        datesEl.textContent = `${era.start} → ${era.end}`;
+      }
+      
+      if (combosEl) {
+        combosEl.innerHTML = era.topCombos.length > 0
+          ? era.topCombos.map((combo, i) => `
+              <div class="flex items-center gap-2 text-sm">
+                <span class="text-accent font-mono">${i + 1}.</span>
+                <span class="text-fg font-mono truncate">${combo}</span>
+              </div>
+            `).join('')
+          : '<div class="text-fg-muted text-sm">No data</div>';
+      }
+    }
+
+    async function loadAndRender() {
+      const loadingEl = document.getElementById('projections-loading');
+      const contentEl = document.getElementById('projections-content');
+
+      try {
+        await initDB();
+        const data = await getEnhancedHiddenGems();
+
+        // Render era context
+        renderEraSection('early-era', data.eraAnalysis.early);
+        renderEraSection('mid-era', data.eraAnalysis.mid);
+        renderEraSection('current-era', data.eraAnalysis.current);
+
+        // Render underused blades
+        const underusedEl = document.getElementById('underused-gems');
+        if (underusedEl) {
+          underusedEl.innerHTML = data.underused.length > 0
+            ? data.underused.map(g => renderGemCard(g, 'series-ux')).join('')
+            : renderEmptyState('No underused blades found with sufficient data');
+        }
+
+        // Render forgotten champions
+        const forgottenEl = document.getElementById('forgotten-gems');
+        if (forgottenEl) {
+          forgottenEl.innerHTML = data.forgotten.length > 0
+            ? data.forgotten.map(g => renderGemCard(g, 'tier-ss')).join('')
+            : renderEmptyState('No forgotten champions found');
+        }
+
+        // Render rising newcomers
+        const risingEl = document.getElementById('rising-gems');
+        if (risingEl) {
+          risingEl.innerHTML = data.rising.length > 0
+            ? data.rising.map(g => renderGemCard(g, 'positive')).join('')
+            : renderEmptyState('No rising newcomers found');
+        }
+
+        // Render counter-meta picks
+        const counterMetaEl = document.getElementById('counter-meta-gems');
+        if (counterMetaEl) {
+          counterMetaEl.innerHTML = data.counterMeta.length > 0
+            ? data.counterMeta.map(g => renderGemCard(g, 'negative')).join('')
+            : renderEmptyState('No counter-meta picks found');
+        }
+
+        // Show content
+        loadingEl?.classList.add('hidden');
+        contentEl?.classList.remove('hidden');
+
+      } catch (error) {
+        console.error('Error loading projection data:', error);
+        if (loadingEl) {
+          loadingEl.innerHTML = `
+            <svg class="w-16 h-16 text-negative mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p class="text-negative font-mono mb-2">Error loading projections</p>
+            <p class="text-fg-muted text-sm">${error instanceof Error ? error.message : 'Please try refreshing the page'}</p>
+          `;
+        }
+      }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', loadAndRender);
+  </script>
+</Layout>

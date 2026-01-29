@@ -140,7 +140,7 @@ const currentPath = Astro.url.pathname;
 
     <!-- Feed Carousel Script -->
     <script>
-      import { initDB, getMetaSpotlight, getDatabaseSummary, type Region } from '../lib/db';
+      import { initDB, getMetaSpotlight, getDatabaseSummary, type Region, type MetaSpotlightData } from '../lib/db';
 
       let carouselInterval: ReturnType<typeof setInterval> | null = null;
       let currentSlide = 0;
@@ -246,8 +246,8 @@ const currentPath = Astro.url.pathname;
 
           // Slide 2: Rising combos
           if (risers.length > 0) {
-            const risersList = risers.slice(0, 3).map(r =>
-              `<span class="feed-value">${r.blade}</span><span class="feed-positive">+${r.change}</span>`
+            const risersList = risers.slice(0, 3).map((r: MetaSpotlightData['risers'][0]) =>
+              `<span class="feed-value">${r.blade} ${r.ratchet} ${r.bit}</span><span class="feed-positive">+${r.change}</span>`
             ).join('<span class="feed-divider"></span>');
 
             slides.push(`
@@ -263,8 +263,8 @@ const currentPath = Astro.url.pathname;
 
           // Slide 3: Falling combos
           if (fallers.length > 0) {
-            const fallersList = fallers.slice(0, 3).map(f =>
-              `<span class="feed-value">${f.blade}</span><span class="feed-negative">${f.change}</span>`
+            const fallersList = fallers.slice(0, 3).map((f: MetaSpotlightData['fallers'][0]) =>
+              `<span class="feed-value">${f.blade} ${f.ratchet} ${f.bit}</span><span class="feed-negative">${f.change}</span>`
             ).join('<span class="feed-divider"></span>');
 
             slides.push(`

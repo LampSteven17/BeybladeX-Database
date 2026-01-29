@@ -14,6 +14,32 @@ import Layout from '../layouts/Layout.astro';
       </p>
     </div>
 
+    {/* Filter Tabs */}
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="50">
+        <span class="w-2 h-2 rounded-full bg-ratchet-50 mr-1.5"></span>50
+      </button>
+      <button class="filter-btn" data-filter="55">
+        <span class="w-2 h-2 rounded-full bg-ratchet-55 mr-1.5"></span>55
+      </button>
+      <button class="filter-btn" data-filter="60">
+        <span class="w-2 h-2 rounded-full bg-ratchet-60 mr-1.5"></span>60
+      </button>
+      <button class="filter-btn" data-filter="65">
+        <span class="w-2 h-2 rounded-full bg-ratchet-65 mr-1.5"></span>65
+      </button>
+      <button class="filter-btn" data-filter="70">
+        <span class="w-2 h-2 rounded-full bg-ratchet-70 mr-1.5"></span>70
+      </button>
+      <button class="filter-btn" data-filter="80">
+        <span class="w-2 h-2 rounded-full bg-ratchet-80 mr-1.5"></span>80
+      </button>
+      <button class="filter-btn" data-filter="85">
+        <span class="w-2 h-2 rounded-full bg-ratchet-85 mr-1.5"></span>85
+      </button>
+    </div>
+
     {/* Search Bar */}
     <div class="mb-4">
       <div class="relative">
@@ -73,20 +99,36 @@ import Layout from '../layouts/Layout.astro';
       </div>
       <div class="card card-padding">
         <h3 class="text-lg font-mono font-bold text-fg mb-3">
-          <span class="text-accent">#</span> Nub Count Colors
+          <span class="text-accent">#</span> Height Colors
         </h3>
-        <div class="space-y-2 text-sm">
+        <div class="grid grid-cols-2 gap-2 text-sm">
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-series-bx/20 text-series-bx border border-series-bx/40 font-mono text-xs">X-60</span>
-            <span class="text-fg-muted">6 nubs (60°)</span>
+            <span class="px-2 py-0.5 rounded bg-ratchet-50-muted text-ratchet-50 border border-ratchet-50/40 font-mono text-xs">X-50</span>
+            <span class="text-fg-muted">5 nubs</span>
           </div>
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-series-cx/20 text-series-cx border border-series-cx/40 font-mono text-xs">X-70</span>
-            <span class="text-fg-muted">7 nubs (70°)</span>
+            <span class="px-2 py-0.5 rounded bg-ratchet-55-muted text-ratchet-55 border border-ratchet-55/40 font-mono text-xs">X-55</span>
+            <span class="text-fg-muted">5.5 nubs</span>
           </div>
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-series-ux/20 text-series-ux border border-series-ux/40 font-mono text-xs">X-80</span>
-            <span class="text-fg-muted">8 nubs (80°)</span>
+            <span class="px-2 py-0.5 rounded bg-ratchet-60-muted text-ratchet-60 border border-ratchet-60/40 font-mono text-xs">X-60</span>
+            <span class="text-fg-muted">6 nubs</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-ratchet-65-muted text-ratchet-65 border border-ratchet-65/40 font-mono text-xs">X-65</span>
+            <span class="text-fg-muted">6.5 nubs</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-ratchet-70-muted text-ratchet-70 border border-ratchet-70/40 font-mono text-xs">X-70</span>
+            <span class="text-fg-muted">7 nubs</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-ratchet-80-muted text-ratchet-80 border border-ratchet-80/40 font-mono text-xs">X-80</span>
+            <span class="text-fg-muted">8 nubs</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-ratchet-85-muted text-ratchet-85 border border-ratchet-85/40 font-mono text-xs">X-85</span>
+            <span class="text-fg-muted">8.5 nubs</span>
           </div>
         </div>
       </div>
@@ -109,6 +151,7 @@ import Layout from '../layouts/Layout.astro';
 
   let allRatchets: PartStats[] = [];
   let searchQuery: string = '';
+  let selectedHeight: string = 'all';
 
   function getSelectedRegion(): Region {
     if (typeof localStorage !== 'undefined') {
@@ -124,6 +167,7 @@ import Layout from '../layouts/Layout.astro';
       allRatchets = await getRankedRatchets(50, 2, region);
       renderTable(allRatchets);
       setupSearch();
+      setupFilters();
     } catch (error) {
       console.error('Failed to load rankings:', error);
       const tbody = document.getElementById('rankings-body');
@@ -139,17 +183,27 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  // Color scheme based on ratchet angle/nubs (the XX in X-XX)
+  // Color scheme based on ratchet height (the XX in X-XX)
   function getRatchetColor(name: string): { bg: string; text: string; border: string } {
-    // Extract the angle part (e.g., "60" from "3-60")
+    // Extract the height part (e.g., "60" from "3-60")
     const match = name.match(/-(\d+)/);
-    const angle = match ? match[1] : '';
+    const height = match ? match[1] : '';
     const colors: Record<string, { bg: string; text: string; border: string }> = {
-      '60': { bg: 'bg-series-bx/20', text: 'text-series-bx', border: 'border-series-bx/40' },
-      '70': { bg: 'bg-series-cx/20', text: 'text-series-cx', border: 'border-series-cx/40' },
-      '80': { bg: 'bg-series-ux/20', text: 'text-series-ux', border: 'border-series-ux/40' },
+      '50': { bg: 'bg-ratchet-50-muted', text: 'text-ratchet-50', border: 'border-ratchet-50/40' },
+      '55': { bg: 'bg-ratchet-55-muted', text: 'text-ratchet-55', border: 'border-ratchet-55/40' },
+      '60': { bg: 'bg-ratchet-60-muted', text: 'text-ratchet-60', border: 'border-ratchet-60/40' },
+      '65': { bg: 'bg-ratchet-65-muted', text: 'text-ratchet-65', border: 'border-ratchet-65/40' },
+      '70': { bg: 'bg-ratchet-70-muted', text: 'text-ratchet-70', border: 'border-ratchet-70/40' },
+      '80': { bg: 'bg-ratchet-80-muted', text: 'text-ratchet-80', border: 'border-ratchet-80/40' },
+      '85': { bg: 'bg-ratchet-85-muted', text: 'text-ratchet-85', border: 'border-ratchet-85/40' },
     };
-    return colors[angle] || { bg: 'bg-accent/20', text: 'text-accent', border: 'border-accent/30' };
+    return colors[height] || { bg: 'bg-accent/20', text: 'text-accent', border: 'border-accent/30' };
+  }
+
+  // Extract height from ratchet name (e.g., "3-60" -> "60")
+  function getRatchetHeight(name: string): string {
+    const match = name.match(/-(\d+)/);
+    return match ? match[1] : '';
   }
 
   function renderTable(ratchets: Awaited<ReturnType<typeof getRankedRatchets>>) {
@@ -210,9 +264,27 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
+  function setupFilters() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedHeight = (btn as HTMLElement).dataset.filter || 'all';
+        applyFilters();
+      });
+    });
+  }
+
   function applyFilters() {
     let filtered = allRatchets;
 
+    // Filter by height
+    if (selectedHeight !== 'all') {
+      filtered = filtered.filter(r => getRatchetHeight(r.name) === selectedHeight);
+    }
+
+    // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(r => r.name.toLowerCase().includes(query));

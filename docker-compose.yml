@@ -1,0 +1,43 @@
+services:
+  # Static site served by nginx
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    container_name: beybladex-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - db-data:/data:ro
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API service for bookmarklet uploads and scheduled scraping
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: beybladex-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8081}:8000"
+    volumes:
+      - db-data:/data
+      - ./data:/app/data
+    environment:
+      - SCRAPE_SCHEDULE=${SCRAPE_SCHEDULE:-0 6 * * *}
+      - TZ=${TZ:-UTC}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  db-data:

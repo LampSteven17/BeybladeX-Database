@@ -1,0 +1,45 @@
+# Traefik configuration for BeybladeX Database
+# Add this to your TheLightLab/compose/traefik/config/services.yml
+#
+# Replace BEYBLADEX_HOST_IP with the IP of the VM/LXC running the containers
+# Default ports: web=8080, api=8081
+
+http:
+  routers:
+    # Main website
+    beybladex:
+      rule: "Host(`beybladexdatabase.thelightlab.net`)"
+      service: beybladex-web
+      tls:
+        certResolver: cloudflare
+      entryPoints:
+        - websecure
+
+    # API endpoint (for bookmarklet uploads)
+    beybladex-api:
+      rule: "Host(`beybladexdatabase.thelightlab.net`) && PathPrefix(`/api`)"
+      service: beybladex-api
+      middlewares:
+        - beybladex-strip-api
+      tls:
+        certResolver: cloudflare
+      entryPoints:
+        - websecure
+
+  middlewares:
+    # Strip /api prefix before forwarding to API container
+    beybladex-strip-api:
+      stripPrefix:
+        prefixes:
+          - "/api"
+
+  services:
+    beybladex-web:
+      loadBalancer:
+        servers:
+          - url: "http://BEYBLADEX_HOST_IP:8080"
+
+    beybladex-api:
+      loadBalancer:
+        servers:
+          - url: "http://BEYBLADEX_HOST_IP:8081"

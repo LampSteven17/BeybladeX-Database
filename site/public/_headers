@@ -1,0 +1,13 @@
+# Cache the DuckDB database file (updates trigger new deploys anyway)
+/data/beyblade.duckdb
+  Cache-Control: public, max-age=86400
+
+# Cache static assets aggressively (hashed filenames)
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Don't cache HTML pages for long (want updates to propagate)
+/*.html
+  Cache-Control: public, max-age=3600
+/
+  Cache-Control: public, max-age=3600

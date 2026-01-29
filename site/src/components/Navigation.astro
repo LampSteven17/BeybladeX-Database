@@ -8,14 +8,15 @@ interface Props {
 const { currentPath = '/' } = Astro.props;
 
 const navItems = [
-  { href: '/', label: 'Dashboard' },
   { href: '/combos', label: 'Combos' },
   { href: '/blades', label: 'Blades' },
   { href: '/ratchets', label: 'Ratchets' },
   { href: '/bits', label: 'Bits' },
   { href: '/assist', label: 'Assists' },
   { href: '/lockchips', label: 'Lock Chips' },
-  { href: '/tools', label: 'Tools' },
+  { href: '/projections', label: 'Projections' },
+  { href: '/tools', label: 'Rate My Deck' },
+  { href: '/methodology', label: 'Methodology' },
 ];
 
 function isActive(href: string): boolean {
@@ -39,12 +40,12 @@ function isActive(href: string): boolean {
       </a>
 
       <!-- Desktop Navigation -->
-      <div class="hidden md:flex items-center gap-1">
+      <div class="hidden lg:flex items-center gap-1">
         {navItems.map((item) => (
           <a
             href={item.href}
             class:list={[
-              'px-3 py-1.5 rounded text-sm transition-all duration-150',
+              'px-3 py-1.5 rounded text-sm transition-all duration-150 whitespace-nowrap',
               isActive(item.href)
                 ? 'bg-panel text-fg'
                 : 'text-fg-secondary hover:text-fg hover:bg-panel',
@@ -61,7 +62,7 @@ function isActive(href: string): boolean {
       <!-- Mobile Menu Button -->
       <button
         id="mobile-menu-btn"
-        class="md:hidden p-2 rounded text-fg-secondary hover:text-fg hover:bg-panel transition-colors"
+        class="lg:hidden p-2 rounded text-fg-secondary hover:text-fg hover:bg-panel transition-colors"
         aria-label="Toggle menu"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +73,7 @@ function isActive(href: string): boolean {
   </div>
 
   <!-- Mobile Navigation -->
-  <div id="mobile-menu" class="hidden md:hidden border-t border-stroke bg-canvas/95 backdrop-blur-sm">
+  <div id="mobile-menu" class="hidden lg:hidden border-t border-stroke bg-canvas/95 backdrop-blur-sm">
     <div class="px-4 py-3 space-y-1">
       {navItems.map((item) => (
         <a
