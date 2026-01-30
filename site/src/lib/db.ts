@@ -383,11 +383,39 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
 }
 
 /**
+ * Convert Arrow/DuckDB value to plain JavaScript value.
+ * Handles BigInt, Date, and other special types.
+ */
+function toJSValue(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  // Convert BigInt to Number (safe for our use case - tournament counts, placements)
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  // Convert Date objects to ISO strings for consistent handling
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  // Handle Arrow Decimal/Int64 types that have a valueOf method
+  if (typeof value === 'object' && value !== null && 'valueOf' in value && typeof (value as any).valueOf === 'function') {
+    const primitive = (value as any).valueOf();
+    if (typeof primitive === 'bigint') {
+      return Number(primitive);
+    }
+    return primitive;
+  }
+  return value;
+}
+
+/**
  * Execute a query and return results as an array of objects.
  *
  * Note: DuckDB-WASM returns StructRowProxy objects from toArray().
  * Object.entries() doesn't work reliably on these proxy objects in all browsers.
  * We use the schema to get column names and build plain objects manually.
+ * Values are converted from Arrow types to plain JavaScript types.
  */
 export async function query<T = Record<string, unknown>>(sql: string, _params?: unknown[]): Promise<T[]> {
   const connection = await initDB();
@@ -401,7 +429,7 @@ export async function query<T = Record<string, unknown>>(sql: string, _params?: 
   return result.toArray().map((row) => {
     const obj: Record<string, unknown> = {};
     for (const col of columns) {
-      obj[col] = row[col];
+      obj[col] = toJSValue(row[col]);
     }
     return obj;
   }) as T[];
