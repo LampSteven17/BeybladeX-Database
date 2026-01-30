@@ -6,10 +6,89 @@ Single source of truth: site/public/data/beyblade.duckdb
 """
 
 import duckdb
+import fcntl
+import os
+from contextlib import contextmanager
 from pathlib import Path
 
 # Database path - single source of truth, used directly by the website
 DB_PATH = Path(__file__).parent.parent / "site" / "public" / "data" / "beyblade.duckdb"
+
+# Lock file for coordinating concurrent access
+LOCK_PATH = DB_PATH.parent / ".beyblade.lock"
+
+
+class DatabaseLockError(Exception):
+    """Raised when the database lock cannot be acquired."""
+    pass
+
+
+@contextmanager
+def database_lock(timeout: float = 0):
+    """Context manager for acquiring an exclusive lock on the database.
+
+    This prevents concurrent write operations from multiple processes
+    (e.g., cron job and API-triggered scrapes running simultaneously).
+
+    Args:
+        timeout: How long to wait for the lock (0 = non-blocking, fail immediately)
+
+    Raises:
+        DatabaseLockError: If the lock cannot be acquired
+
+    Usage:
+        with database_lock():
+            conn = get_connection()
+            # ... do database operations ...
+            conn.close()
+    """
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd = os.open(str(LOCK_PATH), os.O_CREAT | os.O_RDWR)
+
+    try:
+        # Try to acquire exclusive lock (non-blocking)
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (IOError, OSError):
+            os.close(lock_fd)
+            raise DatabaseLockError(
+                "Could not acquire database lock. Another scrape may be in progress. "
+                "Wait for it to complete or check for stale lock files."
+            )
+
+        yield
+
+    finally:
+        # Release lock and close file descriptor
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        except (IOError, OSError):
+            pass
+        os.close(lock_fd)
+
+
+def is_database_locked() -> bool:
+    """Check if the database is currently locked by another process.
+
+    Returns:
+        True if locked, False if available
+    """
+    if not LOCK_PATH.exists():
+        return False
+
+    try:
+        lock_fd = os.open(str(LOCK_PATH), os.O_CREAT | os.O_RDWR)
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # If we got here, lock is available - release it
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            return False
+        except (IOError, OSError):
+            return True
+        finally:
+            os.close(lock_fd)
+    except (IOError, OSError):
+        return False
 
 
 # =============================================================================
@@ -383,10 +462,14 @@ BLADE_SERIES = {
 }
 
 
-def get_connection() -> duckdb.DuckDBPyConnection:
-    """Get a connection to the database."""
+def get_connection(read_only: bool = False) -> duckdb.DuckDBPyConnection:
+    """Get a connection to the database.
+
+    Args:
+        read_only: If True, open in read-only mode (allows concurrent reads).
+    """
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    return duckdb.connect(str(DB_PATH))
+    return duckdb.connect(str(DB_PATH), read_only=read_only)
 
 
 def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:

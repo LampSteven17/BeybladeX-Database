@@ -384,11 +384,27 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
 
 /**
  * Execute a query and return results as an array of objects.
+ *
+ * Note: DuckDB-WASM returns StructRowProxy objects from toArray().
+ * Object.entries() doesn't work reliably on these proxy objects in all browsers.
+ * We use the schema to get column names and build plain objects manually.
  */
 export async function query<T = Record<string, unknown>>(sql: string, _params?: unknown[]): Promise<T[]> {
   const connection = await initDB();
   const result = await connection.query(sql);
-  return result.toArray().map((row) => Object.fromEntries(Object.entries(row))) as T[];
+
+  // Get column names from the schema
+  const columns = result.schema.fields.map(f => f.name);
+
+  // Convert each row to a plain object using column names
+  // This is more reliable than Object.entries() on StructRowProxy objects
+  return result.toArray().map((row) => {
+    const obj: Record<string, unknown> = {};
+    for (const col of columns) {
+      obj[col] = row[col];
+    }
+    return obj;
+  }) as T[];
 }
 
 // =============================================================================

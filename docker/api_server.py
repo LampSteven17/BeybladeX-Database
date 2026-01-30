@@ -19,6 +19,15 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+# Add scripts directory to path for imports
+sys.path.insert(0, str(Path("/app/scripts")))
+try:
+    from db import is_database_locked
+except ImportError:
+    # Fallback if import fails
+    def is_database_locked():
+        return False
+
 # Paths
 DATA_DIR = Path("/app/data")
 SHARED_DB = Path("/data/beyblade.duckdb")
@@ -39,7 +48,11 @@ def run_scrape(sources: list[str] = None):
     global scrape_status
 
     if scrape_status["running"]:
-        return False, "Scrape already in progress"
+        return False, "Scrape already in progress (API-triggered)"
+
+    # Check if another process (e.g., cron) has the lock
+    if is_database_locked():
+        return False, "Database is locked by another process (possibly cron job)"
 
     scrape_status["running"] = True
     scrape_status["last_error"] = None
@@ -108,12 +121,14 @@ class APIHandler(BaseHTTPRequestHandler):
             db_exists = SHARED_DB.exists()
             db_size = SHARED_DB.stat().st_size if db_exists else 0
             db_modified = datetime.fromtimestamp(SHARED_DB.stat().st_mtime).isoformat() if db_exists else None
+            db_locked = is_database_locked()
 
             self._send_json({
                 "database": {
                     "exists": db_exists,
                     "size_bytes": db_size,
                     "last_modified": db_modified,
+                    "locked": db_locked,
                 },
                 "scraper": scrape_status,
             })

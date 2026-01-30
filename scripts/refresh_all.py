@@ -24,7 +24,7 @@ from pathlib import Path
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from db import get_connection, init_schema, normalize_data
+from db import get_connection, init_schema, normalize_data, database_lock, DatabaseLockError
 from scrapers import WBOScraper, JPScraper, DEScraper
 from import_championships import (
     init_data_file as init_champ_data,
@@ -261,15 +261,27 @@ Examples:
     else:
         sources = DEFAULT_ORDER
 
-    # Connect to database
-    conn = get_connection()
-    init_schema(conn)
+    # Stats-only mode: use read-only connection, no lock needed
+    if args.stats:
+        conn = get_connection(read_only=True)
+        try:
+            show_stats(conn, sources)
+        finally:
+            conn.close()
+        return
+
+    # Write operations: acquire exclusive lock to prevent concurrent scrapes
+    try:
+        lock_context = database_lock()
+        lock_context.__enter__()
+    except DatabaseLockError as e:
+        print(f"ERROR: {e}")
+        sys.exit(1)
 
     try:
-        # Stats only mode
-        if args.stats:
-            show_stats(conn, sources)
-            return
+        # Connect to database (write mode)
+        conn = get_connection()
+        init_schema(conn)
 
         # Clear only mode
         if args.clear:
@@ -326,6 +338,8 @@ Examples:
 
     finally:
         conn.close()
+        # Release database lock
+        lock_context.__exit__(None, None, None)
 
 
 if __name__ == "__main__":
