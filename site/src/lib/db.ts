@@ -446,24 +446,9 @@ export async function query<T = Record<string, unknown>>(sql: string, _params?: 
   // Get column names from the schema
   const columns = result.schema.fields.map(f => f.name);
 
-  // Log first query result for debugging
-  const rawRows = result.toArray();
-  if (rawRows.length > 0 && !query._logged) {
-    query._logged = true;
-    console.log('[DuckDB] Schema columns:', columns);
-    console.log('[DuckDB] First raw row type:', typeof rawRows[0], rawRows[0]?.constructor?.name);
-    console.log('[DuckDB] First raw row:', rawRows[0]);
-    // Try different ways to access the data
-    const testRow = rawRows[0];
-    console.log('[DuckDB] Direct property access test:');
-    for (const col of columns.slice(0, 3)) {
-      console.log(`  ${col}: ${testRow[col]} (type: ${typeof testRow[col]})`);
-    }
-  }
-
   // Convert each row to a plain object using column names
   // This is more reliable than Object.entries() on StructRowProxy objects
-  return rawRows.map((row) => {
+  return result.toArray().map((row) => {
     const obj: Record<string, unknown> = {};
     for (const col of columns) {
       obj[col] = toJSValue(row[col]);
@@ -471,8 +456,6 @@ export async function query<T = Record<string, unknown>>(sql: string, _params?: 
     return obj;
   }) as T[];
 }
-// Flag to only log once
-query._logged = false;
 
 // =============================================================================
 // Type definitions
@@ -3505,14 +3488,7 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
   // Get the most recent tournament date for this region
   const lastTournamentDate = rows.length > 0 ? rows[0].tournament_date : null;
 
-  console.log('[MetaSpotlight] Total rows:', rows.length);
-  console.log('[MetaSpotlight] Last tournament date:', lastTournamentDate);
-  if (rows.length > 0) {
-    console.log('[MetaSpotlight] First row:', rows[0]);
-  }
-
   if (rows.length === 0 || !lastTournamentDate) {
-    console.log('[MetaSpotlight] No data - returning null champion');
     return { champion: null, risers: [], fallers: [], lastTournamentDate: null, isStale: false, dataSource: 'recent' };
   }
 
@@ -3522,16 +3498,10 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
   const recentDays = 30;
   const olderDays = 30;
 
-  console.log('[MetaSpotlight] Anchor date:', anchorDate);
-  console.log('[MetaSpotlight] Anchor date valid:', !isNaN(anchorDate.getTime()));
-
   // 30 days before the most recent tournament
   const recentCutoff = new Date(anchorDate.getTime() - recentDays * 24 * 60 * 60 * 1000);
   // 60 days before the most recent tournament (for comparison)
   const olderCutoff = new Date(anchorDate.getTime() - (recentDays + olderDays) * 24 * 60 * 60 * 1000);
-
-  console.log('[MetaSpotlight] Recent cutoff:', recentCutoff);
-  console.log('[MetaSpotlight] Older cutoff:', olderCutoff);
 
   // Check if the data is stale (most recent tournament is more than 30 days ago from today)
   const todayCutoff = new Date(now.getTime() - recentDays * 24 * 60 * 60 * 1000);
@@ -3599,13 +3569,7 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     return d >= recentCutoff && d <= anchorDate;
   });
 
-  console.log('[MetaSpotlight] Recent rows (30d window):', recentRows.length);
-  if (recentRows.length > 0) {
-    console.log('[MetaSpotlight] First recent row date:', recentRows[0].tournament_date);
-  }
-
   const { champion } = calculateStats(recentRows, 2);
-  console.log('[MetaSpotlight] Champion:', champion);
 
   // Calculate risers and fallers by comparing recent 30 days vs previous 30 days
   const olderRows = rows.filter(row => {

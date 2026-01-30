@@ -1,151 +1,150 @@
-# Self-Hosting BeybladeX Database
+# BeybladeX-Database Deployment Guide
 
-This guide explains how to deploy BeybladeX Database on your own server for personal use.
+Simple deployment without Docker - just nginx + Python API.
 
-## Quick Start
+## System Requirements
+
+- **OS:** Debian 12 / Ubuntu 22.04+
+- **Node.js:** 20.x LTS
+- **Python:** 3.12+
+- **uv:** Latest (Astral Python package manager)
+- **nginx:** For static file serving
+
+## Directory Structure
+
+```
+/opt/beybladex/
+├── site/
+│   ├── dist/              # Built Astro static site (nginx serves this)
+│   │   └── data/
+│   │       └── beyblade.duckdb  # Database (copied here after scrapes)
+│   └── public/data/       # Source database location
+├── scripts/               # Python scrapers & API
+├── data/                  # Scraper temp files (wbo_pages.json)
+└── .venv/                 # Python virtual environment (managed by uv)
+```
+
+## Installation Steps
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/BeybladeX-Database.git
-cd BeybladeX-Database
+# 1. System packages
+apt update && apt install -y nginx curl git
 
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your preferred settings
+# 2. Node.js 20.x
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs
 
-# Start the services
-docker compose up -d
+# 3. uv (Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+
+# 4. Clone repo
+git clone https://github.com/LampSteven17/BeybladeX-Database.git /opt/beybladex
+cd /opt/beybladex
+
+# 5. Python deps
+uv sync
+
+# 6. Build site
+cd site && npm ci && npm run build && cd ..
+
+# 7. Create dist data dir and run initial scrape
+mkdir -p site/dist/data data
+uv run python scripts/refresh_all.py --sources jp
+cp site/public/data/beyblade.duckdb site/dist/data/
 ```
 
-The web interface will be available at `http://localhost:8080` (or your configured port).
+## nginx Config
 
-## Architecture
+`/etc/nginx/sites-available/beybladex`:
+```nginx
+server {
+    listen 80;
+    server_name beybladex.example.com;
+    root /opt/beybladex/site/dist;
+    index index.html;
 
-```
-┌─────────────────┐     ┌─────────────────┐
-│   Web (nginx)   │────▶│  Static Site    │
-│   Port 8080     │     │  (Astro build)  │
-└────────┬────────┘     └─────────────────┘
-         │
-         │ reads
-         ▼
-┌─────────────────┐
-│   Shared DB     │◀──── db-data volume
-│  beyblade.duckdb│
-└────────▲────────┘
-         │
-         │ writes
-         │
-┌────────┴────────┐     ┌─────────────────┐
-│   API Server    │────▶│  Python Scraper │
-│   Port 8081     │     │  (refresh_all)  │
-└─────────────────┘     └─────────────────┘
-```
+    # No cache for database
+    location /data/beyblade.duckdb {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        expires -1;
+    }
 
-## Services
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|ico|svg|woff2?)$ {
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
 
-### Web (`beybladex-web`)
-- Serves the static Astro site via nginx
-- Reads the DuckDB database for in-browser queries
-- Default port: 8080
+    # SPA routing
+    location / {
+        try_files $uri $uri/ $uri.html /index.html;
+    }
 
-### API (`beybladex-api`)
-- Receives scraped data from browser bookmarklet
-- Runs scheduled scraping jobs (default: 6am daily)
-- Default port: 8081
-
-## Configuration
-
-Edit `.env` to customize:
-
-```bash
-# Web server port
-WEB_PORT=8080
-
-# API server port (for bookmarklet)
-API_PORT=8081
-
-# Cron schedule for auto-scraping (default: 6am daily)
-SCRAPE_SCHEDULE=0 6 * * *
-
-# Timezone
-TZ=America/New_York
+    # API proxy
+    location /api/ {
+        proxy_pass http://127.0.0.1:8081/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
 ```
 
-## Updating Data
+Enable: `ln -s /etc/nginx/sites-available/beybladex /etc/nginx/sites-enabled/`
 
-### Option 1: Browser Bookmarklet (Recommended)
+## API Systemd Service
 
-The bookmarklet scrapes WBO directly from your browser and uploads to your server.
+`/etc/systemd/system/beybladex-api.service`:
+```ini
+[Unit]
+Description=BeybladeX API Server
+After=network.target
 
-1. Open `scripts/bookmarklet_homelab.js`
-2. Replace `YOUR_SERVER_URL` with your server's address
-3. Create a browser bookmark with the minified code as the URL
-4. Navigate to the WBO thread and click the bookmarklet
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/beybladex
+ExecStart=/root/.local/bin/uv run python scripts/api_server_standalone.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=DB_PATH=/opt/beybladex/site/dist/data/beyblade.duckdb
 
-### Option 2: Manual Trigger
-
-```bash
-# Trigger all sources
-curl http://localhost:8081/scrape
-
-# Trigger specific sources
-curl "http://localhost:8081/scrape?sources=wbo,jp"
+[Install]
+WantedBy=multi-user.target
 ```
 
-### Option 3: Scheduled (Automatic)
+Enable: `systemctl enable --now beybladex-api`
 
-The API container runs a cron job based on `SCRAPE_SCHEDULE`. Default is 6am daily.
+## Cron for Scheduled Scrapes
+
+`/etc/cron.d/beybladex`:
+```cron
+# Run JP scraper daily at 6 AM, copy DB to dist
+0 6 * * * root cd /opt/beybladex && /root/.local/bin/uv run python scripts/refresh_all.py --sources jp && cp site/public/data/beyblade.duckdb site/dist/data/
+```
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check |
-| `/status` | GET | Database and scraper status |
-| `/scrape` | GET/POST | Trigger manual scrape |
-| `/upload/wbo` | POST | Receive WBO data from bookmarklet |
+| `/api/health` | GET | Health check |
+| `/api/status` | GET | DB & scraper status |
+| `/api/scrape` | GET/POST | Trigger scrape |
+| `/api/upload/wbo` | POST | Bookmarklet upload |
 
-## Reverse Proxy (Optional)
+## Update Procedure
 
-For Traefik users, add labels to `docker-compose.yml`:
-
-```yaml
-services:
-  web:
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.beybladex.rule=Host(`beybladex.yourdomain.local`)"
-```
-
-## Troubleshooting
-
-### Database not updating
 ```bash
-# Check API logs
-docker compose logs api
-
-# Manually trigger scrape
-docker compose exec api uv run python scripts/refresh_all.py
+cd /opt/beybladex
+git pull
+cd site && npm ci && npm run build && cd ..
+cp site/public/data/beyblade.duckdb site/dist/data/ 2>/dev/null || true
+systemctl restart beybladex-api
+systemctl reload nginx
 ```
 
-### Web showing stale data
-```bash
-# Restart web container to reload database
-docker compose restart web
-```
+## Bookmarklet
 
-### Check scrape status
-```bash
-curl http://localhost:8081/status
-```
-
-## Data Sources
-
-- **WBO**: World Beyblade Organization tournament results
-- **JP**: Japanese tournament data from okuyama3093.com
-- **DE**: German BLG tournament data
-
-## Legal Notice
-
-This tool is for personal, non-commercial use only. Tournament data belongs to its respective sources. Please respect rate limits when scraping.
+Update `API_URL` in bookmarklet to: `https://beybladex.example.com/api`
