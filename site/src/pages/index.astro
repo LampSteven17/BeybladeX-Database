@@ -63,11 +63,11 @@ import Layout from '../layouts/Layout.astro';
             </div>
             
             {/* Blade Journey Visualization */}
-            <div class="border-t border-stroke pt-4">
+            <div class="border-t border-stroke pt-4 w-full">
               <div class="flex items-center justify-between mb-3">
                 <span class="text-xs font-mono text-fg-muted uppercase tracking-widest">Top Blade Rankings Over Time</span>
               </div>
-              <div id="blade-journey-chart" class="h-40 relative">
+              <div id="blade-journey-chart" class="h-40 w-full relative overflow-hidden">
                 {/* SVG journey lines rendered by JS */}
               </div>
               <div id="blade-journey-legend" class="flex flex-wrap gap-3 mt-2 text-xs">
@@ -758,7 +758,9 @@ import Layout from '../layouts/Layout.astro';
     // Render blade journey visualization (SVG bump chart)
     if (journeyChartEl && data.bladeJourneys.length > 0) {
       const months = data.timeline.map(t => t.month);
-      const width = journeyChartEl.clientWidth || 600;
+      // Get actual container width, fallback to parent width
+      const containerWidth = journeyChartEl.getBoundingClientRect().width || journeyChartEl.parentElement?.getBoundingClientRect().width || 800;
+      const width = Math.max(containerWidth, 400);
       const height = 160;
       const padding = { top: 10, right: 20, bottom: 20, left: 30 };
       const chartWidth = width - padding.left - padding.right;
@@ -768,8 +770,8 @@ import Layout from '../layouts/Layout.astro';
       const topJourneys = data.bladeJourneys.slice(0, 6);
       const maxRank = 8; // Only show ranks 1-8
 
-      // Create SVG
-      let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">`;
+      // Create SVG - use none for preserveAspectRatio to fill container width
+      let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMinYMid meet" style="display:block;">`;
       
       // Grid lines for ranks
       for (let rank = 1; rank <= maxRank; rank++) {
