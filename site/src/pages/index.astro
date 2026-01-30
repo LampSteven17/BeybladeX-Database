@@ -755,73 +755,7 @@ import Layout from '../layouts/Layout.astro';
       `}).join('');
     }
 
-    // Render blade journey visualization (SVG bump chart)
-    if (journeyChartEl && data.bladeJourneys.length > 0) {
-      const months = data.timeline.map(t => t.month);
-      // Get actual container width, fallback to parent width
-      const containerWidth = journeyChartEl.getBoundingClientRect().width || journeyChartEl.parentElement?.getBoundingClientRect().width || 800;
-      const width = Math.max(containerWidth, 400);
-      const height = 160;
-      const padding = { top: 10, right: 20, bottom: 20, left: 30 };
-      const chartWidth = width - padding.left - padding.right;
-      const chartHeight = height - padding.top - padding.bottom;
-
-      // Only show top 6 blades for clarity
-      const topJourneys = data.bladeJourneys.slice(0, 6);
-      const maxRank = 8; // Only show ranks 1-8
-
-      // Create SVG - use none for preserveAspectRatio to fill container width
-      let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMinYMid meet" style="display:block;">`;
-      
-      // Grid lines for ranks
-      for (let rank = 1; rank <= maxRank; rank++) {
-        const y = padding.top + ((rank - 1) / (maxRank - 1)) * chartHeight;
-        svg += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
-        svg += `<text x="${padding.left - 5}" y="${y + 3}" fill="#6b7280" font-size="9" text-anchor="end" font-family="monospace">${rank}</text>`;
-      }
-
-      // Month labels (show every other month if many)
-      const step = months.length > 8 ? 2 : 1;
-      months.forEach((month, i) => {
-        if (i % step !== 0 && i !== months.length - 1) return;
-        const x = padding.left + (i / (months.length - 1)) * chartWidth;
-        const label = month.slice(2); // Just "24-01" format
-        svg += `<text x="${x}" y="${height - 5}" fill="#6b7280" font-size="8" text-anchor="middle" font-family="monospace">${label}</text>`;
-      });
-
-      // Draw journey lines
-      topJourneys.forEach((journey, idx) => {
-        const color = bladeColors[idx % bladeColors.length];
-        const points: string[] = [];
-        
-        journey.monthlyRanks.forEach((mr, i) => {
-          if (mr.rank !== null && mr.rank <= maxRank) {
-            const x = padding.left + (i / (months.length - 1)) * chartWidth;
-            const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
-            points.push(`${x},${y}`);
-          }
-        });
-
-        if (points.length > 1) {
-          // Draw line
-          svg += `<polyline points="${points.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>`;
-          
-          // Draw dots at each point
-          journey.monthlyRanks.forEach((mr, i) => {
-            if (mr.rank !== null && mr.rank <= maxRank) {
-              const x = padding.left + (i / (months.length - 1)) * chartWidth;
-              const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
-              svg += `<circle cx="${x}" cy="${y}" r="3" fill="${color}" stroke="#1a1a2e" stroke-width="1"/>`;
-            }
-          });
-        }
-      });
-
-      svg += '</svg>';
-      journeyChartEl.innerHTML = svg;
-    }
-
-    // Render legend
+    // Render legend first (doesn't need width measurement)
     if (journeyLegendEl && data.bladeJourneys.length > 0) {
       const topJourneys = data.bladeJourneys.slice(0, 6);
       journeyLegendEl.innerHTML = topJourneys.map((journey, idx) => {
@@ -838,9 +772,77 @@ import Layout from '../layouts/Layout.astro';
       }).join('');
     }
 
-    // Show content
+    // Show content FIRST so we can measure width
     loadingEl?.classList.add('hidden');
     contentEl?.classList.remove('hidden');
+
+    // Render blade journey chart AFTER content is visible (use requestAnimationFrame for layout)
+    if (journeyChartEl && data.bladeJourneys.length > 0) {
+      requestAnimationFrame(() => {
+        const months = data.timeline.map(t => t.month);
+        // Now we can accurately measure width since element is visible
+        const containerWidth = journeyChartEl.getBoundingClientRect().width;
+        const width = Math.max(containerWidth, 400);
+        const height = 160;
+        const padding = { top: 10, right: 20, bottom: 20, left: 30 };
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
+
+        // Only show top 6 blades for clarity
+        const topJourneys = data.bladeJourneys.slice(0, 6);
+        const maxRank = 8; // Only show ranks 1-8
+
+        // Create SVG with measured width
+        let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="display:block;">`;
+
+        // Grid lines for ranks
+        for (let rank = 1; rank <= maxRank; rank++) {
+          const y = padding.top + ((rank - 1) / (maxRank - 1)) * chartHeight;
+          svg += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+          svg += `<text x="${padding.left - 5}" y="${y + 3}" fill="#6b7280" font-size="9" text-anchor="end" font-family="monospace">${rank}</text>`;
+        }
+
+        // Month labels (show every other month if many)
+        const step = months.length > 8 ? 2 : 1;
+        months.forEach((month, i) => {
+          if (i % step !== 0 && i !== months.length - 1) return;
+          const x = padding.left + (i / (months.length - 1)) * chartWidth;
+          const label = month.slice(2); // Just "24-01" format
+          svg += `<text x="${x}" y="${height - 5}" fill="#6b7280" font-size="8" text-anchor="middle" font-family="monospace">${label}</text>`;
+        });
+
+        // Draw journey lines
+        topJourneys.forEach((journey, idx) => {
+          const color = bladeColors[idx % bladeColors.length];
+          const points: string[] = [];
+
+          journey.monthlyRanks.forEach((mr, i) => {
+            if (mr.rank !== null && mr.rank <= maxRank) {
+              const x = padding.left + (i / (months.length - 1)) * chartWidth;
+              const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
+              points.push(`${x},${y}`);
+            }
+          });
+
+          if (points.length > 1) {
+            // Draw line
+            svg += `<polyline points="${points.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>`;
+
+            // Draw dots at each point
+            journey.monthlyRanks.forEach((mr, i) => {
+              if (mr.rank !== null && mr.rank <= maxRank) {
+                const x = padding.left + (i / (months.length - 1)) * chartWidth;
+                const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
+                svg += `<circle cx="${x}" cy="${y}" r="3" fill="${color}" stroke="#1a1a2e" stroke-width="1"/>`;
+              }
+            });
+          }
+        });
+
+        svg += '</svg>';
+        journeyChartEl.innerHTML = svg;
+      });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', loadDashboard);
