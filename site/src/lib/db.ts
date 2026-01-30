@@ -424,9 +424,24 @@ export async function query<T = Record<string, unknown>>(sql: string, _params?: 
   // Get column names from the schema
   const columns = result.schema.fields.map(f => f.name);
 
+  // Log first query result for debugging
+  const rawRows = result.toArray();
+  if (rawRows.length > 0 && !query._logged) {
+    query._logged = true;
+    console.log('[DuckDB] Schema columns:', columns);
+    console.log('[DuckDB] First raw row type:', typeof rawRows[0], rawRows[0]?.constructor?.name);
+    console.log('[DuckDB] First raw row:', rawRows[0]);
+    // Try different ways to access the data
+    const testRow = rawRows[0];
+    console.log('[DuckDB] Direct property access test:');
+    for (const col of columns.slice(0, 3)) {
+      console.log(`  ${col}: ${testRow[col]} (type: ${typeof testRow[col]})`);
+    }
+  }
+
   // Convert each row to a plain object using column names
   // This is more reliable than Object.entries() on StructRowProxy objects
-  return result.toArray().map((row) => {
+  return rawRows.map((row) => {
     const obj: Record<string, unknown> = {};
     for (const col of columns) {
       obj[col] = toJSValue(row[col]);
@@ -434,6 +449,8 @@ export async function query<T = Record<string, unknown>>(sql: string, _params?: 
     return obj;
   }) as T[];
 }
+// Flag to only log once
+query._logged = false;
 
 // =============================================================================
 // Type definitions
