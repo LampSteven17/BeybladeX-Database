@@ -18,8 +18,14 @@ Usage:
 """
 
 import argparse
+import signal
 import sys
 from pathlib import Path
+
+# Handle broken pipe gracefully (e.g., when spawned by API with closed stdout)
+# This prevents BrokenPipeError when print() is called after pipe closes
+if hasattr(signal, 'SIGPIPE'):
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
