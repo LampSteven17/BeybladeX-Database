@@ -243,6 +243,28 @@ let conn: duckdb.AsyncDuckDBConnection | null = null;
 let initPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
 
 /**
+ * Force refresh the database connection.
+ * Call this after new data is uploaded to reload from the server.
+ */
+export async function refreshDB(): Promise<void> {
+  console.log('[DuckDB] Refreshing database connection...');
+
+  // Close existing connection
+  if (conn) {
+    await conn.close();
+    conn = null;
+  }
+
+  // Reset the init promise to force re-initialization
+  initPromise = null;
+
+  // Re-initialize (this will fetch fresh data from server)
+  await initDB();
+
+  console.log('[DuckDB] Database refreshed');
+}
+
+/**
  * Calculate recency weight using exponential decay.
  * More recent = higher weight (max 1.0)
  * Weight halves every RECENCY_HALF_LIFE_DAYS days.
