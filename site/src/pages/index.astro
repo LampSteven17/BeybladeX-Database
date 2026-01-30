@@ -9,9 +9,9 @@ import Layout from '../layouts/Layout.astro';
         META CHAMPION SPOTLIGHT (Full-width Hero)
         ============================================ */}
     <section class="mb-6">
-      <div id="meta-spotlight">
+      <div id="meta-spotlight" class="w-full">
         <!-- Loading State -->
-        <div id="spotlight-loading" class="champion-spotlight p-8 h-48 flex items-center justify-center">
+        <div id="spotlight-loading" class="champion-spotlight p-8 min-h-[280px] flex items-center justify-center w-full">
           <div class="flex items-center gap-3">
             <div class="w-6 h-6 border-2 border-terminal-border border-t-gold rounded-full animate-spin"></div>
             <span class="text-fg-muted font-mono text-sm">LOADING META DATA...</span>
@@ -418,8 +418,8 @@ import Layout from '../layouts/Layout.astro';
     const metaShare = ((champion.uses / 100) * champion.winRate).toFixed(1);
 
     container.innerHTML = `
-      <div class="champion-spotlight">
-        <div class="relative p-6 md:p-8">
+      <div class="champion-spotlight w-full">
+        <div class="relative p-6 md:p-8 min-h-[240px]">
           <!-- Status Badge -->
           <div class="absolute top-4 right-4 flex items-center gap-2">
             <span class="status-dot ${isStale ? 'status-dot-stale' : 'status-dot-live'}"></span>
