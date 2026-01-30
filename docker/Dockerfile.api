@@ -27,7 +27,9 @@ COPY docker/api-entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 
 # Create data directories
-RUN mkdir -p /data /app/data /app/site/public/data
+# Symlink site/public/data to shared volume so scraper writes to /data/
+RUN mkdir -p /data /app/data /app/site/public && \
+    ln -s /data /app/site/public/data
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app

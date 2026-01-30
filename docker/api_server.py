@@ -10,7 +10,6 @@ Provides endpoints for:
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 import threading
@@ -29,9 +28,10 @@ except ImportError:
         return False
 
 # Paths
+# Note: /app/site/public/data is symlinked to /data in Dockerfile
+# so scripts/db.py writes directly to the shared volume
 DATA_DIR = Path("/app/data")
-SHARED_DB = Path("/data/beyblade.duckdb")
-LOCAL_DB = Path("/app/site/public/data/beyblade.duckdb")  # Where scripts/db.py writes
+DB_PATH = Path("/data/beyblade.duckdb")
 WBO_PAGES_FILE = DATA_DIR / "wbo_pages.json"
 
 # Track scrape status
@@ -76,10 +76,6 @@ def run_scrape(sources: list[str] = None):
             if result.returncode != 0:
                 scrape_status["last_error"] = result.stderr[:500]
 
-            # Copy database to shared volume
-            if LOCAL_DB.exists():
-                shutil.copy(LOCAL_DB, SHARED_DB)
-
         except Exception as e:
             scrape_status["last_result"] = False
             scrape_status["last_error"] = str(e)
@@ -118,9 +114,9 @@ class APIHandler(BaseHTTPRequestHandler):
             self._send_json({"status": "ok"})
 
         elif path == "/status":
-            db_exists = SHARED_DB.exists()
-            db_size = SHARED_DB.stat().st_size if db_exists else 0
-            db_modified = datetime.fromtimestamp(SHARED_DB.stat().st_mtime).isoformat() if db_exists else None
+            db_exists = DB_PATH.exists()
+            db_size = DB_PATH.stat().st_size if db_exists else 0
+            db_modified = datetime.fromtimestamp(DB_PATH.stat().st_mtime).isoformat() if db_exists else None
             db_locked = is_database_locked()
 
             self._send_json({
