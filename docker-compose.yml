@@ -38,6 +38,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 300s  # 5 minutes for initial scrape
 
 volumes:
   db-data:

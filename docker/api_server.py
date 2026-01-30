@@ -22,7 +22,7 @@ from urllib.parse import parse_qs, urlparse
 # Paths
 DATA_DIR = Path("/app/data")
 SHARED_DB = Path("/data/beyblade.duckdb")
-LOCAL_DB = DATA_DIR / "beyblade.duckdb"
+LOCAL_DB = Path("/app/site/public/data/beyblade.duckdb")  # Where scripts/db.py writes
 WBO_PAGES_FILE = DATA_DIR / "wbo_pages.json"
 
 # Track scrape status

@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy project files
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 COPY scripts/ ./scripts/
 
 # Install Python dependencies
@@ -27,7 +27,7 @@ COPY docker/api-entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 
 # Create data directories
-RUN mkdir -p /data /app/data
+RUN mkdir -p /data /app/data /app/site/public/data
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
