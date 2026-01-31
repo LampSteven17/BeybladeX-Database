@@ -481,6 +481,7 @@ export interface ComboStats {
   ratchet: string;
   bit: string;
   lockChip?: string | null;  // Lock chip for CX blades
+  assist?: string | null;     // Assist blade for CX blades
   raw_score: number;
   uses: number;
   first: number;
@@ -725,11 +726,12 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
     ratchet: string;
     bit: string;
     lock_chip: string | null;
+    assist: string | null;
     place: number;
     tournament_date: string;
     stage: string | null;
   }>(`
-    SELECT blade, ratchet, bit, lock_chip, place, tournament_date::VARCHAR as tournament_date, stage
+    SELECT blade, ratchet, bit, lock_chip, assist, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
     ORDER BY tournament_date DESC
@@ -744,10 +746,12 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
     const ratchet = normalizeRatchet(row.ratchet);
     const bit = normalizeBit(row.bit);
     const lockChip = row.lock_chip;
+    const assist = row.assist;
     const blade = getFullBladeName(row.blade, lockChip);
-    const key = `${blade}|${ratchet}|${bit}`;
-    const comboStr = `${blade} ${ratchet} ${bit}`;
-    
+    // For CX blades with assist, include it in the key and combo string
+    const key = assist ? `${blade}|${assist}|${ratchet}|${bit}` : `${blade}|${ratchet}|${bit}`;
+    const comboStr = assist ? `${blade} ${assist} ${ratchet} ${bit}` : `${blade} ${ratchet} ${bit}`;
+
     if (!comboScores[key]) {
       comboScores[key] = {
         combo: comboStr,
@@ -755,6 +759,7 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
         ratchet: ratchet,
         bit: bit,
         lockChip: lockChip,
+        assist: assist,
         raw_score: 0,
         uses: 0,
         first: 0,
@@ -2235,13 +2240,17 @@ export interface HiddenGemsData {
 
 /**
  * Build a combo display name, including lock chip for CX blades.
- * Format: "[LockChip] [Blade] [Ratchet][Bit]" or "[Blade] [Ratchet][Bit]"
+ * Format: "[LockChip] [Blade] [Assist] [Ratchet] [Bit]" for CX blades, or "[Blade] [Ratchet] [Bit]" for others
  */
-function buildComboName(blade: string, ratchet: string, bit: string, lockChip?: string | null): string {
+function buildComboName(blade: string, ratchet: string, bit: string, lockChip?: string | null, assist?: string | null): string {
+  let name = blade;
   if (lockChip) {
-    return `${lockChip} ${blade} ${ratchet} ${bit}`;
+    name = `${lockChip} ${blade}`;
   }
-  return `${blade} ${ratchet} ${bit}`;
+  if (assist) {
+    name = `${name} ${assist}`;
+  }
+  return `${name} ${ratchet} ${bit}`;
 }
 
 /**
@@ -3475,11 +3484,13 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     blade: string;
     ratchet: string;
     bit: string;
+    lock_chip: string | null;
+    assist: string | null;
     place: number;
     tournament_date: string;
     stage: string | null;
   }>(`
-    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    SELECT blade, ratchet, bit, lock_chip, assist, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
     ORDER BY tournament_date DESC
@@ -3523,10 +3534,13 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     let totalPlacements = 0;
 
     for (const row of dataRows) {
-      const blade = normalizeBladeDisplay(row.blade);
+      const baseBlade = normalizeBladeDisplay(row.blade);
       const ratchet = normalizeRatchet(row.ratchet);
       const bit = normalizeBit(row.bit);
-      const combo = `${blade} ${ratchet} ${bit}`;
+      // Build full blade name with lock chip for CX blades
+      const blade = row.lock_chip ? `${row.lock_chip} ${baseBlade}` : baseBlade;
+      // Include assist in combo for CX blades
+      const combo = row.assist ? `${blade} ${row.assist} ${ratchet} ${bit}` : `${blade} ${ratchet} ${bit}`;
       const points = getPlacementScore(row.place, row.stage);
 
       if (!comboStats[combo]) {
