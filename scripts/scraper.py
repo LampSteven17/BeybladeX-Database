@@ -530,10 +530,10 @@ def parse_date(date_str: str) -> Optional[datetime]:
             if parsed.year < 100:
                 parsed = parsed.replace(year=parsed.year + 2000)
 
-            # Beyblade X era validation (2023 onwards, not too far in future)
+            # Beyblade X era validation (2023 onwards, no future dates)
             if parsed.year < 2023:
                 continue
-            if parsed > now + timedelta(days=30):
+            if parsed > now:
                 continue
 
             return parsed
