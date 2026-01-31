@@ -265,12 +265,14 @@ import Layout from '../layouts/Layout.astro';
       return;
     }
 
-    tbody.innerHTML = combos.map((combo) => {
+    tbody.innerHTML = combos.map((combo, index) => {
       const tier = getTier(combo);
+      // Use sequential numbering when unique blades filter is active
+      const displayRank = uniqueBladesOnly ? index + 1 : combo.rank;
       return `
         <tr class="ranking-row hover:bg-panel">
           <td class="font-mono">
-            <span class="rank-number text-lg">${combo.rank}</span>
+            <span class="rank-number text-lg">${displayRank}</span>
           </td>
           <td>
             <span class="${getTierClass(tier)} cursor-pointer hover:ring-2 hover:ring-white/30" data-tier="${tier}">${tier}</span>
