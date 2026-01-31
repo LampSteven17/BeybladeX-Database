@@ -19,13 +19,21 @@
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
-const SERVER_URL = "https://beybladexdatabase.thelightlab.net/api";
+const SERVER_URL = "https://beybladex-database.thelightlab.net/api";
 
 // ============================================================================
 // FULL SCRIPT (for reference/debugging)
 // ============================================================================
 (async () => {
   const baseUrl = "https://worldbeyblade.org/Thread-Winning-Combinations-at-WBO-Organized-Events-Beyblade-X-BBX";
+
+  // Open WBO thread in a new tab first
+  console.log("🌐 Opening WBO thread in new tab...");
+  window.open(baseUrl, '_blank');
+
+  // Wait 30 seconds for page to load / authentication
+  console.log("⏳ Waiting 30 seconds...");
+  await new Promise(resolve => setTimeout(resolve, 30000));
 
   console.log("🔄 Starting WBO scrape...");
 
@@ -81,4 +89,4 @@ const SERVER_URL = "https://beybladexdatabase.thelightlab.net/api";
 // ============================================================================
 // MINIFIED BOOKMARKLET - COPY THIS ENTIRE LINE:
 // ============================================================================
-// javascript:(async()=>{const S="https://beybladexdatabase.thelightlab.net/api",B="https://worldbeyblade.org/Thread-Winning-Combinations-at-WBO-Organized-Events-Beyblade-X-BBX";console.log("Starting WBO scrape...");const f=await(await fetch(B)).text(),M=Math.max(...[...f.matchAll(/page=(\d+)/g)].map(m=>+m[1]));console.log(`Found ${M} pages`);const H={1:f};for(let i=2;i<=M;i++){console.log(`Page ${i}/${M}`);H[i]=await(await fetch(`${B}?page=${i}`)).text();await new Promise(r=>setTimeout(r,300))}console.log("Uploading...");try{const r=await fetch(`${S}/upload/wbo`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(H)});if(r.ok){const j=await r.json();alert(`Done! ${M} pages uploaded.\n\n${j.message}`)}else{alert("Upload failed: "+(await r.json()).error)}}catch(e){alert("Connection failed: "+e.message)}})();
+// javascript:(async()=>{const S="https://beybladex-database.thelightlab.net/api",B="https://worldbeyblade.org/Thread-Winning-Combinations-at-WBO-Organized-Events-Beyblade-X-BBX";console.log("Opening WBO thread...");window.open(B,'_blank');console.log("Waiting 30 seconds...");await new Promise(r=>setTimeout(r,30000));console.log("Starting scrape...");const f=await(await fetch(B)).text(),M=Math.max(...[...f.matchAll(/page=(\d+)/g)].map(m=>+m[1]));console.log("Found "+M+" pages");const H={1:f};for(let i=2;i<=M;i++){console.log("Page "+i+"/"+M);H[i]=await(await fetch(B+"?page="+i)).text();await new Promise(r=>setTimeout(r,300))}console.log("Uploading...");try{const r=await fetch(S+"/upload/wbo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(H)});if(r.ok){const j=await r.json();alert("Done! "+M+" pages uploaded. "+j.message)}else{alert("Upload failed: "+(await r.json()).error)}}catch(e){alert("Connection failed: "+e.message)}})();
