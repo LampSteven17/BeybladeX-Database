@@ -3492,9 +3492,11 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     return { champion: null, risers: [], fallers: [], lastTournamentDate: null, isStale: false, dataSource: 'recent' };
   }
 
-  // Use the most recent tournament date as the anchor point
-  const anchorDate = new Date(lastTournamentDate);
+  // Use the most recent tournament date as the anchor point, but cap at today
+  // (some tournaments may have future dates scheduled)
   const now = new Date();
+  const rawAnchorDate = new Date(lastTournamentDate);
+  const anchorDate = rawAnchorDate > now ? now : rawAnchorDate;
   const recentDays = 30;
   const olderDays = 30;
 
@@ -3569,15 +3571,7 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     return d >= recentCutoff && d <= anchorDate;
   });
 
-  console.log('[MetaSpotlight DEBUG] Total rows:', rows.length);
-  console.log('[MetaSpotlight DEBUG] Anchor date:', anchorDate, 'Recent cutoff:', recentCutoff);
-  console.log('[MetaSpotlight DEBUG] Recent rows count:', recentRows.length);
-  if (rows.length > 0) {
-    console.log('[MetaSpotlight DEBUG] First row date:', rows[0].tournament_date, 'Parsed:', new Date(rows[0].tournament_date));
-  }
-
   const { champion } = calculateStats(recentRows, 2);
-  console.log('[MetaSpotlight DEBUG] Champion result:', champion);
 
   // Calculate risers and fallers by comparing recent 30 days vs previous 30 days
   const olderRows = rows.filter(row => {
