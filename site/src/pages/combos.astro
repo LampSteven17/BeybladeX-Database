@@ -42,6 +42,13 @@ import Layout from '../layouts/Layout.astro';
         <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-d border-tier-d/30 hover:bg-tier-d/10" data-tier="D">D</button>
         <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-f border-tier-f/30 hover:bg-tier-f/10" data-tier="F">F</button>
       </div>
+      <span class="text-fg-muted text-sm ml-4">|</span>
+      <button
+        id="unique-blades-toggle"
+        class="px-3 py-1 text-xs font-mono rounded border transition-all duration-200 text-fg-muted border-fg-muted/30 hover:bg-fg-muted/10"
+      >
+        Unique Blades Only
+      </button>
     </div>
 
     {/* Combo Rankings Table */}
@@ -53,6 +60,7 @@ import Layout from '../layouts/Layout.astro';
               <th class="w-16">#</th>
               <th class="w-20">Tier</th>
               <th>Blade</th>
+              <th>Assist</th>
               <th>Ratchet</th>
               <th>Bit</th>
               <th class="text-right">Score</th>
@@ -68,7 +76,7 @@ import Layout from '../layouts/Layout.astro';
             {/* Loading skeletons */}
             {Array.from({ length: 20 }, (_, i) => (
               <tr>
-                <td colspan="12">
+                <td colspan="13">
                   <div class="skeleton h-12 rounded"></div>
                 </td>
               </tr>
@@ -99,6 +107,7 @@ import Layout from '../layouts/Layout.astro';
   let displayedCount = 50;
   let currentTier: string = 'all';
   let searchQuery: string = '';
+  let uniqueBladesOnly: boolean = false;
   const LOAD_INCREMENT = 50;
 
   function getSelectedRegion(): Region {
@@ -129,7 +138,7 @@ import Layout from '../layouts/Layout.astro';
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="12" class="text-center text-negative py-8">
+            <td colspan="13" class="text-center text-negative py-8">
               Failed to load combo rankings. Please refresh the page.
             </td>
           </tr>
@@ -204,6 +213,18 @@ import Layout from '../layouts/Layout.astro';
       filtered = filtered.filter(c => c.tier === currentTier);
     }
 
+    // Apply unique blades filter - only show the top-ranked combo for each blade
+    if (uniqueBladesOnly) {
+      const seenBlades = new Set<string>();
+      filtered = filtered.filter(c => {
+        if (seenBlades.has(c.blade)) {
+          return false;
+        }
+        seenBlades.add(c.blade);
+        return true;
+      });
+    }
+
     filteredCombos = filtered;
     displayedCount = 50; // Reset to initial count
     renderTable(filteredCombos.slice(0, displayedCount));
@@ -236,7 +257,7 @@ import Layout from '../layouts/Layout.astro';
     if (combos.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="12" class="text-center text-fg-muted py-8">
+          <td colspan="13" class="text-center text-fg-muted py-8">
             No combos found.
           </td>
         </tr>
@@ -255,6 +276,7 @@ import Layout from '../layouts/Layout.astro';
             <span class="${getTierClass(tier)} cursor-pointer hover:ring-2 hover:ring-white/30" data-tier="${tier}">${tier}</span>
           </td>
           <td class="font-mono font-medium text-accent">${combo.blade}</td>
+          <td class="font-mono text-series-cx">${combo.assist || '-'}</td>
           <td class="font-mono text-series-ux">${combo.ratchet}</td>
           <td class="font-mono text-series-bx">${combo.bit}</td>
           <td class="text-right font-mono text-fg">${combo.raw_score.toFixed(1)}</td>
@@ -320,6 +342,22 @@ import Layout from '../layouts/Layout.astro';
 
   // Setup load more button
   document.getElementById('load-more-btn')?.addEventListener('click', loadMore);
+
+  // Setup unique blades toggle
+  document.getElementById('unique-blades-toggle')?.addEventListener('click', () => {
+    uniqueBladesOnly = !uniqueBladesOnly;
+    const btn = document.getElementById('unique-blades-toggle');
+    if (btn) {
+      if (uniqueBladesOnly) {
+        btn.classList.remove('text-fg-muted', 'border-fg-muted/30');
+        btn.classList.add('bg-accent/10', 'text-accent', 'border-accent/30');
+      } else {
+        btn.classList.remove('bg-accent/10', 'text-accent', 'border-accent/30');
+        btn.classList.add('text-fg-muted', 'border-fg-muted/30');
+      }
+    }
+    applyFilters();
+  });
 
   // Load on DOM ready
   document.addEventListener('DOMContentLoaded', loadRankings);
