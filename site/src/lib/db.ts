@@ -3569,7 +3569,15 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     return d >= recentCutoff && d <= anchorDate;
   });
 
+  console.log('[MetaSpotlight DEBUG] Total rows:', rows.length);
+  console.log('[MetaSpotlight DEBUG] Anchor date:', anchorDate, 'Recent cutoff:', recentCutoff);
+  console.log('[MetaSpotlight DEBUG] Recent rows count:', recentRows.length);
+  if (rows.length > 0) {
+    console.log('[MetaSpotlight DEBUG] First row date:', rows[0].tournament_date, 'Parsed:', new Date(rows[0].tournament_date));
+  }
+
   const { champion } = calculateStats(recentRows, 2);
+  console.log('[MetaSpotlight DEBUG] Champion result:', champion);
 
   // Calculate risers and fallers by comparing recent 30 days vs previous 30 days
   const olderRows = rows.filter(row => {
