@@ -78,7 +78,7 @@ def run_scrape(sources: list[str] = None):
                 cwd=str(REPO_ROOT),
                 capture_output=True,
                 text=True,
-                timeout=600,
+                timeout=1800,  # 30 minutes for large WBO scrapes
             )
 
             scrape_status["last_result"] = result.returncode == 0
@@ -93,7 +93,7 @@ def run_scrape(sources: list[str] = None):
 
         except subprocess.TimeoutExpired:
             scrape_status["last_result"] = False
-            scrape_status["last_error"] = "Scrape timed out after 10 minutes"
+            scrape_status["last_error"] = "Scrape timed out after 30 minutes"
             print(f"[{datetime.now().isoformat()}] Scrape timed out")
         except Exception as e:
             scrape_status["last_result"] = False
