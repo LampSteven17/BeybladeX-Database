@@ -133,6 +133,23 @@
     @apply tier-badge bg-tier-f/20 text-tier-f border border-tier-f/30;
   }
 
+  /* Series Badges (BX/UX/CX) */
+  .series-badge {
+    @apply px-2 py-0.5 text-xs font-mono font-bold rounded;
+  }
+
+  .series-badge-bx {
+    @apply series-badge bg-series-bx/20 text-series-bx border border-series-bx/30;
+  }
+
+  .series-badge-ux {
+    @apply series-badge bg-series-ux/20 text-series-ux border border-series-ux/30;
+  }
+
+  .series-badge-cx {
+    @apply series-badge bg-series-cx/20 text-series-cx border border-series-cx/30;
+  }
+
   /* ===========================================
    * Status/Trend Indicators
    * =========================================== */

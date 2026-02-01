@@ -289,7 +289,7 @@ import Layout from '../layouts/Layout.astro';
       // Use sequential numbering when unique blades filter is active
       const displayRank = uniqueBladesOnly ? index + 1 : combo.rank;
       const series = getBladeSeries(combo.blade);
-      const seriesClass = series === 'BX' ? 'text-series-bx' : series === 'UX' ? 'text-series-ux' : series === 'CX' ? 'text-series-cx' : 'text-fg-muted';
+      const seriesBadgeClass = series === 'BX' ? 'series-badge-bx' : series === 'UX' ? 'series-badge-ux' : series === 'CX' ? 'series-badge-cx' : '';
       return `
         <tr class="ranking-row hover:bg-panel">
           <td class="font-mono">
@@ -302,7 +302,7 @@ import Layout from '../layouts/Layout.astro';
           <td class="font-mono text-series-cx">${combo.assist || '-'}</td>
           <td class="font-mono text-series-ux">${combo.ratchet}</td>
           <td class="font-mono text-series-bx">${combo.bit}</td>
-          <td class="font-mono ${seriesClass}">${series || '-'}</td>
+          <td>${series ? `<span class="${seriesBadgeClass}">${series}</span>` : '<span class="text-fg-muted">-</span>'}</td>
           <td class="text-right font-mono text-fg">${combo.raw_score.toFixed(1)}</td>
           <td class="text-right font-mono">${combo.uses}</td>
           <td class="text-right font-mono text-tier-ss">${combo.first}</td>
