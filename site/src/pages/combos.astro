@@ -63,12 +63,12 @@ import Layout from '../layouts/Layout.astro';
               <th>Assist</th>
               <th>Ratchet</th>
               <th>Bit</th>
+              <th>Series</th>
               <th class="text-right">Score</th>
               <th class="text-right">Uses</th>
               <th class="text-right">1st</th>
               <th class="text-right">2nd</th>
               <th class="text-right">3rd</th>
-              <th class="text-right">1st %</th>
               <th class="text-right">Trend</th>
             </tr>
           </thead>
@@ -99,8 +99,27 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getRankedCombos, type ComboStats, type Region } from '../lib/db';
+  import { initDB, getRankedCombos, BLADE_SERIES, type ComboStats, type Region } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
+
+  function getBladeBaseName(blade: string): string {
+    // For CX blades like "Pegasus Blast", extract the main blade name (Blast)
+    // For regular blades, just return as-is
+    const parts = blade.split(' ');
+    if (parts.length > 1) {
+      // Check if last part is a known blade
+      const lastPart = parts[parts.length - 1];
+      if (BLADE_SERIES[lastPart]) return lastPart;
+      // Check if first part is a known blade (for non-CX)
+      if (BLADE_SERIES[parts[0]]) return parts[0];
+    }
+    return blade;
+  }
+
+  function getBladeSeries(blade: string): 'BX' | 'UX' | 'CX' | null {
+    const baseName = getBladeBaseName(blade);
+    return BLADE_SERIES[baseName] || null;
+  }
 
   let allCombos: ComboStats[] = [];
   let filteredCombos: ComboStats[] = [];
@@ -269,6 +288,8 @@ import Layout from '../layouts/Layout.astro';
       const tier = getTier(combo);
       // Use sequential numbering when unique blades filter is active
       const displayRank = uniqueBladesOnly ? index + 1 : combo.rank;
+      const series = getBladeSeries(combo.blade);
+      const seriesClass = series === 'BX' ? 'text-series-bx' : series === 'UX' ? 'text-series-ux' : series === 'CX' ? 'text-series-cx' : 'text-fg-muted';
       return `
         <tr class="ranking-row hover:bg-panel">
           <td class="font-mono">
@@ -281,14 +302,12 @@ import Layout from '../layouts/Layout.astro';
           <td class="font-mono text-series-cx">${combo.assist || '-'}</td>
           <td class="font-mono text-series-ux">${combo.ratchet}</td>
           <td class="font-mono text-series-bx">${combo.bit}</td>
+          <td class="font-mono ${seriesClass}">${series || '-'}</td>
           <td class="text-right font-mono text-fg">${combo.raw_score.toFixed(1)}</td>
           <td class="text-right font-mono">${combo.uses}</td>
           <td class="text-right font-mono text-tier-ss">${combo.first}</td>
           <td class="text-right font-mono text-fg-muted">${combo.second}</td>
           <td class="text-right font-mono text-tier-a">${combo.third}</td>
-          <td class="text-right font-mono">
-            ${combo.uses > 0 ? ((combo.first / combo.uses) * 100).toFixed(1) : '0.0'}%
-          </td>
           <td class="text-right">
             ${getTrendHtml(combo.trend)}
           </td>
