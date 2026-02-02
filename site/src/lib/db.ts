@@ -743,6 +743,11 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
   const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
 
   for (const row of rows) {
+    // Skip invalid CX combos - main blades that require a lock chip but don't have one
+    if (CX_BLADES_REQUIRING_LOCKCHIP.has(row.blade) && !row.lock_chip) {
+      continue;
+    }
+
     const ratchet = normalizeRatchet(row.ratchet);
     const bit = normalizeBit(row.bit);
     const lockChip = row.lock_chip;

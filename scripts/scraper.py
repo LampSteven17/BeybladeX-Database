@@ -507,6 +507,30 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
             stage=stage,
         )
 
+    # Try: Blade + AssistRatchetBit (assist concatenated with ratchet, e.g., "FoxBlast Wheel9-60Hexa")
+    # Pattern: blade_part + assist_prefix + ratchet + bit (no space between assist and ratchet)
+    match = re.match(r"^(.+?)\s+([A-Za-z]+)(\d{1,2}-\d{2,3})([A-Z][A-Za-z]*)$", combo_str)
+    if match:
+        blade_part = match.group(1).strip()
+        potential_assist = match.group(2).strip()
+        ratchet = match.group(3).strip()
+        bit = expand_bit(match.group(4).strip())
+
+        # Check if potential_assist is a known assist
+        if potential_assist in ASSIST_ABBREVIATIONS or potential_assist.lower() in KNOWN_ASSISTS_LOWER:
+            assist = ASSIST_ABBREVIATIONS.get(potential_assist, potential_assist)
+            blade = normalize_blade(blade_part)
+            # Parse CX blade to extract lock chip
+            lock_chip, blade = parse_cx_blade(blade)
+            return Combo(
+                blade=blade,
+                ratchet=ratchet,
+                bit=bit,
+                assist=assist,
+                lock_chip=lock_chip,
+                stage=stage,
+            )
+
     return None
 
 
