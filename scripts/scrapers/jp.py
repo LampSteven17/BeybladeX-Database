@@ -429,8 +429,10 @@ class JPScraper(BaseScraper):
                         blade = translate_blade(combo_match.group(1).strip())
                         ratchet = combo_match.group(2)
                         bit = expand_bit(combo_match.group(3) or "")
+                        # Parse CX blade to extract lock chip
+                        lock_chip, blade = parse_cx_blade(blade)
 
-                        combo = Combo(blade=blade, ratchet=ratchet, bit=bit)
+                        combo = Combo(blade=blade, ratchet=ratchet, bit=bit, lock_chip=lock_chip)
                         existing = [(c.blade, c.ratchet, c.bit) for c in player_combos[player_name]]
                         if (combo.blade, combo.ratchet, combo.bit) not in existing:
                             player_combos[player_name].append(combo)
