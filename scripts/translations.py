@@ -99,6 +99,17 @@ BLADE_TRANSLATIONS: dict[str, str] = {
     "ワルキューレブラスト": "Valkyrie Blast",
     "ワルキューレブラストS": "Valkyrie Blast S",
     "ワルキューレブラストW": "Valkyrie Blast W",
+    "ソルブラスト": "Sol Blast",
+    "ソルブラストJ": "Sol Blast J",
+    "ソルブラストW": "Sol Blast W",
+    "ドランブラスト": "Dran Blast",
+    "ドランブラストJ": "Dran Blast J",
+    "ドランブラストW": "Dran Blast W",
+    "フォックスブラスト": "Fox Blast",
+    "フォックスブラストJ": "Fox Blast J",
+    "フォックスブラストW": "Fox Blast W",
+    "ペガサスブラストW": "Pegasus Blast W",
+    "ペガサスブラストJ": "Pegasus Blast J",
 
     # Alternate spellings
     "スコーピオスピア": "Scorpio Spear",

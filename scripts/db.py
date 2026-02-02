@@ -209,9 +209,9 @@ def parse_cx_blade(blade_name: str) -> tuple[str | None, str]:
     # 2. Normalize: strip whitespace, remove common suffixes
     normalized = blade_name.strip()
 
-    # Remove trailing single-letter suffixes (W, S, A) used for variants
-    # e.g., "Valkyrie Blast W" -> "Valkyrie Blast"
-    if len(normalized) > 2 and normalized[-2] == " " and normalized[-1] in "WSAFHT":
+    # Remove trailing single-letter suffixes (W, S, A, J, etc.) used for variants
+    # e.g., "Valkyrie Blast W" -> "Valkyrie Blast", "Sol Blast J" -> "Sol Blast"
+    if len(normalized) > 2 and normalized[-2] == " " and normalized[-1] in "WSAFHTJ":
         suffix_stripped = normalized[:-2]
         if suffix_stripped in CX_BLADE_COMPONENTS:
             return CX_BLADE_COMPONENTS[suffix_stripped]
