@@ -445,6 +445,12 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
     if not combo_str:
         return None
 
+    # Strip player name prefix (e.g., "geetster99: SolBlast..." -> "SolBlast...")
+    # Only strip if what follows the colon looks like a combo (starts with a letter)
+    colon_match = re.match(r'^[^:]+:\s*([A-Za-z].+)$', combo_str)
+    if colon_match:
+        combo_str = colon_match.group(1).strip()
+
     # Extract stage info before removing annotations
     stage = None
     stage_match = re.search(r"\(([^)]*(?:Stage|Finals)[^)]*)\)", combo_str, flags=re.I)
