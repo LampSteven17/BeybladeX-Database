@@ -446,8 +446,8 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
         return None
 
     # Strip player name prefix (e.g., "geetster99: SolBlast..." -> "SolBlast...")
-    # Only strip if what follows the colon looks like a combo (starts with a letter)
-    colon_match = re.match(r'^[^:]+:\s*([A-Za-z].+)$', combo_str)
+    # Also handles bare colon prefix (e.g., ": SolBlast..." from HTML parsing)
+    colon_match = re.match(r'^[^:]*:\s*([A-Za-z].+)$', combo_str)
     if colon_match:
         combo_str = colon_match.group(1).strip()
 
