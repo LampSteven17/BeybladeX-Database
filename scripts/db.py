@@ -1298,31 +1298,6 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
                 )
                 total_fixed += count
 
-    # Fix single-letter bits that are actually assists (W=Wheel, Z=Zap, H=Heavy, J=Jaggy, S=Slash)
-    # When someone writes "Golem Rock 6-60W", the W is parsed as bit but meant as Wheel assist
-    BIT_TO_ASSIST = {
-        "W": "Wheel",
-        "Z": "Zap",
-        "H": "Heavy",
-        "J": "Jaggy",
-        "S": "Slash",
-    }
-    for i in [1, 2, 3]:
-        bit_col = f"bit_{i}"
-        assist_col = f"assist_{i}"
-        for bit_abbrev, assist_name in BIT_TO_ASSIST.items():
-            # Only fix if there's no assist already and the bit is the single letter
-            count = conn.execute(
-                f"SELECT COUNT(*) FROM placements WHERE {bit_col} = ? AND {assist_col} IS NULL",
-                [bit_abbrev],
-            ).fetchone()[0]
-            if count > 0:
-                conn.execute(
-                    f"UPDATE placements SET {assist_col} = ?, {bit_col} = NULL WHERE {bit_col} = ? AND {assist_col} IS NULL",
-                    [assist_name, bit_abbrev],
-                )
-                total_fixed += count
-
     # Clean up invalid lock chips - main blades should NOT be lock chips
     MAIN_BLADES = {
         "Blast",
