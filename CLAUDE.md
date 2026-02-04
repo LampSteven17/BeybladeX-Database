@@ -63,7 +63,45 @@ Data Pipeline (Python)           Static Site (Astro)
 
 - **BX** - Basic line (standard releases)
 - **UX** - Unique line (more metal/weight)
-- **CX** - Custom line (modular: Lock Chip + Main Blade, e.g., "Pegasus Blast" = Pegasus lock chip + Blast main blade)
+- **CX** - Custom line (modular system, see below)
+
+## CX Blade System (IMPORTANT)
+
+CX blades are modular and consist of multiple parts. **ONLY CX blades can have assist blades. Non-CX blades (BX/UX) NEVER have assists.**
+
+### CX Combo Format
+```
+[Lock Chip] [Main Blade] [Assist Blade] [Ratchet] [Bit]
+```
+Example: `Pegasus Blast Wheel 3-60 Low Flat` = Pegasus lock chip + Blast main blade + Wheel assist + 3-60 ratchet + Low Flat bit
+
+### Lock Chips (prefix for CX blade names)
+Cerberus, Dran, Emperor, Fox, Hells, Hornet, Kraken, Leon, Pegasus, Perseus, Phoenix, Rhino, Sol, Stag, Valkyrie, Whale, Wizard, Wolf
+
+### Main Blades (CX only - require a lock chip)
+Antler, Arc, Blast, Brave, Brush, Dark, Eclipse, Fang, Flame, Flare, Fort, Hunt, Might, Reaper, Volt, Wriggle
+
+### Assist Blades (CX only - single letter abbreviations)
+| Abbrev | Full Name |
+|--------|-----------|
+| S | Slash |
+| B | Bumper |
+| J | Jaggy |
+| R | Round |
+| T | Turn |
+| C | Charge |
+| M | Massive |
+| H | Heavy |
+| Z | Zillion |
+| W | Wheel |
+| F | Free |
+| D | Dual |
+
+### Key Rules
+1. **Only CX main blades can have assist blades** - if you see an assist on a non-CX blade, it's a parsing error
+2. **CX blades are named [LockChip] [MainBlade]** - e.g., "Pegasus Blast" = Pegasus lock chip + Blast main blade
+3. **Assist blade abbreviations are NOT bit abbreviations** - W=Wheel (assist), not Wedge; H=Heavy (assist), not Hexa
+4. **A standalone main blade name without lock chip is incomplete** - e.g., just "Blast" without "Pegasus Blast" is invalid/incomplete data
 
 ## Design System
 
