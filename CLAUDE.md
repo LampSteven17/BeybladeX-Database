@@ -100,8 +100,20 @@ Antler, Arc, Blast, Brave, Brush, Dark, Eclipse, Fang, Flame, Flare, Fort, Hunt,
 ### Key Rules
 1. **Only CX main blades can have assist blades** - if you see an assist on a non-CX blade, it's a parsing error
 2. **CX blades are named [LockChip] [MainBlade]** - e.g., "Pegasus Blast" = Pegasus lock chip + Blast main blade
-3. **Assist blade abbreviations are NOT bit abbreviations** - W=Wheel (assist), not Wedge; H=Heavy (assist), not Hexa
+3. **Assist blade abbreviations are NOT bit abbreviations** - W=Wheel (assist), not Wedge (bit); H=Heavy (assist), not Hexa (bit); Z=Zillion (assist), not Zap (bit)
 4. **A standalone main blade name without lock chip is incomplete** - e.g., just "Blast" without "Pegasus Blast" is invalid/incomplete data
+5. **Context determines letter meaning** - Single letters BEFORE ratchet on CX blades = assist; AFTER ratchet = bit
+
+## Valid Ratchets
+Format: `[height]-[disc diameter]` (e.g., 3-60 = height 3, disc 60)
+- Heights: 0, 1, 2, 3, 4, 5, 6, 7, 9, M
+- Disc sizes: 50, 55, 60, 65, 70, 80, 85
+- Examples: 0-60, 1-60, 1-70, 1-80, 3-60, 3-85, 4-50, 4-55, 7-55, 9-65, M-85
+
+## Valid Bits (tips)
+Single letter abbreviations: A(Accel), B(Ball), C(Cyclone), D(Dot), E(Elevate), F(Flat), G(Glide), H(Hexa), J(Jolt), K(Kick), L(Level), M(Merge), N(Needle), O(Orb), P(Point), Q(Quake), R(Rush), S(Spike), T(Taper), U(Unite), V(Vanguard), W(Wedge), Z(Zap)
+
+Multi-word bits: Bound Spike, Disc Ball, Free Ball, Gear Ball/Flat/Needle/Point/Rush, High Needle/Taper, Low Flat/Needle/Orb/Rush, Metal Needle, Rubber Accel, Trans Kick/Point, Under Flat/Needle, Wall Ball/Wedge, Vortex
 
 ## Design System
 

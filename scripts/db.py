@@ -148,37 +148,47 @@ CX_BLADE_COMPONENTS: dict[str, tuple[str, str]] = {
 
 # CX main blade names that REQUIRE a lock chip prefix
 # If we see just "Blast" without "Pegasus Blast", that's invalid/incomplete data
+# Source: https://beyblade.fandom.com/wiki/Category:Main_Blades
 CX_MAIN_BLADES = {
-    "Brave",
+    "Antler",
     "Arc",
-    "Dark",
-    "Reaper",
-    "Brush",
     "Blast",
+    "Brave",
+    "Brush",
+    "Dark",
     "Eclipse",
+    "Fang",
+    "Flame",
+    "Flare",
+    "Fort",
     "Hunt",
     "Might",
-    "Flare",
+    "Reaper",
     "Volt",
-    "Storm",
+    "Wriggle",
 }
 
 # Known CX lock chips - used for fuzzy matching when parsing blade names
+# Source: https://beyblade.fandom.com/wiki/Category:Lock_Chips
 CX_LOCK_CHIPS = {
+    "Cerberus",
     "Dran",
     "Emperor",
-    "Wizard",
-    "Perseus",
-    "Hells",
     "Fox",
-    "Pegasus",
-    "Cerberus",
-    "Wolf",
-    "Valkyrie",
-    "Sol",
-    "Phoenix",
-    "Whale",
+    "Hells",
+    "Hornet",
     "Kraken",
+    "Leon",
+    "Pegasus",
+    "Perseus",
+    "Phoenix",
+    "Rhino",
+    "Sol",
+    "Stag",
+    "Valkyrie",
+    "Whale",
+    "Wizard",
+    "Wolf",
 }
 
 # Lowercase versions for case-insensitive matching
@@ -1299,24 +1309,9 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
                 total_fixed += count
 
     # Clean up invalid lock chips - main blades should NOT be lock chips
-    MAIN_BLADES = {
-        "Blast",
-        "Brave",
-        "Arc",
-        "Dark",
-        "Reaper",
-        "Brush",
-        "Eclipse",
-        "Hunt",
-        "Might",
-        "Flare",
-        "Volt",
-        "Storm",
-        "Slash",
-    }
     for i in [1, 2, 3]:
         lock_col = f"lock_chip_{i}"
-        for blade in MAIN_BLADES:
+        for blade in CX_MAIN_BLADES:
             count = conn.execute(
                 f"SELECT COUNT(*) FROM placements WHERE {lock_col} = ?", [blade]
             ).fetchone()[0]

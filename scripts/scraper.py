@@ -213,35 +213,38 @@ def normalize_blade(blade: str) -> str:
 # Known blade names for assist detection - use CANONICAL_BLADES plus any single-word blades
 KNOWN_BLADES = CANONICAL_BLADES | {"Venom"}  # Add single-word blades here
 
-# Assist blade names (the gear parts that attach to main blades)
+# Assist blade names (CX only - attach to CX main blades)
+# IMPORTANT: Only CX blades can have assists. Non-CX blades (BX/UX) NEVER have assists.
 KNOWN_ASSISTS = {
-    "Jaggy",
     "Slash",
-    "Wheel",
     "Bumper",
+    "Jaggy",
+    "Round",
+    "Turn",
+    "Charge",
+    "Massive",
     "Heavy",
-    "Assault",
-    "Rush",
-    "Low",
+    "Zillion",
+    "Wheel",
+    "Free",
+    "Dual",
 }
 
 # Assist abbreviations -> full names
+# These are DIFFERENT from bit abbreviations!
 ASSIST_ABBREVIATIONS = {
-    "W": "Wheel",
-    "H": "Heavy",
     "S": "Slash",
+    "B": "Bumper",
     "J": "Jaggy",
-    "K": "Kick",  # Not sure if this is assist or bit
-    "Z": "Zap",
-    "RA": "Rush Assault",
-    "LO": "Low",
-    "UN": "Unite",
-    "TP": "Taper",
-    "BS": "Bumper Slash",
-    "UF": "Upper Flat",
-    "GR": "Gear Rush",
-    "WB": "Wheel Bumper",
-    "V": "Vanguard",
+    "R": "Round",
+    "T": "Turn",
+    "C": "Charge",
+    "M": "Massive",
+    "H": "Heavy",
+    "Z": "Zillion",
+    "W": "Wheel",
+    "F": "Free",
+    "D": "Dual",
 }
 
 # Lowercase lookup for efficient matching (includes no-space and swapped variants)
@@ -269,7 +272,8 @@ KNOWN_ASSISTS_LOWER = {a.lower(): a for a in KNOWN_ASSISTS}
 
 
 BIT_ABBREVIATIONS = {
-    # Single letter
+    # Single letter - NOTE: some letters overlap with assist abbreviations
+    # Context determines meaning: on CX blades before ratchet = assist, after ratchet = bit
     "B": "Ball",
     "F": "Flat",
     "N": "Needle",
@@ -289,6 +293,10 @@ BIT_ABBREVIATIONS = {
     "Q": "Quake",
     "K": "Kick",
     "V": "Vanguard",
+    "W": "Wedge",
+    "Z": "Zap",
+    "M": "Merge",
+    "J": "Jolt",
     # Two letter
     "HN": "High Needle",
     "LF": "Low Flat",
@@ -312,7 +320,7 @@ BIT_ABBREVIATIONS = {
     "Gl": "Glide",
     # Inconsistent naming
     "Hex": "Hexa",
-    # Common variations
+    # Common variations / full names
     "Level": "Level",
     "Elevate": "Elevate",
     "Ball": "Ball",
@@ -323,22 +331,62 @@ BIT_ABBREVIATIONS = {
     "Rush": "Rush",
     "Unite": "Unite",
     "Accel": "Accel",
-    "GearFlat": "GearFlat",
-    "GearBall": "GearBall",
+    "Kick": "Kick",
+    "Vanguard": "Vanguard",
+    "Wedge": "Wedge",
+    "Zap": "Zap",
+    "Merge": "Merge",
+    "Jolt": "Jolt",
+    "Vortex": "Vortex",
+    "Orb": "Orb",
+    # Multi-word bits
+    "GearFlat": "Gear Flat",
+    "GearBall": "Gear Ball",
+    "GearNeedle": "Gear Needle",
+    "GearPoint": "Gear Point",
+    "GearRush": "Gear Rush",
     "High Needle": "High Needle",
     "Low Flat": "Low Flat",
     "Low Rush": "Low Rush",
+    "Low Orb": "Low Orb",
     "LowFlat": "Low Flat",
     "LowRush": "Low Rush",
     "LowNeedle": "Low Needle",
+    "LowOrb": "Low Orb",
     "HighNeedle": "High Needle",
     "HighTaper": "High Taper",
     "HighAccel": "High Accel",
     "DiscBall": "Disc Ball",
+    "Disc Ball": "Disc Ball",
     "MetalNeedle": "Metal Needle",
-    # Full names (for consistency)
-    "Kick": "Kick",
-    "Vanguard": "Vanguard",
+    "Metal Needle": "Metal Needle",
+    "Free Ball": "Free Ball",
+    "FreeBall": "Free Ball",
+    "FB": "Free Ball",
+    "Wall Ball": "Wall Ball",
+    "WallBall": "Wall Ball",
+    "WB": "Wall Ball",
+    "Wall Wedge": "Wall Wedge",
+    "WallWedge": "Wall Wedge",
+    "WW": "Wall Wedge",
+    "Bound Spike": "Bound Spike",
+    "BoundSpike": "Bound Spike",
+    "BS": "Bound Spike",
+    "Trans Kick": "Trans Kick",
+    "TransKick": "Trans Kick",
+    "TK": "Trans Kick",
+    "Trans Point": "Trans Point",
+    "TransPoint": "Trans Point",
+    "TP": "Trans Point",
+    "Under Flat": "Under Flat",
+    "UnderFlat": "Under Flat",
+    "UF": "Under Flat",
+    "Under Needle": "Under Needle",
+    "UnderNeedle": "Under Needle",
+    "UN": "Under Needle",
+    "Rubber Accel": "Rubber Accel",
+    "RubberAccel": "Rubber Accel",
+    "RA": "Rubber Accel",
 }
 
 
