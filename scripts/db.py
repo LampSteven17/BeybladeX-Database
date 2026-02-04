@@ -1177,18 +1177,7 @@ BIT_NORMALIZATIONS = {
 }
 
 # Ratchet normalizations (typos and invalid values)
-RATCHET_NORMALIZATIONS = {
-    # Invalid ratchets - 50 doesn't exist, probably meant 60
-    "5-50": "5-60",
-    "1-50": "1-60",
-    "2-50": "2-60",
-    "3-50": "3-60",
-    "4-50": "4-60",
-    "6-50": "6-60",
-    "7-50": "7-60",
-    "8-50": "8-60",
-    "9-50": "9-60",
-}
+RATCHET_NORMALIZATIONS = {}
 
 
 def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
