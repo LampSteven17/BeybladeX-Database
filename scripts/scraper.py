@@ -495,8 +495,8 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
             stage=stage,
         )
 
-    # Try: Everything + Ratchet+Bit (no space, bit attached like 3-60F or 6-60V)
-    match = re.match(r"^(.+?)\s+(\d{1,2}-\d{2,3})([A-Z][A-Za-z]*)$", combo_str)
+    # Try: Everything + Ratchet+Bit (no space, bit attached like 3-60F or 6-60V or 4-50Low Rush)
+    match = re.match(r"^(.+?)\s+(\d{1,2}-\d{2,3})([A-Z][A-Za-z\s]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
         ratchet = match.group(2).strip()
@@ -515,7 +515,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
 
     # Try: Blade + AssistRatchetBit (assist concatenated with ratchet, e.g., "FoxBlast Wheel9-60Hexa")
     # Pattern: blade_part + assist_prefix + ratchet + bit (no space between assist and ratchet)
-    match = re.match(r"^(.+?)\s+([A-Za-z]+)(\d{1,2}-\d{2,3})([A-Z][A-Za-z]*)$", combo_str)
+    match = re.match(r"^(.+?)\s+([A-Za-z]+)(\d{1,2}-\d{2,3})([A-Z][A-Za-z\s]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
         potential_assist = match.group(2).strip()
