@@ -86,6 +86,24 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
 
+    {/* Detail Panel (shown when ratchet is clicked) */}
+    <div id="ratchet-detail" class="hidden mt-6 card card-padding border-accent/30">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 id="detail-ratchet-name" class="text-2xl font-mono font-bold text-fg"></h2>
+          <p class="text-fg-muted text-sm">Top blade + bit combinations using this ratchet</p>
+        </div>
+        <button id="close-detail" class="text-fg-muted hover:text-fg transition-colors p-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="detail-combos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Combo cards will be inserted here */}
+      </div>
+    </div>
+
     {/* Info Section */}
     <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="card card-padding">
@@ -146,12 +164,13 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getRankedRatchets, type PartStats, type Region } from '../lib/db';
+  import { initDB, getRankedRatchets, getBestCombosForRatchet, type PartStats, type Region } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
 
   let allRatchets: PartStats[] = [];
   let searchQuery: string = '';
   let selectedHeight: string = 'all';
+  let selectedRatchet: string | null = null;
 
   function getSelectedRegion(): Region {
     if (typeof localStorage !== 'undefined') {
@@ -168,6 +187,7 @@ import Layout from '../layouts/Layout.astro';
       renderTable(allRatchets);
       setupSearch();
       setupFilters();
+      setupDetailClose();
     } catch (error) {
       console.error('Failed to load rankings:', error);
       const tbody = document.getElementById('rankings-body');
@@ -213,7 +233,7 @@ import Layout from '../layouts/Layout.astro';
     tbody.innerHTML = ratchets.map((ratchet) => {
       const color = getRatchetColor(ratchet.name);
       return `
-      <tr class="ranking-row">
+      <tr class="ranking-row cursor-pointer hover:bg-panel" data-ratchet="${ratchet.name}">
         <td class="font-mono text-center">
           <span class="rank-number text-lg">${ratchet.rank}</span>
         </td>
@@ -233,6 +253,79 @@ import Layout from '../layouts/Layout.astro';
     `}).join('');
 
     staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
+    setupRowClicks();
+  }
+
+  function setupRowClicks() {
+    const rows = document.querySelectorAll('#rankings-body tr[data-ratchet]');
+    rows.forEach(row => {
+      row.addEventListener('click', () => {
+        const ratchetName = row.getAttribute('data-ratchet');
+        if (ratchetName) showRatchetDetail(ratchetName);
+      });
+    });
+  }
+
+  async function showRatchetDetail(ratchetName: string) {
+    selectedRatchet = ratchetName;
+    const detailEl = document.getElementById('ratchet-detail');
+    const nameEl = document.getElementById('detail-ratchet-name');
+    const combosEl = document.getElementById('detail-combos');
+
+    if (!detailEl || !nameEl || !combosEl) return;
+
+    // Show panel with loading state
+    detailEl.classList.remove('hidden');
+    nameEl.textContent = ratchetName;
+    combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-8">Loading combos...</div>';
+
+    // Scroll to detail panel
+    detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    try {
+      const region = getSelectedRegion();
+      const combos = await getBestCombosForRatchet(ratchetName, 6, region);
+
+      if (combos.length === 0) {
+        combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-8">No combo data available</div>';
+        return;
+      }
+
+      combosEl.innerHTML = combos.map((combo, i) => `
+        <div class="card card-padding">
+          <div class="flex items-start gap-3">
+            <span class="rank-number text-xl">${i + 1}</span>
+            <div class="flex-grow">
+              <div class="font-mono font-bold text-fg">${combo.blade}</div>
+              <div class="flex items-center gap-2 mt-1 text-sm">
+                <span class="text-series-bx">${combo.bit}</span>
+              </div>
+              <div class="flex items-center gap-4 mt-2 text-sm">
+                <span class="text-accent font-mono">${combo.raw_score.toFixed(1)}</span>
+                <span class="text-fg-muted">${combo.uses} uses</span>
+                <span class="text-tier-ss">${combo.first} wins</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      staggerFadeIn(combosEl.children, { delay: 50 });
+    } catch (error) {
+      console.error('Failed to load ratchet combos:', error);
+      combosEl.innerHTML = '<div class="col-span-full text-center text-negative py-8">Failed to load combos</div>';
+    }
+  }
+
+  function setupDetailClose() {
+    const closeBtn = document.getElementById('close-detail');
+    const detailEl = document.getElementById('ratchet-detail');
+    if (closeBtn && detailEl) {
+      closeBtn.addEventListener('click', () => {
+        detailEl.classList.add('hidden');
+        selectedRatchet = null;
+      });
+    }
   }
 
   function getTrendHtml(trend: number): string {
