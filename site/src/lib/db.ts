@@ -3165,12 +3165,12 @@ export async function getMetaEvolution(region?: Region): Promise<MetaEvolutionDa
     });
   }
 
-  // Track journeys for top blades (those that were ever in top 5)
+  // Track journeys for top blades (those that were ever in top 10)
   const notableBlades = new Set<string>();
   for (const month of sortedMonths) {
     const topInMonth = Object.entries(monthlyData[month].blades)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
+      .slice(0, 10)
       .map(([b]) => b);
     topInMonth.forEach(b => notableBlades.add(b));
   }

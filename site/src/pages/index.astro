@@ -67,7 +67,7 @@ import Layout from '../layouts/Layout.astro';
               <div class="flex items-center justify-between mb-3">
                 <span class="text-xs font-mono text-fg-muted uppercase tracking-widest">Top Blade Rankings Over Time</span>
               </div>
-              <div id="blade-journey-chart" class="h-40 w-full relative overflow-hidden">
+              <div id="blade-journey-chart" class="h-56 w-full relative overflow-hidden">
                 {/* SVG journey lines rendered by JS */}
               </div>
               <div id="blade-journey-legend" class="flex flex-wrap gap-3 mt-2 text-xs">
@@ -757,7 +757,7 @@ import Layout from '../layouts/Layout.astro';
 
     // Render legend first (doesn't need width measurement)
     if (journeyLegendEl && data.bladeJourneys.length > 0) {
-      const topJourneys = data.bladeJourneys.slice(0, 6);
+      const topJourneys = data.bladeJourneys.slice(0, 10);
       journeyLegendEl.innerHTML = topJourneys.map((journey, idx) => {
         const color = bladeColors[idx % bladeColors.length];
         const trendIcon = journey.trend === 'rising' ? '↑' : journey.trend === 'falling' ? '↓' : journey.trend === 'new' ? '★' : journey.trend === 'gone' ? '○' : '→';
@@ -783,14 +783,14 @@ import Layout from '../layouts/Layout.astro';
         // Now we can accurately measure width since element is visible
         const containerWidth = journeyChartEl.getBoundingClientRect().width;
         const width = Math.max(containerWidth, 400);
-        const height = 160;
+        const height = 224;
         const padding = { top: 10, right: 20, bottom: 20, left: 30 };
         const chartWidth = width - padding.left - padding.right;
         const chartHeight = height - padding.top - padding.bottom;
 
-        // Only show top 6 blades for clarity
-        const topJourneys = data.bladeJourneys.slice(0, 6);
-        const maxRank = 8; // Only show ranks 1-8
+        // Show top 10 blades
+        const topJourneys = data.bladeJourneys.slice(0, 10);
+        const maxRank = 10; // Show ranks 1-10
 
         // Create SVG with measured width
         let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="display:block;">`;
@@ -802,11 +802,11 @@ import Layout from '../layouts/Layout.astro';
           svg += `<text x="${padding.left - 5}" y="${y + 3}" fill="#6b7280" font-size="9" text-anchor="end" font-family="monospace">${rank}</text>`;
         }
 
-        // Month labels (show every other month if many)
-        const step = months.length > 8 ? 2 : 1;
+        // Month labels - show a tick for every month
         months.forEach((month, i) => {
-          if (i % step !== 0 && i !== months.length - 1) return;
           const x = padding.left + (i / (months.length - 1)) * chartWidth;
+          // Tick mark
+          svg += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${padding.top + chartHeight}" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>`;
           const label = month.slice(2); // Just "24-01" format
           svg += `<text x="${x}" y="${height - 5}" fill="#6b7280" font-size="8" text-anchor="middle" font-family="monospace">${label}</text>`;
         });
