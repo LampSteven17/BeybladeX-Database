@@ -115,6 +115,33 @@ Single letter abbreviations: A(Accel), B(Ball), C(Cyclone), D(Dot), E(Elevate), 
 
 Multi-word bits: Bound Spike, Disc Ball, Free Ball, Gear Ball/Flat/Needle/Point/Rush, High Needle/Taper, Low Flat/Needle/Orb/Rush, Metal Needle, Rubber Accel, Trans Kick/Point, Under Flat/Needle, Wall Ball/Wedge, Vortex
 
+## Deployment
+
+### Server Details
+- **SSH host**: `beybladex-database` (ubuntu@192.168.88.62, configured in ~/.ssh/config)
+- **Repo on server**: `/opt/beybladex` (owned by root, use sudo)
+- **Web server**: nginx serving `/opt/beybladex/site/dist` on port 80
+- **Node on server**: v20.20.0
+
+### SSH from Claude Code
+SSH hangs in Claude Code's non-interactive shell. **Always use these flags:**
+```bash
+ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 beybladex-database "commands"
+```
+- `BatchMode=yes` — prevents hanging on password/key prompts
+- `ConnectTimeout=10` — fails fast instead of hanging forever
+
+### Deploy Process
+```bash
+# 1. Commit and push locally
+git add <files> && git commit -m "message" && git push
+
+# 2. Pull and rebuild on server
+ssh -o BatchMode=yes -o ConnectTimeout=10 beybladex-database \
+  "cd /opt/beybladex && sudo git pull && cd site && sudo npm run build"
+```
+No nginx restart needed — it serves static files directly from `dist/`.
+
 ## Design System
 
 Bloomberg terminal aesthetic with dark theme:
