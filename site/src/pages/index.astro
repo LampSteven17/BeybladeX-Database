@@ -70,7 +70,7 @@ import Layout from '../layouts/Layout.astro';
               <div id="blade-journey-chart" class="h-56 w-full relative overflow-hidden">
                 {/* SVG journey lines rendered by JS */}
               </div>
-              <div id="blade-journey-legend" class="flex flex-wrap gap-3 mt-2 text-xs">
+              <div id="blade-journey-legend" class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs" style="transform: rotate(-8deg); transform-origin: left center; margin-bottom: 0.5rem;">
                 {/* Legend populated by JS */}
               </div>
             </div>
@@ -730,7 +730,7 @@ import Layout from '../layouts/Layout.astro';
       { border: 'border-series-cx/30', bg: 'bg-series-cx', text: 'text-series-cx' },
       { border: 'border-tier-ss/30', bg: 'bg-tier-ss', text: 'text-tier-ss' },
     ];
-    const bladeColors = ['#22d3ee', '#4ade80', '#fbbf24', '#f472b6', '#a78bfa', '#fb923c', '#38bdf8', '#34d399', '#facc15', '#f87171'];
+    const bladeColors = ['#22d3ee', '#f87171', '#4ade80', '#fbbf24', '#a78bfa', '#fb923c', '#f472b6', '#2dd4bf', '#e879f9', '#84cc16'];
 
     // Render era cards
     if (eraCardsEl) {
@@ -783,8 +783,8 @@ import Layout from '../layouts/Layout.astro';
         // Now we can accurately measure width since element is visible
         const containerWidth = journeyChartEl.getBoundingClientRect().width;
         const width = Math.max(containerWidth, 400);
-        const height = 224;
-        const padding = { top: 10, right: 20, bottom: 20, left: 30 };
+        const height = 250;
+        const padding = { top: 10, right: 20, bottom: 40, left: 30 };
         const chartWidth = width - padding.left - padding.right;
         const chartHeight = height - padding.top - padding.bottom;
 
@@ -808,7 +808,7 @@ import Layout from '../layouts/Layout.astro';
           // Tick mark
           svg += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${padding.top + chartHeight}" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>`;
           const label = month.slice(2); // Just "24-01" format
-          svg += `<text x="${x}" y="${height - 5}" fill="#6b7280" font-size="8" text-anchor="middle" font-family="monospace">${label}</text>`;
+          svg += `<text x="${x}" y="${padding.top + chartHeight + 5}" fill="#6b7280" font-size="8" text-anchor="end" font-family="monospace" transform="rotate(-45, ${x}, ${padding.top + chartHeight + 5})">${label}</text>`;
         });
 
         // Draw journey lines
