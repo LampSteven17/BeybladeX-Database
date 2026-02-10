@@ -1183,7 +1183,7 @@ BIT_NORMALIZATIONS = {
     "RubberAccel": "Rubber Accel",
     "UnderNeedle": "Under Needle",
     "UpperFlat": "Upper Flat",
-    "RushAccel": "Rush Accel",
+    "RushAccel": "Rubber Accel",
 }
 
 # Ratchet normalizations (typos and invalid values)

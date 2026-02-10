@@ -43,7 +43,7 @@ def normalize_bit_name(bit: str) -> str:
         "RubberAccel": "Rubber Accel",
         "UnderNeedle": "Under Needle",
         "UpperFlat": "Upper Flat",
-        "RushAccel": "Rush Accel",
+        "RushAccel": "Rubber Accel",
         "WB": "Wall Ball",
         "UN": "Under Needle",
         "RA": "Rubber Accel",

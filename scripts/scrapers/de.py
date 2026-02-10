@@ -75,7 +75,7 @@ BIT_ABBREVIATIONS = {
     "HS": "High Sword",
     "SN": "Spiral Needle",
     "FB": "Free Ball",
-    "RA": "Rush Accel",
+    "RA": "Rubber Accel",
 }
 
 
