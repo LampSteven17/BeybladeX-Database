@@ -240,14 +240,12 @@ def normalize_bit_name(bit: str) -> str:
         "HighNeedle": "High Needle",
         "LowFlat": "Low Flat",
         "LowRush": "Low Rush",
-        "LowNeedle": "Low Needle",
         "GearFlat": "Gear Flat",
         "GearBall": "Gear Ball",
         "GearNeedle": "Gear Needle",
         "GearPoint": "Gear Point",
         "MetalNeedle": "Metal Needle",
         "HighTaper": "High Taper",
-        "HighAccel": "High Accel",
         "DiscBall": "Disc Ball",
         "RubberAccel": "Rubber Accel",
         "UnderNeedle": "Under Needle",
@@ -341,7 +339,7 @@ def parse_combo(combo_str: str) -> dict | None:
 
     # Pattern: [Blade] [Ratchet][Bit] or [Blade] [Ratchet] [Bit]
     # Try with space before bit
-    match = re.match(r"^(.+?)\s+(\d{1,2}-\d{2,3})\s+([A-Za-z][A-Za-z\s]*)$", combo_str)
+    match = re.match(r"^(.+?)\s+((?:\d{1,2}|M)-\d{2,3})\s+([A-Za-z][A-Za-z\s]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
         ratchet = match.group(2).strip()
@@ -360,7 +358,7 @@ def parse_combo(combo_str: str) -> dict | None:
         }
 
     # Try with bit attached to ratchet
-    match = re.match(r"^(.+?)\s+(\d{1,2}-\d{2,3})([A-Z][A-Za-z]*)$", combo_str)
+    match = re.match(r"^(.+?)\s+((?:\d{1,2}|M)-\d{2,3})([A-Z][A-Za-z]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
         ratchet = match.group(2).strip()
@@ -377,6 +375,22 @@ def parse_combo(combo_str: str) -> dict | None:
             "bit": bit,
             "assist": assist,
         }
+
+    # Fallback: Ratchet Integrated Bits (Operate/Turbo)
+    for rib in ("Operate", "Turbo"):
+        if combo_str.endswith(rib) or combo_str.endswith(rib.lower()):
+            blade_part = combo_str[: -len(rib)].strip()
+            if blade_part:
+                blade_only, assist = split_blade_assist(blade_part)
+                lock_chip, blade = parse_cx_blade(blade_only)
+                blade = normalize_blade_name(blade)
+                return {
+                    "blade": blade,
+                    "lock_chip": lock_chip,
+                    "ratchet": rib,
+                    "bit": rib,
+                    "assist": assist,
+                }
 
     return None
 
@@ -436,7 +450,7 @@ def is_beyblade_x(lines: list) -> bool:
     if re.search(r"\b\d{2,3}(RF|WD|RB|MB|CS|B:D|SF)\b", text, re.I):
         return False
     # Accept X format ratchets
-    if re.search(r"\b\d{1,2}-\d{2,3}[A-Z]", text):
+    if re.search(r"\b(?:\d{1,2}|M)-\d{2,3}[A-Z]", text):
         return True
     if re.search(r"Beyblade\s*X|X\s*Format", text, re.I):
         return True

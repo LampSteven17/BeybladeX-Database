@@ -292,7 +292,7 @@ BIT_ABBREVIATIONS = {
     "G": "Glide",
     "Q": "Quake",
     "K": "Kick",
-    "V": "Vanguard",
+    "V": "Vortex",
     "W": "Wedge",
     "Z": "Zap",
     "M": "Merge",
@@ -301,17 +301,13 @@ BIT_ABBREVIATIONS = {
     "HN": "High Needle",
     "LF": "Low Flat",
     "LR": "Low Rush",
-    "LN": "Low Needle",
     "GF": "GearFlat",
     "GB": "GearBall",
     "GN": "GearNeedle",
     "GP": "GearPoint",
     "MN": "Metal Needle",
     "HT": "High Taper",
-    "HA": "High Accel",
     "DB": "Disc Ball",
-    "HS": "High Sword",
-    "SN": "Spiral Needle",
     "Lv": "Level",
     "El": "Elevate",
     "Un": "Unite",
@@ -351,11 +347,9 @@ BIT_ABBREVIATIONS = {
     "Low Orb": "Low Orb",
     "LowFlat": "Low Flat",
     "LowRush": "Low Rush",
-    "LowNeedle": "Low Needle",
     "LowOrb": "Low Orb",
     "HighNeedle": "High Needle",
     "HighTaper": "High Taper",
-    "HighAccel": "High Accel",
     "DiscBall": "Disc Ball",
     "Disc Ball": "Disc Ball",
     "MetalNeedle": "Metal Needle",
@@ -387,6 +381,10 @@ BIT_ABBREVIATIONS = {
     "Rubber Accel": "Rubber Accel",
     "RubberAccel": "Rubber Accel",
     "RA": "Rubber Accel",
+    # Dirty data normalizations
+    "Rrush": "Rush",
+    "Operate": "Operate",
+    "Turbo": "Turbo",
 }
 
 
@@ -526,7 +524,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
     # Ratchet is X-XX format, bit can be attached or separate
 
     # Try: Everything + Ratchet + Bit (with space before bit)
-    match = re.match(r"^(.+?)\s+(\d{1,2}-\d{2,3})\s+([A-Za-z][A-Za-z\s]*)$", combo_str)
+    match = re.match(r"^(.+?)\s+((?:\d{1,2}|M)-\d{2,3})\s+([A-Za-z][A-Za-z\s]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
         ratchet = match.group(2).strip()
@@ -544,7 +542,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
         )
 
     # Try: Everything + Ratchet+Bit (no space, bit attached like 3-60F or 6-60V or 4-50Low Rush)
-    match = re.match(r"^(.+?)\s+(\d{1,2}-\d{2,3})([A-Z][A-Za-z\s]*)$", combo_str)
+    match = re.match(r"^(.+?)\s+((?:\d{1,2}|M)-\d{2,3})([A-Z][A-Za-z\s]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
         ratchet = match.group(2).strip()
@@ -563,7 +561,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
 
     # Try: Blade + AssistRatchetBit (assist concatenated with ratchet, e.g., "FoxBlast Wheel9-60Hexa")
     # Pattern: blade_part + assist_prefix + ratchet + bit (no space between assist and ratchet)
-    match = re.match(r"^(.+?)\s+([A-Za-z]+)(\d{1,2}-\d{2,3})([A-Z][A-Za-z\s]*)$", combo_str)
+    match = re.match(r"^(.+?)\s+([A-Za-z]+)((?:\d{1,2}|M)-\d{2,3})([A-Z][A-Za-z\s]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
         potential_assist = match.group(2).strip()
@@ -584,6 +582,24 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
                 lock_chip=lock_chip,
                 stage=stage,
             )
+
+    # Fallback: Ratchet Integrated Bits (Operate/Turbo) - no ratchet pattern
+    # These replace both ratchet + bit as one piece
+    RATCHET_INTEGRATED_BITS = {"Operate", "Turbo"}
+    for rib in RATCHET_INTEGRATED_BITS:
+        if combo_str.endswith(rib) or combo_str.endswith(rib.lower()):
+            blade_part = combo_str[: -len(rib)].strip()
+            if blade_part:
+                blade, assist = split_blade_assist(blade_part)
+                lock_chip, blade = parse_cx_blade(blade)
+                return Combo(
+                    blade=blade,
+                    ratchet=rib,
+                    bit=rib,
+                    assist=assist,
+                    lock_chip=lock_chip,
+                    stage=stage,
+                )
 
     return None
 
@@ -716,7 +732,7 @@ def is_beyblade_x_content(lines: list[str]) -> bool:
             return False
 
     # Beyblade X indicators (ratchet pattern X-XX)
-    x_pattern = r"\b\d{1,2}-\d{2,3}[A-Z]"  # Like 3-60F, 4-80B
+    x_pattern = r"\b(?:\d{1,2}|M)-\d{2,3}[A-Z]"  # Like 3-60F, 4-80B
     if re.search(x_pattern, text):
         return True
 

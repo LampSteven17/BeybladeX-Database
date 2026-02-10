@@ -160,7 +160,7 @@ def parse_jp_combo(combo_str: str) -> Optional[Combo]:
     # Pattern 1: [Blade] [Assist?] [Ratchet][Bit]
     # Try with assist first
     match_with_assist = re.match(
-        r'^(.+?)\s+([ァ-ヶー]+|[A-Z][a-z]+)\s+(\d{1,2}-\d{2,3})([A-Za-zァ-ヶー]+)$',
+        r'^(.+?)\s+([ァ-ヶー]+|[A-Z][a-z]+)\s+((?:\d{1,2}|M)-\d{2,3})([A-Za-zァ-ヶー]+)$',
         combo_str
     )
     if match_with_assist:
@@ -193,7 +193,7 @@ def parse_jp_combo(combo_str: str) -> Optional[Combo]:
 
     # Pattern 2: [Blade] [Ratchet][Bit] (no assist)
     match_simple = re.match(
-        r'^(.+?)\s+(\d{1,2}-\d{2,3})([A-Za-zァ-ヶー]+)$',
+        r'^(.+?)\s+((?:\d{1,2}|M)-\d{2,3})([A-Za-zァ-ヶー]+)$',
         combo_str
     )
     if match_simple:
@@ -216,7 +216,7 @@ def parse_jp_combo(combo_str: str) -> Optional[Combo]:
 
     # Pattern 3: [Blade] [Ratchet] [Bit] (space between ratchet and bit)
     match_spaced = re.match(
-        r'^(.+?)\s+(\d{1,2}-\d{2,3})\s+([A-Za-zァ-ヶー]+)$',
+        r'^(.+?)\s+((?:\d{1,2}|M)-\d{2,3})\s+([A-Za-zァ-ヶー]+)$',
         combo_str
     )
     if match_spaced:
@@ -235,6 +235,15 @@ def parse_jp_combo(combo_str: str) -> Optional[Combo]:
             bit=bit,
             lock_chip=lock_chip
         )
+
+    # Fallback: Ratchet Integrated Bits (Operate/Turbo)
+    for rib in ("Operate", "Turbo"):
+        if combo_str.endswith(rib) or combo_str.endswith(rib.lower()):
+            blade_part = combo_str[: -len(rib)].strip()
+            if blade_part:
+                blade = translate_blade(blade_part)
+                lock_chip, blade = parse_cx_blade(blade)
+                return Combo(blade=blade, ratchet=rib, bit=rib, lock_chip=lock_chip)
 
     return None
 
@@ -494,7 +503,7 @@ class RequestsScraper:
 
                     # Try to parse combo - can be "BladeName\nX-XXBit" or "BladeNameX-XXBit" or "BladeName X-XX Bit"
                     # Pattern: Japanese/English blade name followed by ratchet-bit (with optional spaces)
-                    combo_match = re.match(r'^(.+?)(\d{1,2}-\d{2,3})\s*([A-Za-z]*)$', cell_text.replace('\n', ''))
+                    combo_match = re.match(r'^(.+?)((?:\d{1,2}|M)-\d{2,3})\s*([A-Za-z]*)$', cell_text.replace('\n', ''))
                     if combo_match:
                         blade_jp = combo_match.group(1).strip()
                         ratchet = combo_match.group(2)

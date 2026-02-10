@@ -97,27 +97,35 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
 
     # Pattern: [Blade Name] [Ratchet][Bit]
     match = re.match(
-        r'^(.+?)\s+([A-Z]?\d{1,2}-\d{2,3})([A-Z]{1,2})$',
+        r'^(.+?)\s+([A-Z]?(?:\d{1,2}|M)-\d{2,3})([A-Z]{1,2})$',
         combo_str,
         re.IGNORECASE
     )
 
-    if not match:
-        return None
+    if match:
+        blade = match.group(1).strip()
+        ratchet = match.group(2)
+        bit_abbrev = match.group(3).upper()
 
-    blade = match.group(1).strip()
-    ratchet = match.group(2)
-    bit_abbrev = match.group(3).upper()
+        bit = expand_bit(bit_abbrev)
+        lock_chip, blade = parse_cx_blade(blade)
 
-    bit = expand_bit(bit_abbrev)
-    lock_chip, blade = parse_cx_blade(blade)
+        return Combo(
+            blade=blade,
+            ratchet=ratchet,
+            bit=bit,
+            lock_chip=lock_chip
+        )
 
-    return Combo(
-        blade=blade,
-        ratchet=ratchet,
-        bit=bit,
-        lock_chip=lock_chip
-    )
+    # Fallback: Ratchet Integrated Bits (Operate/Turbo)
+    for rib in ("Operate", "Turbo"):
+        if combo_str.endswith(rib) or combo_str.endswith(rib.lower()):
+            blade_part = combo_str[: -len(rib)].strip()
+            if blade_part:
+                lock_chip, blade = parse_cx_blade(blade_part)
+                return Combo(blade=blade, ratchet=rib, bit=rib, lock_chip=lock_chip)
+
+    return None
 
 
 def parse_date(date_str: str) -> Optional[datetime]:

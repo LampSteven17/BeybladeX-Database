@@ -156,43 +156,65 @@ function normalizeBladeDisplay(name: string): string {
   return BLADE_DISPLAY_NAMES[name] || name;
 }
 
-// Normalize ratchet - strip blade type prefixes (H, J, W, F, S, T, etc.)
-// These prefixes belong to the blade (Heavy, Jump, Wide, etc.), not the ratchet
+// Normalize ratchet - strip assist letter prefixes (H, W, S, etc.) stuck to ratchets
+// but preserve M prefix (M-85 is a valid ratchet height)
 function normalizeRatchet(ratchet: string): string {
   if (!ratchet) return ratchet;
-  // Match pattern: optional letter prefix + number + dash + number
-  // e.g., "H9-60" -> "9-60", "W3-60" -> "3-60", "9-60" -> "9-60"
-  const match = ratchet.match(/^[A-Za-z]*(\d+-\d+)$/);
+  // Strip non-M letter prefixes, keep M as valid height prefix
+  // e.g., "H9-60" -> "9-60", "W3-60" -> "3-60", "M-85" -> "M-85", "HM-85" -> "M-85"
+  const match = ratchet.match(/^[A-LN-Za-ln-z]*((?:M|\d+)-\d+)$/);
   return match ? match[1] : ratchet;
 }
 
 // Bit display names - abbreviations to full names
 const BIT_DISPLAY_NAMES: Record<string, string> = {
   // Single letter abbreviations
+  'A': 'Accel',
+  'B': 'Ball',
+  'C': 'Cyclone',
+  'D': 'Dot',
+  'E': 'Elevate',
+  'F': 'Flat',
+  'G': 'Glide',
+  'H': 'Hexa',
   'J': 'Jolt',
+  'K': 'Kick',
+  'L': 'Level',
+  'M': 'Merge',
+  'N': 'Needle',
+  'O': 'Orb',
+  'P': 'Point',
+  'Q': 'Quake',
+  'R': 'Rush',
+  'S': 'Spike',
+  'T': 'Taper',
+  'U': 'Unite',
+  'V': 'Vortex',
   'W': 'Wedge',
   'Z': 'Zap',
   
   // Two letter abbreviations
-  'BS': 'Ball Spike',
+  'BS': 'Bound Spike',
+  'DB': 'Disc Ball',
   'FB': 'Free Ball',
+  'GB': 'Gear Ball',
+  'GF': 'Gear Flat',
+  'GN': 'Gear Needle',
+  'GP': 'Gear Point',
   'GR': 'Gear Rush',
   'HN': 'High Needle',
   'HT': 'High Taper',
   'LF': 'Low Flat',
   'LO': 'Low Orb',
   'LR': 'Low Rush',
+  'MN': 'Metal Needle',
   'RA': 'Rubber Accel',
   'TK': 'Trans Kick',
-  'TP': 'Taper',
+  'TP': 'Trans Point',
   'UF': 'Under Flat',
   'UN': 'Under Needle',
   'WB': 'Wall Ball',
-  'GB': 'Gear Ball',
-  'GF': 'Gear Flat',
-  'GN': 'Gear Needle',
-  'GP': 'Gear Point',
-  'DB': 'Disc Ball',
+  'WW': 'Wall Wedge',
   
   // Normalize inconsistent casing/spacing
   'FreeBall': 'Free Ball',
@@ -210,7 +232,16 @@ const BIT_DISPLAY_NAMES: Record<string, string> = {
   'Low Rush': 'Low Rush',
   'Rush Accel': 'Rush Accel',
   'Trans Kick': 'Trans Kick',
+  'Trans Point': 'Trans Point',
   'Disc Ball': 'Disc Ball',
+
+  // Dirty data normalizations
+  'Rrush': 'Rush',
+  'Vanguard': 'Vortex',
+  'Bound Spike': 'Bound Spike',
+  'BoundSpike': 'Bound Spike',
+  'Operate': 'Operate',
+  'Turbo': 'Turbo',
 };
 
 // Normalize bit name for display

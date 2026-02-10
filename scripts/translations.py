@@ -432,7 +432,7 @@ def translate_combo(jp_combo: str) -> tuple[str, str, str]:
 
     # Try to match pattern: [Blade] [Ratchet][Bit]
     # Ratchet is X-XX format
-    match = re.match(r'^(.+?)\s+(\d{1,2}-\d{2,3})([A-Za-zァ-ヶー]+)$', jp_combo.strip())
+    match = re.match(r'^(.+?)\s+((?:\d{1,2}|M)-\d{2,3})([A-Za-zァ-ヶー]+)$', jp_combo.strip())
     if match:
         blade_jp = match.group(1).strip()
         ratchet = match.group(2)
