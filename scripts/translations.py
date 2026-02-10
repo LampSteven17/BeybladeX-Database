@@ -317,7 +317,7 @@ ASSIST_TRANSLATIONS: dict[str, str] = {
     "ラッシュアサルト": "Rush Assault",
     "ローオービット": "Low",
     "バンパースラッシュ": "Bumper Slash",
-    "アッパーフラット": "Upper Flat",
+    "アッパーフラット": "Under Flat",
     "ギアラッシュ": "Gear Rush",
     "ホイールバンパー": "Wheel Bumper",
 

@@ -1149,7 +1149,7 @@ BIT_NORMALIZATIONS = {
     "UN": "Under Needle",
     "RA": "Rubber Accel",
     "FB": "Free Ball",
-    "UF": "Upper Flat",
+    "UF": "Under Flat",
     "GF": "Gear Flat",
     "GB": "Gear Ball",
     "GN": "Gear Needle",
@@ -1182,7 +1182,7 @@ BIT_NORMALIZATIONS = {
     "DiscBall": "Disc Ball",
     "RubberAccel": "Rubber Accel",
     "UnderNeedle": "Under Needle",
-    "UpperFlat": "Upper Flat",
+    "UnderFlat": "Under Flat",
     "RushAccel": "Rubber Accel",
 }
 
