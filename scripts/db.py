@@ -452,7 +452,6 @@ BLADE_SERIES = {
     "Might": "CX",  # CX-11 main blade
     "Flare": "CX",  # CX-12 main blade
     "Volt": "CX",  # CX Random Booster main blade
-    "Storm": "CX",  # CX Random Booster main blade
     "Emperor": "CX",  # CX main blade
     # Also keep full names for backwards compatibility with existing data
     "Dran Brave": "CX",
