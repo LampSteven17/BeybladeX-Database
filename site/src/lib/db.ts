@@ -215,6 +215,13 @@ const BIT_DISPLAY_NAMES: Record<string, string> = {
   'UN': 'Under Needle',
   'WB': 'Wall Ball',
   'WW': 'Wall Wedge',
+
+  // Dirty data: wrong casing, typos, missing spaces
+  'Disk Ball': 'Disc Ball',
+  'Low flat': 'Low Flat',
+  'Low rush': 'Low Rush',
+  'Under needle': 'Under Needle',
+  'Loworb': 'Low Orb',
   
   // Normalize inconsistent casing/spacing
   'FreeBall': 'Free Ball',
@@ -248,7 +255,9 @@ const BIT_DISPLAY_NAMES: Record<string, string> = {
 // Normalize bit name for display
 function normalizeBit(bit: string): string {
   if (!bit) return bit;
-  return BIT_DISPLAY_NAMES[bit] || bit;
+  // Strip non-breaking spaces and stage annotations that may be baked into dirty data
+  let cleaned = bit.replace(/\u00a0/g, ' ').replace(/\s*(First and Finals Stage|First Stage Only|Finals Only|Final Stage|First Stage|Both Stages)\s*/gi, '').trim();
+  return BIT_DISPLAY_NAMES[cleaned] || BIT_DISPLAY_NAMES[bit] || cleaned;
 }
 
 /**

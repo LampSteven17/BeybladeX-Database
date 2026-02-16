@@ -8,6 +8,7 @@ Single source of truth: site/public/data/beyblade.duckdb
 import duckdb
 import fcntl
 import os
+import re
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -1129,21 +1130,43 @@ BLADE_NORMALIZATIONS = {
 
 # Bit abbreviation normalizations (unexpanded abbreviations -> full names)
 BIT_NORMALIZATIONS = {
-    # Single letter abbreviations that weren't expanded
-    "U": "Unite",
-    "L": "Level",
+    # ALL single letter abbreviations
+    "A": "Accel",
+    "B": "Ball",
+    "C": "Cyclone",
+    "D": "Dot",
     "E": "Elevate",
+    "F": "Flat",
     "G": "Glide",
-    "Q": "Quake",
+    "H": "Hexa",
+    "J": "Jolt",
     "K": "Kick",
+    "L": "Level",
+    "M": "Merge",
+    "N": "Needle",
+    "O": "Orb",
+    "P": "Point",
+    "Q": "Quake",
+    "R": "Rush",
+    "S": "Spike",
+    "T": "Taper",
+    "U": "Unite",
     "V": "Vanguard",
-    # Two letter that might slip through
+    "W": "Wedge",
+    "Z": "Zap",
+    # Two letter abbreviations
     "Lv": "Level",
     "El": "Elevate",
     "Un": "Unite",
     "Br": "Brake",
     "Bd": "Bound",
     "Gl": "Glide",
+    "LO": "Low Orb",
+    "GR": "Gear Rush",
+    "BS": "Bound Spike",
+    "TK": "Trans Kick",
+    "TP": "Trans Point",
+    "WW": "Wall Wedge",
     "WB": "Wall Ball",
     "UN": "Under Needle",
     "RA": "Rubber Accel",
@@ -1161,8 +1184,14 @@ BIT_NORMALIZATIONS = {
     "HT": "High Taper",
     "HA": "High Accel",
     "DB": "Disc Ball",
-    # Inconsistent naming
+    # Inconsistent naming / casing
     "Hex": "Hexa",
+    "Disk Ball": "Disc Ball",
+    "Low flat": "Low Flat",
+    "Low rush": "Low Rush",
+    "Under needle": "Under Needle",
+    "Freeball": "Free Ball",
+    "Loworb": "Low Orb",
     # CamelCase bits - add spaces
     "LowOrb": "Low Orb",
     "WallBall": "Wall Ball",
@@ -1183,6 +1212,10 @@ BIT_NORMALIZATIONS = {
     "UnderNeedle": "Under Needle",
     "UnderFlat": "Under Flat",
     "RushAccel": "Rubber Accel",
+    "BoundSpike": "Bound Spike",
+    "TransKick": "Trans Kick",
+    "TransPoint": "Trans Point",
+    "WallWedge": "Wall Wedge",
 }
 
 # Ratchet normalizations (typos and invalid values)
@@ -1203,6 +1236,46 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
         conn = get_connection()
 
     total_fixed = 0
+
+    # Pre-cleaning: strip non-breaking spaces (\xa0) and stage annotations from all text columns
+    # Some scrapers produce dirty data like 'B \xa0 \xa0 First and Finals Stage'
+    stage_annotations = [
+        "First and Finals Stage",
+        "First Stage Only",
+        "Finals Only",
+        "Final Stage",
+        "First Stage",
+        "Both Stages",
+    ]
+    for col in ["bit_1", "bit_2", "bit_3", "blade_1", "blade_2", "blade_3",
+                "ratchet_1", "ratchet_2", "ratchet_3", "assist_1", "assist_2", "assist_3"]:
+        # Replace non-breaking spaces with regular spaces
+        count = conn.execute(
+            f"SELECT COUNT(*) FROM placements WHERE {col} LIKE '%' || chr(160) || '%'"
+        ).fetchone()[0]
+        if count > 0:
+            conn.execute(
+                f"UPDATE placements SET {col} = REPLACE({col}, chr(160), ' ') WHERE {col} LIKE '%' || chr(160) || '%'"
+            )
+            total_fixed += count
+
+    # Strip stage annotations that got baked into column values
+    for col in ["bit_1", "bit_2", "bit_3"]:
+        for annotation in stage_annotations:
+            count = conn.execute(
+                f"SELECT COUNT(*) FROM placements WHERE {col} LIKE ?", [f"%{annotation}%"]
+            ).fetchone()[0]
+            if count > 0:
+                conn.execute(
+                    f"UPDATE placements SET {col} = TRIM(REPLACE({col}, ?, '')) WHERE {col} LIKE ?",
+                    [annotation, f"%{annotation}%"]
+                )
+                total_fixed += count
+
+    # Final trim pass to clean up leftover whitespace
+    for col in ["bit_1", "bit_2", "bit_3", "blade_1", "blade_2", "blade_3",
+                "ratchet_1", "ratchet_2", "ratchet_3"]:
+        conn.execute(f"UPDATE placements SET {col} = TRIM({col}) WHERE {col} != TRIM({col})")
 
     # Fix blade normalizations
     for wrong, correct in BLADE_NORMALIZATIONS.items():
