@@ -282,14 +282,15 @@ import Layout from '../layouts/Layout.astro';
       expandedRow = null;
     }
     if (detailRow) {
-      const content = detailRow.querySelector('.detail-content');
+      const oldRow = detailRow;
+      detailRow = null;
+      const content = oldRow.querySelector('.detail-content');
       if (content) {
         content.classList.remove('open');
-        setTimeout(() => detailRow?.remove(), 300);
+        setTimeout(() => oldRow.remove(), 300);
       } else {
-        detailRow.remove();
+        oldRow.remove();
       }
-      detailRow = null;
     }
   }
 
