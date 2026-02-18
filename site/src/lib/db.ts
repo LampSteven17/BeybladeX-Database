@@ -528,6 +528,7 @@ export interface ComboStats {
   bit: string;
   lockChip?: string | null;  // Lock chip for CX blades
   assist?: string | null;     // Assist blade for CX blades
+  overBlade?: string | null;  // Over blade for CX blades
   raw_score: number;
   uses: number;
   first: number;
@@ -773,11 +774,12 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
     bit: string;
     lock_chip: string | null;
     assist: string | null;
+    over_blade: string | null;
     place: number;
     tournament_date: string;
     stage: string | null;
   }>(`
-    SELECT blade, ratchet, bit, lock_chip, assist, place, tournament_date::VARCHAR as tournament_date, stage
+    SELECT blade, ratchet, bit, lock_chip, assist, over_blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
     ORDER BY tournament_date DESC
@@ -798,10 +800,13 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
     const bit = normalizeBit(row.bit);
     const lockChip = row.lock_chip;
     const assist = row.assist;
+    const overBlade = row.over_blade;
     const blade = getFullBladeName(row.blade, lockChip);
-    // For CX blades with assist, include it in the key and combo string
-    const key = assist ? `${blade}|${assist}|${ratchet}|${bit}` : `${blade}|${ratchet}|${bit}`;
-    const comboStr = assist ? `${blade} ${assist} ${ratchet} ${bit}` : `${blade} ${ratchet} ${bit}`;
+    // Include assist and over_blade in key/combo string when present
+    const keyParts = [blade, overBlade, assist, ratchet, bit].filter(Boolean);
+    const key = keyParts.join('|');
+    const comboStrParts = [blade, overBlade, assist, ratchet, bit].filter(Boolean);
+    const comboStr = comboStrParts.join(' ');
 
     if (!comboScores[key]) {
       comboScores[key] = {
@@ -811,6 +816,7 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
         bit: bit,
         lockChip: lockChip,
         assist: assist,
+        overBlade: overBlade,
         raw_score: 0,
         uses: 0,
         first: 0,

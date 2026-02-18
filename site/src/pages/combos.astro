@@ -60,6 +60,7 @@ import Layout from '../layouts/Layout.astro';
               <th class="w-16">#</th>
               <th class="w-20">Tier</th>
               <th>Blade</th>
+              <th>Over</th>
               <th>Assist</th>
               <th>Ratchet</th>
               <th>Bit</th>
@@ -76,7 +77,7 @@ import Layout from '../layouts/Layout.astro';
             {/* Loading skeletons */}
             {Array.from({ length: 20 }, (_, i) => (
               <tr>
-                <td colspan="13">
+                <td colspan="14">
                   <div class="skeleton h-12 rounded"></div>
                 </td>
               </tr>
@@ -165,7 +166,7 @@ import Layout from '../layouts/Layout.astro';
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="13" class="text-center text-negative py-8">
+            <td colspan="14" class="text-center text-negative py-8">
               Failed to load combo rankings. Please refresh the page.
             </td>
           </tr>
@@ -331,7 +332,7 @@ import Layout from '../layouts/Layout.astro';
     detailRow = document.createElement('tr');
     detailRow.className = 'detail-row';
     detailRow.innerHTML = `
-      <td colspan="13">
+      <td colspan="14">
         <div class="detail-content">
           <div class="detail-inner">
             <div class="flex flex-col md:flex-row gap-6 items-start">
@@ -469,7 +470,7 @@ import Layout from '../layouts/Layout.astro';
     if (combos.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="13" class="text-center text-fg-muted py-8">
+          <td colspan="14" class="text-center text-fg-muted py-8">
             No combos found.
           </td>
         </tr>
@@ -490,7 +491,8 @@ import Layout from '../layouts/Layout.astro';
             data-blade="${bladeBaseName}"
             data-ratchet="${combo.ratchet}"
             data-bit="${combo.bit}"
-            data-assist="${combo.assist || ''}">
+            data-assist="${combo.assist || ''}"
+            data-overblade="${combo.overBlade || ''}">
           <td class="font-mono">
             <span class="rank-number text-lg">${displayRank}</span>
           </td>
@@ -498,6 +500,7 @@ import Layout from '../layouts/Layout.astro';
             <span class="${getTierClass(tier)} cursor-pointer hover:ring-2 hover:ring-white/30" data-tier="${tier}">${tier}</span>
           </td>
           <td class="font-mono font-medium text-accent">${combo.blade}</td>
+          <td class="font-mono text-series-cx">${combo.overBlade || '-'}</td>
           <td class="font-mono text-series-cx">${combo.assist || '-'}</td>
           <td class="font-mono text-series-ux">${combo.ratchet}</td>
           <td class="font-mono text-series-bx">${combo.bit}</td>
