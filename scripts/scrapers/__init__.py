@@ -10,5 +10,6 @@ Provides scraper classes for each data source:
 from .wbo import WBOScraper
 from .jp import JPScraper
 from .de import DEScraper
+from .fandom import FandomScraper
 
-__all__ = ["WBOScraper", "JPScraper", "DEScraper"]
+__all__ = ["WBOScraper", "JPScraper", "DEScraper", "FandomScraper"]

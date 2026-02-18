@@ -556,6 +556,23 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
         )
     """)
 
+    # Part attributes table (official Takara Tomy stats from Fandom wiki)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS part_attributes (
+            name VARCHAR PRIMARY KEY,
+            part_type VARCHAR NOT NULL,
+            system VARCHAR,
+            attack INTEGER,
+            defense INTEGER,
+            stamina INTEGER,
+            dash INTEGER,
+            burst_resistance INTEGER,
+            weight DECIMAL(5,1),
+            spin_direction VARCHAR,
+            scraped_at TIMESTAMP DEFAULT current_timestamp
+        )
+    """)
+
     # View: Flatten all combos (includes stage for weighted scoring)
     conn.execute("""
         CREATE OR REPLACE VIEW combo_usage AS
@@ -1409,6 +1426,7 @@ def reset_database() -> None:
     conn.execute("DROP TABLE IF EXISTS placements")
     conn.execute("DROP TABLE IF EXISTS tournaments")
     conn.execute("DROP TABLE IF EXISTS parts")
+    conn.execute("DROP TABLE IF EXISTS part_attributes")
     init_schema(conn)
     conn.close()
 

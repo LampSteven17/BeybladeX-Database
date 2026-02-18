@@ -99,18 +99,18 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getRankedCombos, BLADE_SERIES, type ComboStats, type Region } from '../lib/db';
+  import { initDB, getRankedCombos, getComboRadarStats, getMetaAverageRadarStats, BLADE_SERIES, type ComboStats, type ComboRadarStats, type Region } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
+  import { Chart, RadarController, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from 'chart.js';
+
+  // Register Chart.js components for radar charts
+  Chart.register(RadarController, RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
   function getBladeBaseName(blade: string): string {
-    // For CX blades like "Pegasus Blast", extract the main blade name (Blast)
-    // For regular blades, just return as-is
     const parts = blade.split(' ');
     if (parts.length > 1) {
-      // Check if last part is a known blade
       const lastPart = parts[parts.length - 1];
       if (BLADE_SERIES[lastPart]) return lastPart;
-      // Check if first part is a known blade (for non-CX)
       if (BLADE_SERIES[parts[0]]) return parts[0];
     }
     return blade;
@@ -129,6 +129,12 @@ import Layout from '../layouts/Layout.astro';
   let uniqueBladesOnly: boolean = false;
   const LOAD_INCREMENT = 50;
 
+  // Radar chart state
+  let expandedRow: HTMLTableRowElement | null = null;
+  let detailRow: HTMLTableRowElement | null = null;
+  let activeChart: Chart | null = null;
+  let metaAverage: ComboRadarStats | null = null;
+
   function getSelectedRegion(): Region {
     if (typeof localStorage !== 'undefined') {
       return (localStorage.getItem('beyblade-region') as Region) || 'ALL';
@@ -136,17 +142,19 @@ import Layout from '../layouts/Layout.astro';
     return 'ALL';
   }
 
-  let allCombosWithRare: ComboStats[] = []; // Includes 1-use combos for search
+  let allCombosWithRare: ComboStats[] = [];
 
   async function loadRankings() {
     try {
       await initDB();
       const region = getSelectedRegion();
-      // Load combos with 2+ uses for main display
       allCombos = await getRankedCombos(500, 2, region);
-      // Also load rare combos (1 use) for search functionality
       allCombosWithRare = await getRankedCombos(2000, 1, region);
       filteredCombos = allCombos;
+
+      // Pre-fetch meta average for radar ghost overlay
+      metaAverage = await getMetaAverageRadarStats();
+
       renderTable(filteredCombos.slice(0, displayedCount));
       updateLoadMoreButton();
       setupTierFilters();
@@ -213,10 +221,9 @@ import Layout from '../layouts/Layout.astro';
   }
 
   function applyFilters() {
-    // Use rare combos dataset when searching, regular dataset otherwise
+    collapseDetail();
     let filtered = searchQuery ? allCombosWithRare : allCombos;
 
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(c =>
@@ -227,25 +234,21 @@ import Layout from '../layouts/Layout.astro';
       );
     }
 
-    // Apply tier filter
     if (currentTier !== 'all') {
       filtered = filtered.filter(c => c.tier === currentTier);
     }
 
-    // Apply unique blades filter - only show the top-ranked combo for each blade
     if (uniqueBladesOnly) {
       const seenBlades = new Set<string>();
       filtered = filtered.filter(c => {
-        if (seenBlades.has(c.blade)) {
-          return false;
-        }
+        if (seenBlades.has(c.blade)) return false;
         seenBlades.add(c.blade);
         return true;
       });
     }
 
     filteredCombos = filtered;
-    displayedCount = 50; // Reset to initial count
+    displayedCount = 50;
     renderTable(filteredCombos.slice(0, displayedCount));
     updateLoadMoreButton();
   }
@@ -264,9 +267,198 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  // Tier is now calculated in getRankedCombos using bell curve distribution
   function getTier(combo: ComboStats): 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F' {
     return combo.tier || 'C';
+  }
+
+  // Collapse any open detail row
+  function collapseDetail() {
+    if (activeChart) {
+      activeChart.destroy();
+      activeChart = null;
+    }
+    if (expandedRow) {
+      expandedRow.classList.remove('expanded');
+      expandedRow = null;
+    }
+    if (detailRow) {
+      const content = detailRow.querySelector('.detail-content');
+      if (content) {
+        content.classList.remove('open');
+        setTimeout(() => detailRow?.remove(), 300);
+      } else {
+        detailRow.remove();
+      }
+      detailRow = null;
+    }
+  }
+
+  // Build stat bar HTML for a single stat
+  function statBarHtml(label: string, value: number, rawValue: string, color: string): string {
+    return `
+      <div class="radar-stat-row">
+        <span class="radar-stat-label">${label}</span>
+        <div class="radar-stat-bar">
+          <div class="radar-stat-fill" style="width: ${value}%; background: ${color};"></div>
+        </div>
+        <span class="radar-stat-value">${rawValue}</span>
+      </div>
+    `;
+  }
+
+  // Toggle combo detail with radar chart
+  async function toggleComboDetail(row: HTMLTableRowElement) {
+    const blade = row.dataset.blade || '';
+    const ratchet = row.dataset.ratchet || '';
+    const bit = row.dataset.bit || '';
+    const assist = row.dataset.assist || '';
+
+    // If clicking the same row, just collapse
+    if (expandedRow === row) {
+      collapseDetail();
+      return;
+    }
+
+    // Collapse any existing detail first
+    collapseDetail();
+
+    // Mark this row as expanded
+    expandedRow = row;
+    row.classList.add('expanded');
+
+    // Create the detail row
+    detailRow = document.createElement('tr');
+    detailRow.className = 'detail-row';
+    detailRow.innerHTML = `
+      <td colspan="13">
+        <div class="detail-content">
+          <div class="detail-inner">
+            <div class="flex flex-col md:flex-row gap-6 items-start">
+              <div class="w-full md:w-64 flex-shrink-0 flex items-center justify-center">
+                <canvas id="radar-chart" width="240" height="240"></canvas>
+              </div>
+              <div class="flex-1 min-w-0" id="stat-bars">
+                <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Official Stats</div>
+                <div class="text-fg-muted text-sm py-4">Loading stats...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+
+    // Insert after the clicked row
+    row.after(detailRow);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      const content = detailRow!.querySelector('.detail-content');
+      if (content) content.classList.add('open');
+    });
+
+    // Fetch stats
+    const stats = await getComboRadarStats(blade, ratchet, bit, assist || null);
+    const statBars = detailRow.querySelector('#stat-bars');
+
+    if (!stats) {
+      if (statBars) {
+        statBars.innerHTML = `
+          <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Official Stats</div>
+          <div class="text-fg-muted text-sm py-2">Stats unavailable for this combo's parts.</div>
+        `;
+      }
+      return;
+    }
+
+    // Render stat bars
+    if (statBars) {
+      const accentColor = '#f97316';
+      statBars.innerHTML = `
+        <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Official Stats</div>
+        ${statBarHtml('Attack', stats.attack, String(stats.raw.attack), accentColor)}
+        ${statBarHtml('Defense', stats.defense, String(stats.raw.defense), '#3b82f6')}
+        ${statBarHtml('Stamina', stats.stamina, String(stats.raw.stamina), '#22c55e')}
+        ${statBarHtml('Burst Res', stats.burstResistance, String(stats.raw.burstResistance), '#a855f7')}
+        ${statBarHtml('Weight', stats.weight, stats.raw.weight + 'g', '#6b7280')}
+      `;
+    }
+
+    // Render radar chart
+    const canvas = detailRow.querySelector('#radar-chart') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const datasets: any[] = [
+      {
+        label: 'Combo',
+        data: [stats.attack, stats.defense, stats.stamina, stats.burstResistance, stats.weight],
+        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+        borderColor: '#f97316',
+        borderWidth: 2,
+        pointBackgroundColor: '#f97316',
+        pointBorderColor: '#f97316',
+        pointRadius: 3,
+        pointHoverRadius: 5,
+      },
+    ];
+
+    // Add meta average ghost overlay
+    if (metaAverage) {
+      datasets.push({
+        label: 'Meta Average',
+        data: [metaAverage.attack, metaAverage.defense, metaAverage.stamina, metaAverage.burstResistance, metaAverage.weight],
+        backgroundColor: 'rgba(102, 102, 102, 0.05)',
+        borderColor: '#666',
+        borderWidth: 1,
+        borderDash: [4, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+      });
+    }
+
+    activeChart = new Chart(canvas, {
+      type: 'radar',
+      data: {
+        labels: ['ATK', 'DEF', 'STA', 'BURST', 'WGT'],
+        datasets,
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: true,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              stepSize: 25,
+              display: false,
+              backdropColor: 'transparent',
+            },
+            grid: {
+              color: 'rgba(48, 54, 61, 0.5)',
+            },
+            angleLines: {
+              color: 'rgba(48, 54, 61, 0.5)',
+            },
+            pointLabels: {
+              color: '#a3a3a3',
+              font: { family: 'JetBrains Mono, monospace', size: 10 },
+            },
+          },
+        },
+        plugins: {
+          tooltip: {
+            backgroundColor: '#161b22',
+            borderColor: '#30363d',
+            borderWidth: 1,
+            titleFont: { family: 'JetBrains Mono, monospace' },
+            bodyFont: { family: 'JetBrains Mono, monospace' },
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}`,
+            },
+          },
+        },
+      },
+    });
   }
 
   function renderTable(combos: ComboStats[]) {
@@ -286,12 +478,18 @@ import Layout from '../layouts/Layout.astro';
 
     tbody.innerHTML = combos.map((combo, index) => {
       const tier = getTier(combo);
-      // Use sequential numbering when unique blades filter is active
       const displayRank = uniqueBladesOnly ? index + 1 : combo.rank;
       const series = getBladeSeries(combo.blade);
       const seriesBadgeClass = series === 'BX' ? 'series-badge-bx' : series === 'UX' ? 'series-badge-ux' : series === 'CX' ? 'series-badge-cx' : '';
+      // Extract the base blade name for CX blades (e.g., "Pegasus Blast" -> blade is the full name as stored)
+      // For the radar lookup, we need the base blade name from the database
+      const bladeBaseName = getBladeBaseName(combo.blade);
       return `
-        <tr class="ranking-row hover:bg-panel">
+        <tr class="ranking-row hover:bg-panel"
+            data-blade="${bladeBaseName}"
+            data-ratchet="${combo.ratchet}"
+            data-bit="${combo.bit}"
+            data-assist="${combo.assist || ''}">
           <td class="font-mono">
             <span class="rank-number text-lg">${displayRank}</span>
           </td>
@@ -315,9 +513,22 @@ import Layout from '../layouts/Layout.astro';
       `;
     }).join('');
 
+    // Add click handlers to ranking rows (for radar expansion)
+    tbody.querySelectorAll('.ranking-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        // Don't expand if clicking a tier badge
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-tier]') && target.closest('[data-tier]') !== row) {
+          return;
+        }
+        toggleComboDetail(row as HTMLTableRowElement);
+      });
+    });
+
     // Add click handlers to tier badges
-    tbody.querySelectorAll('[data-tier]').forEach(badge => {
-      badge.addEventListener('click', () => {
+    tbody.querySelectorAll('.tier-badge-ss, .tier-badge-s, .tier-badge-a, .tier-badge-b, .tier-badge-c, .tier-badge-d, .tier-badge-f').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
         const tier = badge.getAttribute('data-tier') || 'all';
         currentTier = tier;
         updateTierStyles(tier);
@@ -385,6 +596,7 @@ import Layout from '../layouts/Layout.astro';
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
+    collapseDetail();
     loadRankings();
   });
 </script>

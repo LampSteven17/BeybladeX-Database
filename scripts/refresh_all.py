@@ -31,7 +31,7 @@ if hasattr(signal, 'SIGPIPE'):
 sys.path.insert(0, str(Path(__file__).parent))
 
 from db import get_connection, init_schema, normalize_data, database_lock, DatabaseLockError
-from scrapers import WBOScraper, JPScraper, DEScraper
+from scrapers import WBOScraper, JPScraper, DEScraper, FandomScraper
 from import_championships import (
     init_data_file as init_champ_data,
     import_championships,
@@ -48,6 +48,7 @@ SCRAPERS = {
     "wbo": WBOScraper,
     "jp": JPScraper,
     "de": DEScraper,
+    "fandom": FandomScraper,
 }
 
 # Default order of scraping (champ is handled separately)

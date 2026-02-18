@@ -525,6 +525,60 @@
   .sparkline svg {
     @apply block;
   }
+
+  /* ===========================================
+   * Combo Detail Row (inline accordion)
+   * =========================================== */
+  .detail-row td {
+    @apply bg-terminal-surface border-b border-stroke p-0;
+  }
+
+  .detail-content {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+    opacity: 0;
+  }
+
+  .detail-content.open {
+    max-height: 400px;
+    opacity: 1;
+    transition: max-height 0.35s ease-in, opacity 0.2s ease-in;
+  }
+
+  .detail-inner {
+    @apply p-4;
+  }
+
+  .ranking-row {
+    @apply cursor-pointer;
+  }
+
+  .ranking-row.expanded {
+    @apply bg-panel;
+    border-left: 3px solid theme('colors.accent.DEFAULT');
+  }
+
+  /* Radar chart stat bars */
+  .radar-stat-row {
+    @apply flex items-center gap-2 py-1;
+  }
+
+  .radar-stat-label {
+    @apply text-xs font-mono text-fg-muted w-20 text-right;
+  }
+
+  .radar-stat-bar {
+    @apply flex-1 h-2 rounded-full bg-stroke overflow-hidden;
+  }
+
+  .radar-stat-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  .radar-stat-value {
+    @apply text-xs font-mono text-fg w-12 text-right tabular-nums;
+  }
 }
 
 @layer utilities {

@@ -4218,3 +4218,163 @@ export async function getCombosSparklineData(
 
   return result;
 }
+
+// =============================================================================
+// Spider Chart / Radar Stats (official Takara Tomy stats from part_attributes)
+// =============================================================================
+
+export interface ComboRadarStats {
+  attack: number;           // 0-100 normalized
+  defense: number;
+  stamina: number;
+  burstResistance: number;
+  weight: number;           // 0-100 normalized from grams
+  raw: {
+    attack: number;
+    defense: number;
+    stamina: number;
+    burstResistance: number;
+    weight: number;         // actual grams
+  };
+}
+
+// Normalization ranges for computing 0-100 scale
+// Based on typical Beyblade X combo stat ranges
+const RADAR_MAX = {
+  attack: 150,        // blade(70) + ratchet(25) + bit(55)
+  defense: 120,       // blade(50) + ratchet(25) + bit(60)
+  stamina: 130,       // blade(60) + ratchet(20) + bit(60)
+  burstResistance: 100, // bit only, already 0-100
+  weight: 55,         // blade(~40g) + ratchet(~8g) + bit(~3g) = ~51g max
+};
+
+/**
+ * Check if the part_attributes table exists and has data.
+ */
+async function hasPartAttributes(): Promise<boolean> {
+  try {
+    const result = await query<{ cnt: number }>(`
+      SELECT COUNT(*) as cnt FROM beyblade.part_attributes WHERE attack IS NOT NULL
+    `);
+    return result.length > 0 && result[0].cnt > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get radar stats for a specific combo (blade + ratchet + bit).
+ * Sums the official TT stats for each component.
+ * Returns null if stats aren't available for the combo's parts.
+ */
+export async function getComboRadarStats(
+  blade: string,
+  ratchet: string,
+  bit: string,
+  assist?: string | null
+): Promise<ComboRadarStats | null> {
+  if (!(await hasPartAttributes())) return null;
+
+  // Query stats for each component
+  const parts = await query<{
+    name: string;
+    part_type: string;
+    attack: number | null;
+    defense: number | null;
+    stamina: number | null;
+    burst_resistance: number | null;
+    weight: number | null;
+  }>(`
+    SELECT name, part_type, attack, defense, stamina, burst_resistance, weight::FLOAT as weight
+    FROM beyblade.part_attributes
+    WHERE name IN ('${blade.replace(/'/g, "''")}', '${ratchet.replace(/'/g, "''")}', '${bit.replace(/'/g, "''")}' ${assist ? `, '${assist.replace(/'/g, "''")}'` : ''})
+  `);
+
+  // We need at least blade and bit stats (ratchet optional since some may be missing)
+  const bladeStats = parts.find(p => p.name === blade);
+  const bitStats = parts.find(p => p.name === bit);
+
+  if (!bladeStats?.attack && !bitStats?.attack) return null;
+
+  const ratchetStats = parts.find(p => p.name === ratchet);
+  const assistStats = assist ? parts.find(p => p.name === assist) : null;
+
+  const rawAttack = (bladeStats?.attack ?? 0) + (ratchetStats?.attack ?? 0) + (bitStats?.attack ?? 0) + (assistStats?.attack ?? 0);
+  const rawDefense = (bladeStats?.defense ?? 0) + (ratchetStats?.defense ?? 0) + (bitStats?.defense ?? 0) + (assistStats?.defense ?? 0);
+  const rawStamina = (bladeStats?.stamina ?? 0) + (ratchetStats?.stamina ?? 0) + (bitStats?.stamina ?? 0) + (assistStats?.stamina ?? 0);
+  const rawBurst = bitStats?.burst_resistance ?? 0;
+  const rawWeight = (bladeStats?.weight ?? 0) + (ratchetStats?.weight ?? 0) + (bitStats?.weight ?? 0) + (assistStats?.weight ?? 0);
+
+  return {
+    attack: Math.min(100, Math.round((rawAttack / RADAR_MAX.attack) * 100)),
+    defense: Math.min(100, Math.round((rawDefense / RADAR_MAX.defense) * 100)),
+    stamina: Math.min(100, Math.round((rawStamina / RADAR_MAX.stamina) * 100)),
+    burstResistance: Math.min(100, Math.round((rawBurst / RADAR_MAX.burstResistance) * 100)),
+    weight: Math.min(100, Math.round((rawWeight / RADAR_MAX.weight) * 100)),
+    raw: {
+      attack: rawAttack,
+      defense: rawDefense,
+      stamina: rawStamina,
+      burstResistance: rawBurst,
+      weight: Math.round(rawWeight * 10) / 10,
+    },
+  };
+}
+
+/**
+ * Get the meta average radar stats across all combos that have part attributes.
+ * Used as a ghost overlay on the radar chart for comparison.
+ */
+export async function getMetaAverageRadarStats(): Promise<ComboRadarStats | null> {
+  if (!(await hasPartAttributes())) return null;
+
+  // Average the stats across blade, ratchet, bit part types
+  const avgStats = await query<{
+    part_type: string;
+    avg_attack: number;
+    avg_defense: number;
+    avg_stamina: number;
+    avg_burst: number;
+    avg_weight: number;
+  }>(`
+    SELECT
+      part_type,
+      AVG(attack)::FLOAT as avg_attack,
+      AVG(defense)::FLOAT as avg_defense,
+      AVG(stamina)::FLOAT as avg_stamina,
+      AVG(burst_resistance)::FLOAT as avg_burst,
+      AVG(weight)::FLOAT as avg_weight
+    FROM beyblade.part_attributes
+    WHERE attack IS NOT NULL
+    AND part_type IN ('blade', 'ratchet', 'bit')
+    GROUP BY part_type
+  `);
+
+  if (avgStats.length === 0) return null;
+
+  const byType: Record<string, typeof avgStats[0]> = {};
+  for (const row of avgStats) {
+    byType[row.part_type] = row;
+  }
+
+  const rawAttack = (byType.blade?.avg_attack ?? 0) + (byType.ratchet?.avg_attack ?? 0) + (byType.bit?.avg_attack ?? 0);
+  const rawDefense = (byType.blade?.avg_defense ?? 0) + (byType.ratchet?.avg_defense ?? 0) + (byType.bit?.avg_defense ?? 0);
+  const rawStamina = (byType.blade?.avg_stamina ?? 0) + (byType.ratchet?.avg_stamina ?? 0) + (byType.bit?.avg_stamina ?? 0);
+  const rawBurst = byType.bit?.avg_burst ?? 0;
+  const rawWeight = (byType.blade?.avg_weight ?? 0) + (byType.ratchet?.avg_weight ?? 0) + (byType.bit?.avg_weight ?? 0);
+
+  return {
+    attack: Math.min(100, Math.round((rawAttack / RADAR_MAX.attack) * 100)),
+    defense: Math.min(100, Math.round((rawDefense / RADAR_MAX.defense) * 100)),
+    stamina: Math.min(100, Math.round((rawStamina / RADAR_MAX.stamina) * 100)),
+    burstResistance: Math.min(100, Math.round((rawBurst / RADAR_MAX.burstResistance) * 100)),
+    weight: Math.min(100, Math.round((rawWeight / RADAR_MAX.weight) * 100)),
+    raw: {
+      attack: Math.round(rawAttack),
+      defense: Math.round(rawDefense),
+      stamina: Math.round(rawStamina),
+      burstResistance: Math.round(rawBurst),
+      weight: Math.round(rawWeight * 10) / 10,
+    },
+  };
+}
