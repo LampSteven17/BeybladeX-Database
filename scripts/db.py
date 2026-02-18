@@ -454,6 +454,11 @@ BLADE_SERIES = {
     "Flare": "CX",  # CX-12 main blade
     "Volt": "CX",  # CX Random Booster main blade
     "Emperor": "CX",  # CX main blade
+    # Metal Blades (CX metal variants of main blades)
+    "Blitz": "CX",  # CX metal blade
+    "Fortress": "CX",  # CX metal blade
+    "Armor": "CX",  # CX metal blade
+    "Rage": "CX",  # CX metal blade
     # Also keep full names for backwards compatibility with existing data
     "Dran Brave": "CX",
     "Wizard Arc": "CX",
@@ -539,18 +544,21 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             bit_1 VARCHAR NOT NULL,
             assist_1 VARCHAR,
             lock_chip_1 VARCHAR,
+            over_blade_1 VARCHAR,
             stage_1 VARCHAR,
             blade_2 VARCHAR,
             ratchet_2 VARCHAR,
             bit_2 VARCHAR,
             assist_2 VARCHAR,
             lock_chip_2 VARCHAR,
+            over_blade_2 VARCHAR,
             stage_2 VARCHAR,
             blade_3 VARCHAR,
             ratchet_3 VARCHAR,
             bit_3 VARCHAR,
             assist_3 VARCHAR,
             lock_chip_3 VARCHAR,
+            over_blade_3 VARCHAR,
             stage_3 VARCHAR,
             UNIQUE(tournament_id, place)
         )
@@ -587,6 +595,7 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             p.bit_1 as bit,
             p.assist_1 as assist,
             p.lock_chip_1 as lock_chip,
+            p.over_blade_1 as over_blade,
             p.stage_1 as stage
         FROM placements p
         JOIN tournaments t ON p.tournament_id = t.id
@@ -602,6 +611,7 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             p.bit_2,
             p.assist_2,
             p.lock_chip_2,
+            p.over_blade_2,
             p.stage_2
         FROM placements p
         JOIN tournaments t ON p.tournament_id = t.id
@@ -618,6 +628,7 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             p.bit_3,
             p.assist_3,
             p.lock_chip_3,
+            p.over_blade_3,
             p.stage_3
         FROM placements p
         JOIN tournaments t ON p.tournament_id = t.id
@@ -645,6 +656,8 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             SELECT place, assist, 'assist' FROM combo_usage WHERE assist IS NOT NULL
             UNION ALL
             SELECT place, lock_chip, 'lock_chip' FROM combo_usage WHERE lock_chip IS NOT NULL
+            UNION ALL
+            SELECT place, over_blade, 'over_blade' FROM combo_usage WHERE over_blade IS NOT NULL
         ) parts
         GROUP BY part_name, part_type
         ORDER BY total_placements DESC

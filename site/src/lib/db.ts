@@ -118,6 +118,11 @@ export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Volt': 'CX',              // CX Random Booster main blade
   'Storm': 'CX',             // CX Random Booster main blade
   'Emperor': 'CX',           // CX main blade (Blast Emperor)
+  // Metal Blades (CX metal variants of main blades)
+  'Blitz': 'CX',             // CX metal blade
+  'Fortress': 'CX',          // CX metal blade
+  'Armor': 'CX',             // CX metal blade
+  'Rage': 'CX',              // CX metal blade
   // Also keep full names for backwards compatibility with existing data
   'Dran Brave': 'CX',
   'Wizard Arc': 'CX',
@@ -1819,6 +1824,95 @@ export async function getRankedLockChips(limit = 15, minUses = 2, region?: Regio
       delete (l as any).recent_uses;
       delete (l as any).older_uses;
       return l;
+    })
+    .sort((a, b) => b.raw_score - a.raw_score)
+    .slice(0, limit);
+}
+
+/**
+ * Get ranked over blades with weighted scores.
+ */
+export async function getRankedOverBlades(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    over_blade: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT over_blade, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE over_blade IS NOT NULL${regionFilter}
+  `);
+
+  const overBladeScores: Record<string, PartStats & { recent_score?: number; older_score?: number }> = {};
+  const referenceDate = new Date();
+  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
+  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
+
+  for (const row of rows) {
+    const overBlade = row.over_blade;
+    if (!overBladeScores[overBlade]) {
+      overBladeScores[overBlade] = {
+        name: overBlade,
+        raw_score: 0,
+        uses: 0,
+        first: 0,
+        second: 0,
+        third: 0,
+        avg_score: 0,
+        trend: 0,
+        recent_score: 0,
+        older_score: 0,
+      };
+    }
+
+    const tournamentDate = new Date(row.tournament_date);
+    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
+    const points = getPlacementScore(row.place, row.stage);
+    const weightedScore = points * weight;
+
+    const stats = overBladeScores[overBlade];
+    stats.raw_score += weightedScore;
+    stats.uses += 1;
+
+    if (row.place === 1) stats.first += 1;
+    else if (row.place === 2) stats.second += 1;
+    else if (row.place === 3) stats.third += 1;
+
+    if (tournamentDate >= recentCutoff) {
+      stats.recent_score! += weightedScore;
+      (stats as any).recent_uses = ((stats as any).recent_uses || 0) + 1;
+    } else if (tournamentDate >= olderCutoff) {
+      stats.older_score! += weightedScore;
+      (stats as any).older_uses = ((stats as any).older_uses || 0) + 1;
+    }
+  }
+
+  return Object.values(overBladeScores)
+    .filter((o) => o.uses >= minUses)
+    .map((o) => {
+      o.avg_score = o.raw_score / o.uses;
+      const recentUses = (o as any).recent_uses || 0;
+      const olderUses = (o as any).older_uses || 0;
+
+      if (recentUses > 0 && olderUses > 0) {
+        const recentRate = o.recent_score! / recentUses;
+        const olderRate = o.older_score! / olderUses;
+        o.trend = (recentRate - olderRate) / olderRate;
+      } else if (recentUses > 0 && olderUses === 0) {
+        o.trend = 0.5;
+      } else if (recentUses === 0 && olderUses > 0) {
+        o.trend = -Math.min(0.5, olderUses * 0.1);
+      } else {
+        o.trend = 0;
+      }
+
+      delete o.recent_score;
+      delete o.older_score;
+      delete (o as any).recent_uses;
+      delete (o as any).older_uses;
+      return o;
     })
     .sort((a, b) => b.raw_score - a.raw_score)
     .slice(0, limit);

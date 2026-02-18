@@ -27,6 +27,7 @@ class Combo:
     bit: str
     assist: Optional[str] = None
     lock_chip: Optional[str] = None
+    over_blade: Optional[str] = None
     stage: Optional[str] = None  # 'first', 'final', 'both', or None
 
 
@@ -204,10 +205,10 @@ class BaseScraper(ABC):
                 conn.execute("""
                     INSERT INTO placements (
                         tournament_id, place, player_name, player_wbo_id,
-                        blade_1, ratchet_1, bit_1, assist_1, lock_chip_1, stage_1,
-                        blade_2, ratchet_2, bit_2, assist_2, lock_chip_2, stage_2,
-                        blade_3, ratchet_3, bit_3, assist_3, lock_chip_3, stage_3
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        blade_1, ratchet_1, bit_1, assist_1, lock_chip_1, over_blade_1, stage_1,
+                        blade_2, ratchet_2, bit_2, assist_2, lock_chip_2, over_blade_2, stage_2,
+                        blade_3, ratchet_3, bit_3, assist_3, lock_chip_3, over_blade_3, stage_3
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, [
                     tournament_id,
                     placement.place,
@@ -218,18 +219,21 @@ class BaseScraper(ABC):
                     combos[0].bit if len(combos) > 0 else None,
                     combos[0].assist if len(combos) > 0 else None,
                     combos[0].lock_chip if len(combos) > 0 else None,
+                    combos[0].over_blade if len(combos) > 0 else None,
                     combos[0].stage if len(combos) > 0 else None,
                     combos[1].blade if len(combos) > 1 else None,
                     combos[1].ratchet if len(combos) > 1 else None,
                     combos[1].bit if len(combos) > 1 else None,
                     combos[1].assist if len(combos) > 1 else None,
                     combos[1].lock_chip if len(combos) > 1 else None,
+                    combos[1].over_blade if len(combos) > 1 else None,
                     combos[1].stage if len(combos) > 1 else None,
                     combos[2].blade if len(combos) > 2 else None,
                     combos[2].ratchet if len(combos) > 2 else None,
                     combos[2].bit if len(combos) > 2 else None,
                     combos[2].assist if len(combos) > 2 else None,
                     combos[2].lock_chip if len(combos) > 2 else None,
+                    combos[2].over_blade if len(combos) > 2 else None,
                     combos[2].stage if len(combos) > 2 else None,
                 ])
             except Exception as e:

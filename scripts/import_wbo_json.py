@@ -185,11 +185,11 @@ def main():
                 """
                 INSERT INTO placements (
                     tournament_id, place, player_name,
-                    blade_1, ratchet_1, bit_1, lock_chip_1, assist_1,
-                    blade_2, ratchet_2, bit_2, lock_chip_2, assist_2,
-                    blade_3, ratchet_3, bit_3, lock_chip_3, assist_3
+                    blade_1, ratchet_1, bit_1, lock_chip_1, over_blade_1, assist_1,
+                    blade_2, ratchet_2, bit_2, lock_chip_2, over_blade_2, assist_2,
+                    blade_3, ratchet_3, bit_3, lock_chip_3, over_blade_3, assist_3
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 [
                     tournament_id,
@@ -199,14 +199,20 @@ def main():
                     ratchet_1,
                     bit_1,
                     lock_chip_1,
+                    None,  # over_blade_1
+                    assist_1,
                     blade_2,
                     ratchet_2,
                     bit_2,
                     lock_chip_2,
+                    None,  # over_blade_2
+                    assist_2,
                     blade_3,
                     ratchet_3,
                     bit_3,
                     lock_chip_3,
+                    None,  # over_blade_3
+                    assist_3,
                 ],
             )
             total_placements += 1

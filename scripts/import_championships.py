@@ -271,10 +271,10 @@ def import_championships(conn, data: dict, verbose: bool = False) -> tuple[int, 
                 conn.execute("""
                     INSERT INTO placements (
                         tournament_id, place, player_name,
-                        blade_1, ratchet_1, bit_1, lock_chip_1,
-                        blade_2, ratchet_2, bit_2, lock_chip_2,
-                        blade_3, ratchet_3, bit_3, lock_chip_3
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        blade_1, ratchet_1, bit_1, lock_chip_1, over_blade_1,
+                        blade_2, ratchet_2, bit_2, lock_chip_2, over_blade_2,
+                        blade_3, ratchet_3, bit_3, lock_chip_3, over_blade_3
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, [
                     db_tournament_id,
                     placement['place'],
@@ -283,14 +283,17 @@ def import_championships(conn, data: dict, verbose: bool = False) -> tuple[int, 
                     combos[0].get('ratchet'),
                     combos[0].get('bit'),
                     combos[0].get('lock_chip'),
+                    combos[0].get('over_blade'),
                     combos[1].get('blade'),
                     combos[1].get('ratchet'),
                     combos[1].get('bit'),
                     combos[1].get('lock_chip'),
+                    combos[1].get('over_blade'),
                     combos[2].get('blade'),
                     combos[2].get('ratchet'),
                     combos[2].get('bit'),
                     combos[2].get('lock_chip'),
+                    combos[2].get('over_blade'),
                 ])
                 placements_added += 1
                 if verbose:

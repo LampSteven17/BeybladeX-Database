@@ -442,10 +442,10 @@ def insert_de_tournament(conn, tournament: Tournament) -> Optional[int]:
             conn.execute("""
                 INSERT INTO placements (
                     tournament_id, place, player_name, player_wbo_id,
-                    blade_1, ratchet_1, bit_1, assist_1, lock_chip_1,
-                    blade_2, ratchet_2, bit_2, assist_2, lock_chip_2,
-                    blade_3, ratchet_3, bit_3, assist_3, lock_chip_3
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    blade_1, ratchet_1, bit_1, assist_1, lock_chip_1, over_blade_1,
+                    blade_2, ratchet_2, bit_2, assist_2, lock_chip_2, over_blade_2,
+                    blade_3, ratchet_3, bit_3, assist_3, lock_chip_3, over_blade_3
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 tournament_id,
                 placement.place,
@@ -456,16 +456,19 @@ def insert_de_tournament(conn, tournament: Tournament) -> Optional[int]:
                 combos[0].bit if len(combos) > 0 else None,
                 combos[0].assist if len(combos) > 0 else None,
                 combos[0].lock_chip if len(combos) > 0 else None,
+                None,  # over_blade_1
                 combos[1].blade if len(combos) > 1 else None,
                 combos[1].ratchet if len(combos) > 1 else None,
                 combos[1].bit if len(combos) > 1 else None,
                 combos[1].assist if len(combos) > 1 else None,
                 combos[1].lock_chip if len(combos) > 1 else None,
+                None,  # over_blade_2
                 combos[2].blade if len(combos) > 2 else None,
                 combos[2].ratchet if len(combos) > 2 else None,
                 combos[2].bit if len(combos) > 2 else None,
                 combos[2].assist if len(combos) > 2 else None,
                 combos[2].lock_chip if len(combos) > 2 else None,
+                None,  # over_blade_3
             ])
         except Exception as e:
             print(f"Error inserting placement for {placement.player_name}: {e}")

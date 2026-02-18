@@ -1162,10 +1162,10 @@ def insert_tournament(conn, tournament: Tournament) -> Optional[int]:
                 """
                 INSERT INTO placements (
                     tournament_id, place, player_name, player_wbo_id,
-                    blade_1, ratchet_1, bit_1, assist_1, lock_chip_1, stage_1,
-                    blade_2, ratchet_2, bit_2, assist_2, lock_chip_2, stage_2,
-                    blade_3, ratchet_3, bit_3, assist_3, lock_chip_3, stage_3
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    blade_1, ratchet_1, bit_1, assist_1, lock_chip_1, over_blade_1, stage_1,
+                    blade_2, ratchet_2, bit_2, assist_2, lock_chip_2, over_blade_2, stage_2,
+                    blade_3, ratchet_3, bit_3, assist_3, lock_chip_3, over_blade_3, stage_3
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 [
                     tournament_id,
@@ -1177,18 +1177,21 @@ def insert_tournament(conn, tournament: Tournament) -> Optional[int]:
                     combos[0].bit if len(combos) > 0 else None,
                     combos[0].assist if len(combos) > 0 else None,
                     combos[0].lock_chip if len(combos) > 0 else None,
+                    None,  # over_blade_1
                     combos[0].stage if len(combos) > 0 else None,
                     combos[1].blade if len(combos) > 1 else None,
                     combos[1].ratchet if len(combos) > 1 else None,
                     combos[1].bit if len(combos) > 1 else None,
                     combos[1].assist if len(combos) > 1 else None,
                     combos[1].lock_chip if len(combos) > 1 else None,
+                    None,  # over_blade_2
                     combos[1].stage if len(combos) > 1 else None,
                     combos[2].blade if len(combos) > 2 else None,
                     combos[2].ratchet if len(combos) > 2 else None,
                     combos[2].bit if len(combos) > 2 else None,
                     combos[2].assist if len(combos) > 2 else None,
                     combos[2].lock_chip if len(combos) > 2 else None,
+                    None,  # over_blade_3
                     combos[2].stage if len(combos) > 2 else None,
                 ],
             )
