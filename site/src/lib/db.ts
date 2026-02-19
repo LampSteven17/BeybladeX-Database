@@ -396,6 +396,7 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.bit_1 as bit,
             p.assist_1 as assist,
             p.lock_chip_1 as lock_chip,
+            p.over_blade_1 as over_blade,
             p.stage_1 as stage
         FROM beyblade.placements p
         JOIN beyblade.tournaments t ON p.tournament_id = t.id
@@ -411,6 +412,7 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.bit_2,
             p.assist_2,
             p.lock_chip_2,
+            p.over_blade_2,
             p.stage_2
         FROM beyblade.placements p
         JOIN beyblade.tournaments t ON p.tournament_id = t.id
@@ -427,6 +429,7 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.bit_3,
             p.assist_3,
             p.lock_chip_3,
+            p.over_blade_3,
             p.stage_3
         FROM beyblade.placements p
         JOIN beyblade.tournaments t ON p.tournament_id = t.id
