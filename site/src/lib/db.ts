@@ -115,9 +115,12 @@ export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Hunt': 'CX',              // CX-10 main blade
   'Might': 'CX',             // CX-11 main blade
   'Flare': 'CX',             // CX-12 main blade
+  'Flame': 'CX',             // CX main blade
+  'Fang': 'CX',              // CX main blade
+  'Fort': 'CX',              // CX main blade
+  'Antler': 'CX',            // CX main blade
+  'Wriggle': 'CX',           // CX main blade
   'Volt': 'CX',              // CX Random Booster main blade
-  'Storm': 'CX',             // CX Random Booster main blade
-  'Emperor': 'CX',           // CX main blade (Blast Emperor)
   // Metal Blades (CX metal variants of main blades)
   'Blitz': 'CX',             // CX metal blade
   'Fortress': 'CX',          // CX metal blade
@@ -152,8 +155,9 @@ const BLADE_DISPLAY_NAMES: Record<string, string> = {
 // CX main blade names that REQUIRE a lock chip to be valid
 // These are the base blade names stored in the database that need lock chip prepended
 const CX_BLADES_REQUIRING_LOCKCHIP = new Set([
-  'Brave', 'Arc', 'Dark', 'Reaper', 'Brush', 'Blast', 
-  'Eclipse', 'Hunt', 'Might', 'Flare', 'Volt', 'Storm', 'Emperor'
+  'Brave', 'Arc', 'Dark', 'Reaper', 'Brush', 'Blast',
+  'Eclipse', 'Hunt', 'Might', 'Flare', 'Flame', 'Fang', 'Fort',
+  'Antler', 'Wriggle', 'Volt'
 ]);
 
 // Normalize blade name for display

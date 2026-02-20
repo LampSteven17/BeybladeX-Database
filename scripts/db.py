@@ -139,7 +139,7 @@ CX_BLADE_COMPONENTS: dict[str, tuple[str, str]] = {
     "Whale Might": ("Whale", "Might"),
     # CX-12 and variants using Flare main blade
     "Phoenix Flare": ("Phoenix", "Flare"),
-    "Pegasus Flame": ("Pegasus", "Flare"),  # Flame is likely typo for Flare
+    "Pegasus Flame": ("Pegasus", "Flame"),
     # Random Booster CX blades
     "Valkyrie Volt": ("Valkyrie", "Volt"),
     "Valkyrie Volt A": ("Valkyrie", "Volt"),
@@ -172,17 +172,20 @@ CX_MAIN_BLADES = {
 # Known CX lock chips - used for fuzzy matching when parsing blade names
 # Source: https://beyblade.fandom.com/wiki/Category:Lock_Chips
 CX_LOCK_CHIPS = {
+    "Bahamut",
     "Cerberus",
     "Dran",
     "Emperor",
     "Fox",
     "Hells",
     "Hornet",
+    "Knight",
     "Kraken",
     "Leon",
     "Pegasus",
     "Perseus",
     "Phoenix",
+    "Ragna",
     "Rhino",
     "Sol",
     "Stag",
@@ -452,8 +455,12 @@ BLADE_SERIES = {
     "Hunt": "CX",  # CX-10 main blade
     "Might": "CX",  # CX-11 main blade
     "Flare": "CX",  # CX-12 main blade
+    "Flame": "CX",  # CX main blade
+    "Fang": "CX",  # CX main blade
+    "Fort": "CX",  # CX main blade
+    "Antler": "CX",  # CX main blade
+    "Wriggle": "CX",  # CX main blade
     "Volt": "CX",  # CX Random Booster main blade
-    "Emperor": "CX",  # CX main blade
     # Metal Blades (CX metal variants of main blades)
     "Blitz": "CX",  # CX metal blade
     "Fortress": "CX",  # CX metal blade
@@ -1060,7 +1067,8 @@ BLADE_NORMALIZATIONS = {
     "Valkyrie Volt A": "Volt",
     # Flare main blade variants
     "Phoenix Flare": "Flare",
-    "Pegasus Flame": "Flare",
+    # Flame main blade variants
+    "Pegasus Flame": "Flame",
     # Arc main blade variants
     "Wizard Arc": "Arc",
     # Dark main blade variants
