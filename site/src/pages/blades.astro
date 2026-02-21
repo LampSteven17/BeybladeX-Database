@@ -115,23 +115,7 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
 
-    {/* Expanded Blade Detail Panel */}
-    <div id="blade-detail" class="hidden mt-6 card card-padding border-accent/30">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h2 id="detail-blade-name" class="text-2xl font-mono font-bold text-fg"></h2>
-          <p class="text-fg-muted text-sm">Best ratchet + bit combinations</p>
-        </div>
-        <button id="close-detail" class="text-fg-muted hover:text-fg transition-colors p-2">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div id="detail-combos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Combo cards will be inserted here */}
-      </div>
-    </div>
+    {/* Detail rows are inserted inline in the table via JavaScript */}
   </div>
 </Layout>
 
@@ -188,6 +172,7 @@ import Layout from '../layouts/Layout.astro';
   }
 
   function applyFilters() {
+    collapseBladeDetail();
     let filtered = allBlades;
 
     // Apply search filter
@@ -339,7 +324,7 @@ import Layout from '../layouts/Layout.astro';
         // Don't trigger row click if clicking on tier badge
         if ((e.target as HTMLElement).classList.contains('tier-badge')) return;
         const bladeName = row.getAttribute('data-blade');
-        if (bladeName) showBladeDetail(bladeName);
+        if (bladeName) showBladeDetail(bladeName, row as HTMLTableRowElement);
       });
     });
 
@@ -358,40 +343,97 @@ import Layout from '../layouts/Layout.astro';
     staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
   }
 
-  async function showBladeDetail(bladeName: string) {
-    const detailPanel = document.getElementById('blade-detail');
-    const nameEl = document.getElementById('detail-blade-name');
-    const combosEl = document.getElementById('detail-combos');
+  // Track expanded detail row state
+  let expandedBladeRow: HTMLTableRowElement | null = null;
+  let bladeDetailRow: HTMLTableRowElement | null = null;
 
-    if (!detailPanel || !nameEl || !combosEl) return;
+  function collapseBladeDetail() {
+    if (expandedBladeRow) {
+      expandedBladeRow.classList.remove('expanded');
+      expandedBladeRow = null;
+    }
+    if (bladeDetailRow) {
+      const oldRow = bladeDetailRow;
+      bladeDetailRow = null;
+      const content = oldRow.querySelector('.detail-content');
+      if (content) {
+        content.classList.remove('open');
+        setTimeout(() => oldRow.remove(), 300);
+      } else {
+        oldRow.remove();
+      }
+    }
+  }
 
-    nameEl.textContent = bladeName;
-    combosEl.innerHTML = '<div class="col-span-full text-center py-4"><div class="w-8 h-8 border-2 border-stroke border-t-accent rounded-full animate-spin mx-auto"></div></div>';
-    detailPanel.classList.remove('hidden');
+  async function showBladeDetail(bladeName: string, clickedRow?: HTMLTableRowElement) {
+    // If clicking the same row, toggle off
+    if (clickedRow && expandedBladeRow === clickedRow) {
+      collapseBladeDetail();
+      return;
+    }
 
-    // Scroll to panel
-    detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Collapse any existing detail
+    collapseBladeDetail();
+
+    if (!clickedRow) return;
+
+    // Mark this row as expanded
+    expandedBladeRow = clickedRow;
+    clickedRow.classList.add('expanded');
+
+    // Create the detail row with loading state
+    bladeDetailRow = document.createElement('tr');
+    bladeDetailRow.className = 'detail-row';
+    bladeDetailRow.innerHTML = `
+      <td colspan="12">
+        <div class="detail-content">
+          <div class="detail-inner">
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="text-lg font-mono font-bold text-fg">${bladeName}</h3>
+              <span class="text-fg-muted text-sm">Best combinations</span>
+            </div>
+            <div id="blade-combos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div class="col-span-full text-center py-4">
+                <div class="w-6 h-6 border-2 border-stroke border-t-accent rounded-full animate-spin mx-auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+
+    // Insert after the clicked row
+    clickedRow.after(bladeDetailRow);
+
+    // Trigger open animation
+    requestAnimationFrame(() => {
+      const content = bladeDetailRow?.querySelector('.detail-content');
+      if (content) content.classList.add('open');
+    });
 
     try {
       const region = getSelectedRegion();
       const combos = await getBestCombosForBlade(bladeName, 9, region);
+      const combosGrid = bladeDetailRow?.querySelector('#blade-combos-grid');
+      if (!combosGrid) return;
 
       if (combos.length === 0) {
-        combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-4">No combo data available</div>';
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-fg-muted py-4">No combo data available</div>';
         return;
       }
 
-      combosEl.innerHTML = combos.map((combo, i) => `
+      combosGrid.innerHTML = combos.map((combo, i) => `
         <div class="card card-padding">
           <div class="flex items-start gap-3">
-            <span class="rank-number text-xl">${i + 1}</span>
+            <span class="rank-number text-lg">${i + 1}</span>
             <div class="flex-grow">
-              <div class="font-mono font-bold text-fg">${combo.combo}</div>
-              <div class="flex items-center gap-2 mt-1 text-sm">
+              <div class="font-mono font-bold text-fg text-sm">${combo.combo}</div>
+              <div class="flex items-center gap-2 mt-1 text-xs">
+                ${combo.assist ? `<span class="text-series-cx">${combo.assist}</span>` : ''}
                 <span class="text-series-ux">${combo.ratchet}</span>
                 <span class="text-series-bx">${combo.bit}</span>
               </div>
-              <div class="flex items-center gap-4 mt-2 text-sm">
+              <div class="flex items-center gap-3 mt-1 text-xs">
                 <span class="text-accent font-mono">${combo.raw_score.toFixed(1)}</span>
                 <span class="text-fg-muted">${combo.uses} uses</span>
                 <span class="text-tier-ss">${combo.first} wins</span>
@@ -401,10 +443,13 @@ import Layout from '../layouts/Layout.astro';
         </div>
       `).join('');
 
-      staggerFadeIn(combosEl.children, { delay: 50 });
+      staggerFadeIn(combosGrid.children, { delay: 50 });
     } catch (error) {
       console.error('Failed to load blade combos:', error);
-      combosEl.innerHTML = '<div class="col-span-full text-center text-negative py-4">Failed to load combos</div>';
+      const combosGrid = bladeDetailRow?.querySelector('#blade-combos-grid');
+      if (combosGrid) {
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-negative py-4">Failed to load combos</div>';
+      }
     }
   }
 
@@ -440,16 +485,12 @@ import Layout from '../layouts/Layout.astro';
     return '<span class="text-fg-muted text-sm">--</span>';
   }
 
-  // Close detail panel handler
-  document.getElementById('close-detail')?.addEventListener('click', () => {
-    document.getElementById('blade-detail')?.classList.add('hidden');
-  });
-
   // Load on DOM ready
   document.addEventListener('DOMContentLoaded', loadRankings);
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
+    collapseBladeDetail();
     loadRankings();
   });
 </script>

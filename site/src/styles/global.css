@@ -541,7 +541,7 @@
   }
 
   .detail-content.open {
-    max-height: 400px;
+    max-height: 800px;
     opacity: 1;
     transition: max-height 0.35s ease-in, opacity 0.2s ease-in;
   }

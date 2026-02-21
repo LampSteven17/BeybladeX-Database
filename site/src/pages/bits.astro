@@ -60,23 +60,7 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
 
-    {/* Detail Panel (shown when bit is clicked) */}
-    <div id="bit-detail" class="hidden mt-6 card card-padding border-accent/30">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h2 id="detail-bit-name" class="text-2xl font-mono font-bold text-fg"></h2>
-          <p class="text-fg-muted text-sm">Top blade + ratchet combinations using this bit</p>
-        </div>
-        <button id="close-detail" class="text-fg-muted hover:text-fg transition-colors p-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div id="detail-combos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Combo cards will be inserted here */}
-      </div>
-    </div>
+    {/* Detail rows are inserted inline in the table via JavaScript */}
 
     {/* Info Section */}
     <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -127,7 +111,6 @@ import Layout from '../layouts/Layout.astro';
 
   let allBits: PartStats[] = [];
   let searchQuery: string = '';
-  let selectedBit: string | null = null;
 
   function getSelectedRegion(): Region {
     if (typeof localStorage !== 'undefined') {
@@ -143,7 +126,6 @@ import Layout from '../layouts/Layout.astro';
       allBits = await getRankedBits(50, 2, region);
       renderTable(allBits);
       setupSearch();
-      setupDetailClose();
     } catch (error) {
       console.error('Failed to load rankings:', error);
       const tbody = document.getElementById('rankings-body');
@@ -169,14 +151,14 @@ import Layout from '../layouts/Layout.astro';
       'Gear Flat', 'Gear Rush',
       'Jolt', 'Kick', 'Trans Kick', 'Zap', 'Vortex',
     ];
-    
+
     // Defence bits - stability focused, LAD (Green)
     const defenceBits = [
       'Ball', 'Orb', 'Free Ball', 'Disc Ball', 'Gear Ball', 'Wall Ball',
       'Low Orb', 'Ball Spike',
       'Unite',
     ];
-    
+
     // Stamina bits - spin time, low friction (Yellow)
     const staminaBits = [
       'Needle', 'High Needle', 'Under Needle', 'Gear Needle',
@@ -184,7 +166,7 @@ import Layout from '../layouts/Layout.astro';
       'Taper', 'High Taper',
       'Point', 'Gear Point',
     ];
-    
+
     // Balance bits - versatile, hybrid (Red)
     const balanceBits = [
       'Level', 'Elevate', 'Glide', 'Quake',
@@ -208,6 +190,17 @@ import Layout from '../layouts/Layout.astro';
     const tbody = document.getElementById('rankings-body');
     if (!tbody) return;
 
+    if (bits.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="text-center text-fg-muted py-8">
+            No bits found matching your search.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
     tbody.innerHTML = bits.map((bit) => {
       const color = getBitColor(bit.name);
       return `
@@ -230,55 +223,106 @@ import Layout from '../layouts/Layout.astro';
       </tr>
     `}).join('');
 
-    staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
-    setupRowClicks();
-  }
-
-  function setupRowClicks() {
-    const rows = document.querySelectorAll('#rankings-body tr[data-bit]');
-    rows.forEach(row => {
+    // Add click handlers to rows
+    tbody.querySelectorAll('.ranking-row').forEach(row => {
       row.addEventListener('click', () => {
         const bitName = row.getAttribute('data-bit');
-        if (bitName) showBitDetail(bitName);
+        if (bitName) showBitDetail(bitName, row as HTMLTableRowElement);
       });
     });
+
+    staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
   }
 
-  async function showBitDetail(bitName: string) {
-    selectedBit = bitName;
-    const detailEl = document.getElementById('bit-detail');
-    const nameEl = document.getElementById('detail-bit-name');
-    const combosEl = document.getElementById('detail-combos');
+  // Track expanded detail row state
+  let expandedRow: HTMLTableRowElement | null = null;
+  let detailRow: HTMLTableRowElement | null = null;
 
-    if (!detailEl || !nameEl || !combosEl) return;
+  function collapseDetail() {
+    if (expandedRow) {
+      expandedRow.classList.remove('expanded');
+      expandedRow = null;
+    }
+    if (detailRow) {
+      const oldRow = detailRow;
+      detailRow = null;
+      const content = oldRow.querySelector('.detail-content');
+      if (content) {
+        content.classList.remove('open');
+        setTimeout(() => oldRow.remove(), 300);
+      } else {
+        oldRow.remove();
+      }
+    }
+  }
 
-    // Show panel with loading state
-    detailEl.classList.remove('hidden');
-    nameEl.textContent = bitName;
-    combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-8">Loading combos...</div>';
+  async function showBitDetail(bitName: string, clickedRow: HTMLTableRowElement) {
+    // If clicking the same row, toggle off
+    if (clickedRow && expandedRow === clickedRow) {
+      collapseDetail();
+      return;
+    }
 
-    // Scroll to detail panel
-    detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Collapse any existing detail
+    collapseDetail();
+
+    if (!clickedRow) return;
+
+    // Mark this row as expanded
+    expandedRow = clickedRow;
+    clickedRow.classList.add('expanded');
+
+    // Create the detail row with loading state
+    detailRow = document.createElement('tr');
+    detailRow.className = 'detail-row';
+    detailRow.innerHTML = `
+      <td colspan="9">
+        <div class="detail-content">
+          <div class="detail-inner">
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="text-lg font-mono font-bold text-fg">${bitName}</h3>
+              <span class="text-fg-muted text-sm">Best combinations</span>
+            </div>
+            <div id="bit-combos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div class="col-span-full text-center py-4">
+                <div class="w-6 h-6 border-2 border-stroke border-t-accent rounded-full animate-spin mx-auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+
+    // Insert after the clicked row
+    clickedRow.after(detailRow);
+
+    // Trigger open animation
+    requestAnimationFrame(() => {
+      const content = detailRow?.querySelector('.detail-content');
+      if (content) content.classList.add('open');
+    });
 
     try {
       const region = getSelectedRegion();
-      const combos = await getBestCombosForBit(bitName, 6, region);
+      const combos = await getBestCombosForBit(bitName, 9, region);
+      const combosGrid = detailRow?.querySelector('#bit-combos-grid');
+      if (!combosGrid) return;
 
       if (combos.length === 0) {
-        combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-8">No combo data available</div>';
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-fg-muted py-4">No combo data available</div>';
         return;
       }
 
-      combosEl.innerHTML = combos.map((combo, i) => `
+      combosGrid.innerHTML = combos.map((combo, i) => `
         <div class="card card-padding">
           <div class="flex items-start gap-3">
-            <span class="rank-number text-xl">${i + 1}</span>
+            <span class="rank-number text-lg">${i + 1}</span>
             <div class="flex-grow">
-              <div class="font-mono font-bold text-fg">${combo.blade}</div>
-              <div class="flex items-center gap-2 mt-1 text-sm">
+              <div class="font-mono font-bold text-fg text-sm">${combo.blade}</div>
+              <div class="flex items-center gap-2 mt-1 text-xs">
                 <span class="text-series-ux">${combo.ratchet}</span>
               </div>
-              <div class="flex items-center gap-4 mt-2 text-sm">
+              <div class="flex items-center gap-3 mt-1 text-xs">
                 <span class="text-accent font-mono">${combo.raw_score.toFixed(1)}</span>
                 <span class="text-fg-muted">${combo.uses} uses</span>
                 <span class="text-tier-ss">${combo.first} wins</span>
@@ -288,21 +332,13 @@ import Layout from '../layouts/Layout.astro';
         </div>
       `).join('');
 
-      staggerFadeIn(combosEl.children, { delay: 50 });
+      staggerFadeIn(combosGrid.children, { delay: 50 });
     } catch (error) {
       console.error('Failed to load bit combos:', error);
-      combosEl.innerHTML = '<div class="col-span-full text-center text-negative py-8">Failed to load combos</div>';
-    }
-  }
-
-  function setupDetailClose() {
-    const closeBtn = document.getElementById('close-detail');
-    const detailEl = document.getElementById('bit-detail');
-    if (closeBtn && detailEl) {
-      closeBtn.addEventListener('click', () => {
-        detailEl.classList.add('hidden');
-        selectedBit = null;
-      });
+      const combosGrid = detailRow?.querySelector('#bit-combos-grid');
+      if (combosGrid) {
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-negative py-4">Failed to load combos</div>';
+      }
     }
   }
 
@@ -336,6 +372,7 @@ import Layout from '../layouts/Layout.astro';
   }
 
   function applyFilters() {
+    collapseDetail();
     let filtered = allBits;
 
     if (searchQuery) {
@@ -350,6 +387,7 @@ import Layout from '../layouts/Layout.astro';
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
+    collapseDetail();
     loadRankings();
   });
 </script>

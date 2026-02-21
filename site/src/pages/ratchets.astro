@@ -86,23 +86,7 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
 
-    {/* Detail Panel (shown when ratchet is clicked) */}
-    <div id="ratchet-detail" class="hidden mt-6 card card-padding border-accent/30">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h2 id="detail-ratchet-name" class="text-2xl font-mono font-bold text-fg"></h2>
-          <p class="text-fg-muted text-sm">Top blade + bit combinations using this ratchet</p>
-        </div>
-        <button id="close-detail" class="text-fg-muted hover:text-fg transition-colors p-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div id="detail-combos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Combo cards will be inserted here */}
-      </div>
-    </div>
+    {/* Detail rows are inserted inline in the table via JavaScript */}
 
     {/* Info Section */}
     <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -170,13 +154,34 @@ import Layout from '../layouts/Layout.astro';
   let allRatchets: PartStats[] = [];
   let searchQuery: string = '';
   let selectedHeight: string = 'all';
-  let selectedRatchet: string | null = null;
+
+  // Track expanded detail row state
+  let expandedRow: HTMLTableRowElement | null = null;
+  let detailRow: HTMLTableRowElement | null = null;
 
   function getSelectedRegion(): Region {
     if (typeof localStorage !== 'undefined') {
       return (localStorage.getItem('beyblade-region') as Region) || 'ALL';
     }
     return 'ALL';
+  }
+
+  function collapseDetail() {
+    if (expandedRow) {
+      expandedRow.classList.remove('expanded');
+      expandedRow = null;
+    }
+    if (detailRow) {
+      const oldRow = detailRow;
+      detailRow = null;
+      const content = oldRow.querySelector('.detail-content');
+      if (content) {
+        content.classList.remove('open');
+        setTimeout(() => oldRow.remove(), 300);
+      } else {
+        oldRow.remove();
+      }
+    }
   }
 
   async function loadRankings() {
@@ -187,7 +192,6 @@ import Layout from '../layouts/Layout.astro';
       renderTable(allRatchets);
       setupSearch();
       setupFilters();
-      setupDetailClose();
     } catch (error) {
       console.error('Failed to load rankings:', error);
       const tbody = document.getElementById('rankings-body');
@@ -253,54 +257,81 @@ import Layout from '../layouts/Layout.astro';
     `}).join('');
 
     staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
-    setupRowClicks();
-  }
 
-  function setupRowClicks() {
-    const rows = document.querySelectorAll('#rankings-body tr[data-ratchet]');
-    rows.forEach(row => {
+    // Add click handlers to rows
+    tbody.querySelectorAll('.ranking-row').forEach(row => {
       row.addEventListener('click', () => {
         const ratchetName = row.getAttribute('data-ratchet');
-        if (ratchetName) showRatchetDetail(ratchetName);
+        if (ratchetName) showRatchetDetail(ratchetName, row as HTMLTableRowElement);
       });
     });
   }
 
-  async function showRatchetDetail(ratchetName: string) {
-    selectedRatchet = ratchetName;
-    const detailEl = document.getElementById('ratchet-detail');
-    const nameEl = document.getElementById('detail-ratchet-name');
-    const combosEl = document.getElementById('detail-combos');
+  async function showRatchetDetail(ratchetName: string, clickedRow: HTMLTableRowElement) {
+    // If clicking the same row, toggle off
+    if (expandedRow === clickedRow) {
+      collapseDetail();
+      return;
+    }
 
-    if (!detailEl || !nameEl || !combosEl) return;
+    // Collapse any existing detail
+    collapseDetail();
 
-    // Show panel with loading state
-    detailEl.classList.remove('hidden');
-    nameEl.textContent = ratchetName;
-    combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-8">Loading combos...</div>';
+    // Mark this row as expanded
+    expandedRow = clickedRow;
+    clickedRow.classList.add('expanded');
 
-    // Scroll to detail panel
-    detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Create the detail row with loading state
+    detailRow = document.createElement('tr');
+    detailRow.className = 'detail-row';
+    detailRow.innerHTML = `
+      <td colspan="9">
+        <div class="detail-content">
+          <div class="detail-inner">
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="text-lg font-mono font-bold text-fg">${ratchetName}</h3>
+              <span class="text-fg-muted text-sm">Best combinations</span>
+            </div>
+            <div id="ratchet-combos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div class="col-span-full text-center py-4">
+                <div class="w-6 h-6 border-2 border-stroke border-t-accent rounded-full animate-spin mx-auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+
+    // Insert after the clicked row
+    clickedRow.after(detailRow);
+
+    // Trigger open animation
+    requestAnimationFrame(() => {
+      const content = detailRow?.querySelector('.detail-content');
+      if (content) content.classList.add('open');
+    });
 
     try {
       const region = getSelectedRegion();
-      const combos = await getBestCombosForRatchet(ratchetName, 6, region);
+      const combos = await getBestCombosForRatchet(ratchetName, 9, region);
+      const combosGrid = detailRow?.querySelector('#ratchet-combos-grid');
+      if (!combosGrid) return;
 
       if (combos.length === 0) {
-        combosEl.innerHTML = '<div class="col-span-full text-center text-fg-muted py-8">No combo data available</div>';
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-fg-muted py-4">No combo data available</div>';
         return;
       }
 
-      combosEl.innerHTML = combos.map((combo, i) => `
+      combosGrid.innerHTML = combos.map((combo, i) => `
         <div class="card card-padding">
           <div class="flex items-start gap-3">
-            <span class="rank-number text-xl">${i + 1}</span>
+            <span class="rank-number text-lg">${i + 1}</span>
             <div class="flex-grow">
-              <div class="font-mono font-bold text-fg">${combo.blade}</div>
-              <div class="flex items-center gap-2 mt-1 text-sm">
+              <div class="font-mono font-bold text-fg text-sm">${combo.blade}</div>
+              <div class="flex items-center gap-2 mt-1 text-xs">
                 <span class="text-series-bx">${combo.bit}</span>
               </div>
-              <div class="flex items-center gap-4 mt-2 text-sm">
+              <div class="flex items-center gap-3 mt-1 text-xs">
                 <span class="text-accent font-mono">${combo.raw_score.toFixed(1)}</span>
                 <span class="text-fg-muted">${combo.uses} uses</span>
                 <span class="text-tier-ss">${combo.first} wins</span>
@@ -310,21 +341,13 @@ import Layout from '../layouts/Layout.astro';
         </div>
       `).join('');
 
-      staggerFadeIn(combosEl.children, { delay: 50 });
+      staggerFadeIn(combosGrid.children, { delay: 50 });
     } catch (error) {
       console.error('Failed to load ratchet combos:', error);
-      combosEl.innerHTML = '<div class="col-span-full text-center text-negative py-8">Failed to load combos</div>';
-    }
-  }
-
-  function setupDetailClose() {
-    const closeBtn = document.getElementById('close-detail');
-    const detailEl = document.getElementById('ratchet-detail');
-    if (closeBtn && detailEl) {
-      closeBtn.addEventListener('click', () => {
-        detailEl.classList.add('hidden');
-        selectedRatchet = null;
-      });
+      const combosGrid = detailRow?.querySelector('#ratchet-combos-grid');
+      if (combosGrid) {
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-negative py-4">Failed to load combos</div>';
+      }
     }
   }
 
@@ -370,6 +393,7 @@ import Layout from '../layouts/Layout.astro';
   }
 
   function applyFilters() {
+    collapseDetail();
     let filtered = allRatchets;
 
     // Filter by height
@@ -390,6 +414,7 @@ import Layout from '../layouts/Layout.astro';
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
+    collapseDetail();
     loadRankings();
   });
 </script>

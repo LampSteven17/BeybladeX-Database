@@ -516,6 +516,9 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
     combo_str = re.sub(
         r"\s*\([^)]*(?:Stage|Finals|Only|Match|Type)[^)]*\)", "", combo_str, flags=re.I
     )
+    # Remove other parenthesized annotations (product codes, notes, etc.)
+    # e.g., "(UX-03)", "(Upper Type)", "(Both)", "(Deck)"
+    combo_str = re.sub(r"\s*\([^)]*\)\s*$", "", combo_str)
     combo_str = combo_str.strip()
     if not combo_str:
         return None
@@ -718,28 +721,23 @@ def is_beyblade_x_content(lines: list[str]) -> bool:
     """
     Check if the post content is about Beyblade X (not Metal Fight, Burst, etc).
     Look for X-format ratchet patterns (X-XX like 3-60, 4-80).
+
+    Posts with BOTH BBX and MF indicators are accepted (multi-format events).
+    Only reject posts with MF indicators and NO BBX indicators.
     """
     text = " ".join(lines[:30])  # Check first 30 lines
 
-    # Metal Fight indicators (should reject)
-    mf_indicators = [
-        r"\b\d{2,3}(RF|WD|RB|MB|CS|B:D|SF|RSF|MF)\b",  # Metal Fight tips
-        r"\bMF-[FLH]\b",  # MF prefix
-        r"\b(L-Drago|Pegasis|Leone|Sagittario)\b",  # Classic MF names
-    ]
-    for pattern in mf_indicators:
-        if re.search(pattern, text, re.I):
-            return False
-
     # Beyblade X indicators (ratchet pattern X-XX)
     x_pattern = r"\b(?:\d{1,2}|M)-\d{2,3}[A-Z]"  # Like 3-60F, 4-80B
-    if re.search(x_pattern, text):
+    has_bbx = bool(re.search(x_pattern, text))
+    if not has_bbx:
+        has_bbx = bool(re.search(r"Beyblade\s*X|X\s*Format", text, re.I))
+
+    # If there's clear BBX content, accept it even if MF indicators are present
+    if has_bbx:
         return True
 
-    # Also accept if "Beyblade X" or "X Format" is mentioned
-    if re.search(r"Beyblade\s*X|X\s*Format", text, re.I):
-        return True
-
+    # No BBX content found - reject (whether or not MF indicators are present)
     return False
 
 
@@ -802,8 +800,8 @@ def parse_header_lines(lines: list[str]) -> dict:
         ):
             continue
 
-        # Skip placement lines
-        if re.match(r"^(1st|2nd|3rd)", line_clean, re.I):
+        # Skip placement lines (any format)
+        if re.match(r"^(1st|2nd|3rd|First|Second|Third|[🥇🥈🥉]|[123]\.)", line_clean, re.I):
             break
 
         # Skip common noise
@@ -979,11 +977,105 @@ def parse_post(post_element) -> list[Tournament]:
             current_combos = []
             # Don't continue - still need to check this line for placements
 
-        # Check for placement lines
+        # Check for placement lines - supports many formats:
+        #   "1st Place: PlayerName", "1st: PlayerName", "1st PlayerName"
+        #   "First Place: PlayerName", "FIRST PLACE", "First:"
+        #   "🥇 PlayerName", "🥈 PlayerName", "🥉 PlayerName"
+        #   "1. PlayerName", "2. PlayerName", "3. PlayerName"
+        #   "PlayerName - 1st Place", "PlayerName 1st"
+        #   "PlayerName 1st Place:", "2ed", "3ed" (typos)
+        #   ", 1st Place:"
+        detected_place = None
+        remainder = ""
+        inline_combo_str = None
+
+        # Clean leading punctuation for placement detection
+        line_clean_place = line.lstrip(",-–—•*").strip()
+
+        # Ordinal mapping (includes common typos)
+        ORDINAL_MAP = {
+            "1st": 1, "2nd": 2, "3rd": 3, "4th": 4,
+            "2ed": 2, "3ed": 3, "4rth": 4,
+        }
+
+        # Pattern 1: Ordinal format - "1st (Place)? ..."
         place_match = re.match(
-            r"^(1st|2nd|3rd)\s*(Place)?[:\s-]*(.*)$", line, re.IGNORECASE
+            r"^(1st|2nd|3rd|4th|2ed|3ed|4rth)\s*(Place)?[:\s-]*(.*)$", line_clean_place, re.IGNORECASE
         )
         if place_match:
+            place_str = place_match.group(1).lower()
+            detected_place = ORDINAL_MAP.get(place_str)
+            remainder = place_match.group(3).strip() if place_match.group(3) else ""
+
+        # Pattern 2: Word format - "First (Place)? ..."
+        if detected_place is None:
+            place_match = re.match(
+                r"^(First|Second|Third|Fourth)\s*(Place)?[:\s-]*(.*)$", line_clean_place, re.IGNORECASE
+            )
+            if place_match:
+                place_str = place_match.group(1).lower()
+                detected_place = {"first": 1, "second": 2, "third": 3, "fourth": 4}.get(place_str)
+                remainder = place_match.group(3).strip() if place_match.group(3) else ""
+
+        # Pattern 3: Emoji medals - "🥇 PlayerName"
+        if detected_place is None:
+            place_match = re.match(r"^(🥇|🥈|🥉)\s*(.*)$", line)
+            if place_match:
+                emoji = place_match.group(1)
+                detected_place = {"🥇": 1, "🥈": 2, "🥉": 3}.get(emoji)
+                remainder = place_match.group(2).strip() if place_match.group(2) else ""
+
+        # Pattern 4: Numbered format - "1. PlayerName", bare "1.", or "#1 PlayerName"
+        if detected_place is None:
+            place_match = re.match(r"^([1234])\.\s*(.*)$", line_clean_place)
+            if not place_match:
+                place_match = re.match(r"^#([1234])\s*(.*)$", line_clean_place)
+            if place_match:
+                detected_place = int(place_match.group(1))
+                remainder = place_match.group(2).strip() if place_match.group(2) else ""
+
+        # Pattern 5: "PlayerName - 1st Place" or "PlayerName - 1st"
+        if detected_place is None:
+            place_match = re.match(
+                r"^(.+?)\s*[-–—]\s*(1st|2nd|3rd|4th|2ed|3ed)\s*(Place)?\s*:?\s*$", line, re.IGNORECASE
+            )
+            if place_match:
+                place_str = place_match.group(2).lower()
+                detected_place = ORDINAL_MAP.get(place_str)
+                remainder = place_match.group(1).strip()
+
+        # Pattern 6: "PlayerName 1st (Place)?:?" (player name before ordinal, no separator)
+        # Only match if line does NOT contain a ratchet pattern (to avoid combo lines)
+        if detected_place is None and not re.search(r"\d-\d{2}", line):
+            place_match = re.match(
+                r"^(.+?)\s+(1st|2nd|3rd|4th|2ed|3ed)\s*(Place)?\s*:?\s*$", line, re.IGNORECASE
+            )
+            if place_match:
+                place_str = place_match.group(2).lower()
+                detected_place = ORDINAL_MAP.get(place_str)
+                remainder = place_match.group(1).strip()
+
+        # Pattern 7: "Winner:" - treat as 1st place
+        if detected_place is None:
+            place_match = re.match(r"^Winner\s*:\s*(.*)$", line_clean_place, re.IGNORECASE)
+            if place_match:
+                detected_place = 1
+                remainder = place_match.group(1).strip() if place_match.group(1) else ""
+
+        # Pattern 8: Inline "PlayerName N combo" (e.g., "Cyrus25 1st DranDagger 4-80Flat")
+        # Player + ordinal + combo all on one line - split into placement + immediate combo
+        if detected_place is None and re.search(r"\d-\d{2}", line):
+            place_match = re.match(
+                r"^(.+?)\s+(1st|2nd|3rd|4th|2ed|3ed|[123])\s+(\S+\s+(?:\d{1,2}|M)-\d{2,3}.*)$", line, re.IGNORECASE
+            )
+            if place_match:
+                place_val = place_match.group(2).lower()
+                detected_place = ORDINAL_MAP.get(place_val) or (int(place_val) if place_val.isdigit() else None)
+                remainder = place_match.group(1).strip()  # Player name
+                # We'll need to parse the combo part after setting up the placement
+                inline_combo_str = place_match.group(3).strip()
+
+        if detected_place is not None and detected_place <= 3:
             # Save previous placement
             if current_place is not None and current_player and current_combos:
                 current_placements.append(
@@ -995,17 +1087,51 @@ def parse_post(post_element) -> list[Tournament]:
                     )
                 )
 
-            place_str = place_match.group(1).lower()
-            current_place = {"1st": 1, "2nd": 2, "3rd": 3}.get(place_str)
+            current_place = detected_place
 
-            # Player name might be on same line
-            remainder = place_match.group(3).strip() if place_match.group(3) else ""
+            # Player name might be on same line (in remainder)
             if remainder and not re.search(r"\d-\d{2}", remainder):
                 # No ratchet pattern, so this is probably the player name
                 current_player = remainder
-            else:
+            elif remainder and re.search(r"\d-\d{2}", remainder):
+                # Remainder has a combo (ratchet pattern) - try to find player from prev line
+                # Handles: "PlayerName\n1st ComboString" format
                 current_player = None
+                if i > 0:
+                    prev_line = lines[i - 1].strip()
+                    if (
+                        prev_line
+                        and len(prev_line) < 50
+                        and not re.search(r"\d-\d{2}", prev_line)
+                        and not re.match(r"^(1st|2nd|3rd|4th|2ed|3ed|First|Second|Third|Fourth|[🥇🥈🥉]|[1234]\.|#[1234])", prev_line, re.I)
+                        and not any(noise.lower() in prev_line.lower() for noise in ["winning combo", "top 3", "stage", "format", "ranked", "http"])
+                        and not prev_line.startswith("(")
+                    ):
+                        current_player = prev_line
+                # Parse the remainder as a combo so we don't lose it
+                inline_combo_str = remainder
+            else:
+                # No remainder at all - try looking back at the previous line for player name
+                # Handles format: "PlayerName\n1st\ncombo1\ncombo2"
+                current_player = None
+                if i > 0:
+                    prev_line = lines[i - 1].strip()
+                    if (
+                        prev_line
+                        and len(prev_line) < 50
+                        and not re.search(r"\d-\d{2}", prev_line)
+                        and not re.match(r"^(1st|2nd|3rd|4th|2ed|3ed|First|Second|Third|Fourth|[🥇🥈🥉]|[1234]\.|#[1234])", prev_line, re.I)
+                        and not any(noise.lower() in prev_line.lower() for noise in ["winning combo", "top 3", "stage", "format", "ranked", "http"])
+                        and not prev_line.startswith("(")
+                    ):
+                        current_player = prev_line
             current_combos = []
+            # If Pattern 8 matched, parse the inline combo immediately
+            if inline_combo_str:
+                combo = parse_combo(inline_combo_str)
+                if combo:
+                    current_combos.append(combo)
+                inline_combo_str = None
             continue
 
         # If we're in a placement section
@@ -1040,6 +1166,15 @@ def parse_post(post_element) -> list[Tournament]:
             combo = parse_combo(line)
             if combo:
                 current_combos.append(combo)
+            elif current_player is not None and re.search(r"\d-\d{2}", line):
+                # Line has a ratchet pattern but didn't parse - might have player prefix
+                # e.g., "Possiblyamelon LeonCrest 9-60Ball" (player + combo inline)
+                # Try stripping the known player name from the front
+                if line.startswith(current_player):
+                    combo_part = line[len(current_player):].strip()
+                    combo = parse_combo(combo_part)
+                    if combo:
+                        current_combos.append(combo)
 
     # Don't forget the last placement and tournament
     if current_place is not None and current_player and current_combos:

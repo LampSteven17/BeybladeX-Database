@@ -94,7 +94,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getRankedOverBlades, type Region } from '../lib/db';
+  import { initDB, getRankedOverBlades, getBestCombosForOverBlade, type Region } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
 
   function getSelectedRegion(): Region {
@@ -143,7 +143,7 @@ import Layout from '../layouts/Layout.astro';
 
     tbody.innerHTML = overBlades.map((ob, index) => {
       return `
-      <tr class="ranking-row">
+      <tr class="ranking-row cursor-pointer hover:bg-panel" data-overblade="${ob.name}">
         <td class="font-mono text-center">
           <span class="rank-number text-lg">${index + 1}</span>
         </td>
@@ -165,7 +165,124 @@ import Layout from '../layouts/Layout.astro';
       </tr>
     `}).join('');
 
+    // Add click handlers to rows
+    tbody.querySelectorAll('.ranking-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const overBladeName = row.getAttribute('data-overblade');
+        if (overBladeName) showOverBladeDetail(overBladeName, row as HTMLTableRowElement);
+      });
+    });
+
     staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 30 });
+  }
+
+  // Track expanded detail row state
+  let expandedOverBladeRow: HTMLTableRowElement | null = null;
+  let overBladeDetailRow: HTMLTableRowElement | null = null;
+
+  function collapseOverBladeDetail() {
+    if (expandedOverBladeRow) {
+      expandedOverBladeRow.classList.remove('expanded');
+      expandedOverBladeRow = null;
+    }
+    if (overBladeDetailRow) {
+      const oldRow = overBladeDetailRow;
+      overBladeDetailRow = null;
+      const content = oldRow.querySelector('.detail-content');
+      if (content) {
+        content.classList.remove('open');
+        setTimeout(() => oldRow.remove(), 300);
+      } else {
+        oldRow.remove();
+      }
+    }
+  }
+
+  async function showOverBladeDetail(name: string, clickedRow?: HTMLTableRowElement) {
+    // If clicking the same row, toggle off
+    if (clickedRow && expandedOverBladeRow === clickedRow) {
+      collapseOverBladeDetail();
+      return;
+    }
+
+    // Collapse any existing detail
+    collapseOverBladeDetail();
+
+    if (!clickedRow) return;
+
+    // Mark this row as expanded
+    expandedOverBladeRow = clickedRow;
+    clickedRow.classList.add('expanded');
+
+    // Create the detail row with loading state
+    overBladeDetailRow = document.createElement('tr');
+    overBladeDetailRow.className = 'detail-row';
+    overBladeDetailRow.innerHTML = `
+      <td colspan="9">
+        <div class="detail-content">
+          <div class="detail-inner">
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="text-lg font-mono font-bold text-fg">${name}</h3>
+              <span class="text-fg-muted text-sm">Best combinations</span>
+            </div>
+            <div id="overblade-combos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div class="col-span-full text-center py-4">
+                <div class="w-6 h-6 border-2 border-stroke border-t-accent rounded-full animate-spin mx-auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+
+    // Insert after the clicked row
+    clickedRow.after(overBladeDetailRow);
+
+    // Trigger open animation
+    requestAnimationFrame(() => {
+      const content = overBladeDetailRow?.querySelector('.detail-content');
+      if (content) content.classList.add('open');
+    });
+
+    try {
+      const region = getSelectedRegion();
+      const combos = await getBestCombosForOverBlade(name, 9, region);
+      const combosGrid = overBladeDetailRow?.querySelector('#overblade-combos-grid');
+      if (!combosGrid) return;
+
+      if (combos.length === 0) {
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-fg-muted py-4">No combo data available</div>';
+        return;
+      }
+
+      combosGrid.innerHTML = combos.map((combo, i) => `
+        <div class="card card-padding">
+          <div class="flex items-start gap-3">
+            <span class="rank-number text-lg">${i + 1}</span>
+            <div class="flex-grow">
+              <div class="font-mono font-bold text-fg text-sm">${combo.combo}</div>
+              <div class="flex items-center gap-2 mt-1 text-xs">
+                <span class="text-series-ux">${combo.ratchet}</span>
+                <span class="text-series-bx">${combo.bit}</span>
+              </div>
+              <div class="flex items-center gap-3 mt-1 text-xs">
+                <span class="text-accent font-mono">${combo.raw_score.toFixed(1)}</span>
+                <span class="text-fg-muted">${combo.uses} uses</span>
+                <span class="text-tier-ss">${combo.first} wins</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      staggerFadeIn(combosGrid.children, { delay: 50 });
+    } catch (error) {
+      console.error('Failed to load over blade combos:', error);
+      const combosGrid = overBladeDetailRow?.querySelector('#overblade-combos-grid');
+      if (combosGrid) {
+        combosGrid.innerHTML = '<div class="col-span-full text-center text-negative py-4">Failed to load combos</div>';
+      }
+    }
   }
 
   function getTrendHtml(trend: number): string {
@@ -191,6 +308,7 @@ import Layout from '../layouts/Layout.astro';
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
+    collapseOverBladeDetail();
     loadRankings();
   });
 </script>

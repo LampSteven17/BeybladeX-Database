@@ -1026,35 +1026,46 @@ export async function getBestCombosForBlade(
   bladeName: string,
   limit = 10,
   region?: Region
-): Promise<{ ratchet: string; bit: string; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }[]> {
+): Promise<{ ratchet: string; bit: string; assist: string | null; lockChip: string | null; overBlade: string | null; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }[]> {
   const regionFilter = getRegionWhereClause(region);
   const rows = await query<{
     ratchet: string;
     bit: string;
+    assist: string | null;
+    lock_chip: string | null;
+    over_blade: string | null;
     place: number;
     tournament_date: string;
     stage: string | null;
   }>(`
-    SELECT ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    SELECT ratchet, bit, assist, lock_chip, over_blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE LOWER(blade) = LOWER('${bladeName.replace(/'/g, "''")}')${regionFilter}
   `);
 
   const comboScores: Record<
     string,
-    { ratchet: string; bit: string; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }
+    { ratchet: string; bit: string; assist: string | null; lockChip: string | null; overBlade: string | null; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }
   > = {};
   const referenceDate = new Date();
 
   for (const row of rows) {
     const ratchet = normalizeRatchet(row.ratchet);
     const bit = normalizeBit(row.bit);
-    const key = `${ratchet}|${bit}`;
+    const assist = row.assist || null;
+    const lockChip = row.lock_chip || null;
+    const overBlade = row.over_blade || null;
+    const key = `${ratchet}|${bit}|${assist || ''}`;
     if (!comboScores[key]) {
+      const parts = [ratchet, bit];
+      if (assist) parts.splice(0, 0, assist);
       comboScores[key] = {
         ratchet: ratchet,
         bit: bit,
-        combo: `${ratchet} ${bit}`,
+        assist: assist,
+        lockChip: lockChip,
+        overBlade: overBlade,
+        combo: parts.join(' '),
         raw_score: 0,
         uses: 0,
         first: 0,
@@ -1195,6 +1206,185 @@ export async function getBestCombosForBit(
     stats.raw_score += points * weight;
     stats.uses += 1;
 
+    if (row.place === 1) stats.first += 1;
+    else if (row.place === 2) stats.second += 1;
+    else if (row.place === 3) stats.third += 1;
+  }
+
+  return Object.values(comboScores)
+    .sort((a, b) => b.raw_score - a.raw_score)
+    .slice(0, limit);
+}
+
+/**
+ * Get best blade+ratchet+bit combinations for a specific assist blade.
+ */
+export async function getBestCombosForAssist(
+  assistName: string,
+  limit = 10,
+  region?: Region
+): Promise<{ blade: string; ratchet: string; bit: string; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }[]> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE LOWER(assist) = LOWER('${assistName.replace(/'/g, "''")}')${regionFilter}
+  `);
+
+  const comboScores: Record<
+    string,
+    { blade: string; ratchet: string; bit: string; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }
+  > = {};
+  const referenceDate = new Date();
+
+  for (const row of rows) {
+    const blade = row.blade;
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const key = `${blade}|${ratchet}|${bit}`;
+    if (!comboScores[key]) {
+      comboScores[key] = {
+        blade, ratchet, bit,
+        combo: `${blade} ${ratchet} ${bit}`,
+        raw_score: 0, uses: 0, first: 0, second: 0, third: 0,
+      };
+    }
+
+    const tournamentDate = new Date(row.tournament_date);
+    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
+    const points = getPlacementScore(row.place, row.stage);
+
+    const stats = comboScores[key];
+    stats.raw_score += points * weight;
+    stats.uses += 1;
+    if (row.place === 1) stats.first += 1;
+    else if (row.place === 2) stats.second += 1;
+    else if (row.place === 3) stats.third += 1;
+  }
+
+  return Object.values(comboScores)
+    .sort((a, b) => b.raw_score - a.raw_score)
+    .slice(0, limit);
+}
+
+/**
+ * Get best blade+ratchet+bit combinations for a specific lock chip.
+ */
+export async function getBestCombosForLockChip(
+  lockChipName: string,
+  limit = 10,
+  region?: Region
+): Promise<{ blade: string; ratchet: string; bit: string; assist: string | null; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }[]> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    assist: string | null;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, assist, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE LOWER(lock_chip) = LOWER('${lockChipName.replace(/'/g, "''")}')${regionFilter}
+  `);
+
+  const comboScores: Record<
+    string,
+    { blade: string; ratchet: string; bit: string; assist: string | null; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }
+  > = {};
+  const referenceDate = new Date();
+
+  for (const row of rows) {
+    const blade = row.blade;
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const assist = row.assist || null;
+    const key = `${blade}|${assist || ''}|${ratchet}|${bit}`;
+    if (!comboScores[key]) {
+      const parts = [blade];
+      if (assist) parts.push(assist);
+      parts.push(ratchet, bit);
+      comboScores[key] = {
+        blade, ratchet, bit, assist,
+        combo: parts.join(' '),
+        raw_score: 0, uses: 0, first: 0, second: 0, third: 0,
+      };
+    }
+
+    const tournamentDate = new Date(row.tournament_date);
+    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
+    const points = getPlacementScore(row.place, row.stage);
+
+    const stats = comboScores[key];
+    stats.raw_score += points * weight;
+    stats.uses += 1;
+    if (row.place === 1) stats.first += 1;
+    else if (row.place === 2) stats.second += 1;
+    else if (row.place === 3) stats.third += 1;
+  }
+
+  return Object.values(comboScores)
+    .sort((a, b) => b.raw_score - a.raw_score)
+    .slice(0, limit);
+}
+
+/**
+ * Get best blade+ratchet+bit combinations for a specific over blade.
+ */
+export async function getBestCombosForOverBlade(
+  overBladeName: string,
+  limit = 10,
+  region?: Region
+): Promise<{ blade: string; ratchet: string; bit: string; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }[]> {
+  const regionFilter = getRegionWhereClause(region);
+  const rows = await query<{
+    blade: string;
+    ratchet: string;
+    bit: string;
+    place: number;
+    tournament_date: string;
+    stage: string | null;
+  }>(`
+    SELECT blade, ratchet, bit, place, tournament_date::VARCHAR as tournament_date, stage
+    FROM combo_usage
+    WHERE LOWER(over_blade) = LOWER('${overBladeName.replace(/'/g, "''")}')${regionFilter}
+  `);
+
+  const comboScores: Record<
+    string,
+    { blade: string; ratchet: string; bit: string; combo: string; raw_score: number; uses: number; first: number; second: number; third: number }
+  > = {};
+  const referenceDate = new Date();
+
+  for (const row of rows) {
+    const blade = row.blade;
+    const ratchet = normalizeRatchet(row.ratchet);
+    const bit = normalizeBit(row.bit);
+    const key = `${blade}|${ratchet}|${bit}`;
+    if (!comboScores[key]) {
+      comboScores[key] = {
+        blade, ratchet, bit,
+        combo: `${blade} ${ratchet} ${bit}`,
+        raw_score: 0, uses: 0, first: 0, second: 0, third: 0,
+      };
+    }
+
+    const tournamentDate = new Date(row.tournament_date);
+    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
+    const points = getPlacementScore(row.place, row.stage);
+
+    const stats = comboScores[key];
+    stats.raw_score += points * weight;
+    stats.uses += 1;
     if (row.place === 1) stats.first += 1;
     else if (row.place === 2) stats.second += 1;
     else if (row.place === 3) stats.third += 1;
