@@ -610,11 +610,21 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
 def parse_date(date_str: str) -> Optional[datetime]:
     """Parse date from various formats."""
     date_str = date_str.strip()
+    # Normalize abbreviated months with periods: "Aug." -> "Aug"
+    date_str = re.sub(r'\b([A-Z][a-z]{2})\.\s', r'\1 ', date_str)
     formats = [
         "%m/%d/%y",
         "%m/%d/%Y",
+        "%d/%m/%Y",
+        "%d/%m/%y",
+        "%m-%d-%y",
+        "%m-%d-%Y",
+        "%m.%d.%y",
+        "%m.%d.%Y",
         "%B %d, %Y",
         "%b %d, %Y",
+        "%B %d %Y",
+        "%b %d %Y",
         "%Y-%m-%d",
     ]
     now = datetime.now()
@@ -646,15 +656,36 @@ def extract_date_from_text(text: str) -> tuple[Optional[datetime], int, int]:
     """
     Extract date from text, returns (date, start_pos, end_pos).
     """
-    # Try MM/DD/YY or MM/DD/YYYY
+    # Try MM/DD/YY or MM/DD/YYYY or DD/MM/YYYY
     match = re.search(r"(\d{1,2}/\d{1,2}/\d{2,4})", text)
     if match:
         date = parse_date(match.group(1))
         if date:
             return date, match.start(), match.end()
 
-    # Try "Month DD, YYYY" or "Month DD YYYY"
-    match = re.search(r"([A-Z][a-z]+ \d{1,2},? \d{4})", text)
+    # Try "Month DD, YYYY" or "Month DD YYYY" (with optional abbreviated period)
+    match = re.search(r"([A-Z][a-z]+\.?\s+\d{1,2},?\s+\d{4})", text)
+    if match:
+        date = parse_date(match.group(1))
+        if date:
+            return date, match.start(), match.end()
+
+    # Try dash dates: M-D-YY, MM-DD-YYYY, etc.
+    match = re.search(r"(\d{1,2}-\d{1,2}-\d{2,4})", text)
+    if match:
+        date = parse_date(match.group(1))
+        if date:
+            return date, match.start(), match.end()
+
+    # Try dot dates: M.D.YY, MM.DD.YYYY, etc.
+    match = re.search(r"(\d{1,2}\.\d{1,2}\.\d{2,4})", text)
+    if match:
+        date = parse_date(match.group(1))
+        if date:
+            return date, match.start(), match.end()
+
+    # Try ISO: YYYY-MM-DD
+    match = re.search(r"(\d{4}-\d{1,2}-\d{1,2})", text)
     if match:
         date = parse_date(match.group(1))
         if date:
@@ -764,12 +795,14 @@ def parse_header_lines(lines: list[str]) -> dict:
     if not lines:
         return result
 
-    # Look at first 6 lines for header info
-    header_lines = lines[:6]
+    # Look at first 10 lines for header info (some posts have longer headers)
+    header_lines = lines[:10]
     combined_text = " ".join(header_lines)
+    # Strip "Date:" prefix so "Date: 2-4-2025" becomes "2-4-2025"
+    combined_text_for_date = re.sub(r"\bDate:\s*", "", combined_text)
 
     # Extract date from combined text
-    date, date_start, date_end = extract_date_from_text(combined_text)
+    date, date_start, date_end = extract_date_from_text(combined_text_for_date)
     result["date"] = date
 
     # Extract format info from combined text
@@ -892,6 +925,16 @@ def parse_post(post_element) -> list[Tournament]:
 
     # Parse header info from first few lines
     header_info = parse_header_lines(lines)
+
+    # Fallback: extract date from WBO post timestamp if text parsing failed
+    if header_info["date"] is None:
+        post_date_el = post_element.find("span", class_="post_date")
+        if post_date_el:
+            post_date_text = post_date_el.get_text().strip()
+            # Format: "Aug. 08, 2025  9:45 PM" — extract just the date part
+            date_part = re.match(r"([A-Z][a-z]+\.?\s+\d{1,2},?\s+\d{4})", post_date_text)
+            if date_part:
+                header_info["date"] = parse_date(date_part.group(1))
 
     current_tournament = None
     current_placements = []
