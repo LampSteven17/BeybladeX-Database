@@ -160,6 +160,13 @@ const CX_BLADES_REQUIRING_LOCKCHIP = new Set([
   'Antler', 'Wriggle', 'Volt'
 ]);
 
+// Metal lock chips (all others are plastic — lock chip identity doesn't affect competitive performance)
+const METAL_LOCK_CHIPS = new Set(['Emperor', 'Valkyrie']);
+
+export function getLockChipMaterial(name: string): 'Metal' | 'Plastic' {
+  return METAL_LOCK_CHIPS.has(name) ? 'Metal' : 'Plastic';
+}
+
 // Normalize blade name for display
 function normalizeBladeDisplay(name: string): string {
   return BLADE_DISPLAY_NAMES[name] || name;
@@ -277,9 +284,9 @@ function normalizeBit(bit: string): string {
 function getFullBladeName(baseBlade: string, lockChip: string | null): string {
   const normalized = normalizeBladeDisplay(baseBlade);
   
-  // If we have a lock chip, prepend it (CX blade format)
+  // If we have a lock chip, prepend material type (CX blade format)
   if (lockChip) {
-    return `${lockChip} ${normalized}`;
+    return `${getLockChipMaterial(lockChip)} ${normalized}`;
   }
   
   // No lock chip - return normalized name as-is
@@ -821,7 +828,7 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
         blade: blade,
         ratchet: ratchet,
         bit: bit,
-        lockChip: lockChip,
+        lockChip: lockChip ? getLockChipMaterial(lockChip) : null,
         assist: assist,
         overBlade: overBlade,
         raw_score: 0,
@@ -1603,10 +1610,10 @@ export async function getComboStats(
     else if (row.place === 3) third++;
   }
 
-  // Format: [LockChip] [Blade] [Assist] [Ratchet][Bit]
+  // Format: [Material] [Blade] [Assist] [Ratchet][Bit]
   let comboStr = blade;
   if (lockChip) {
-    comboStr = `${lockChip} ${blade}`;
+    comboStr = `${getLockChipMaterial(lockChip)} ${blade}`;
   }
   if (assist) {
     comboStr = `${comboStr} ${assist}`;

@@ -903,6 +903,7 @@ import Layout from '../layouts/Layout.astro';
     getComboStats,
     compareFullCombos,
     getBladeSeries,
+    getLockChipMaterial,
     rateDeck,
     BLADE_SERIES,
     type FullComboComparisonResult,
@@ -1082,10 +1083,10 @@ import Layout from '../layouts/Layout.astro';
       const comboName = document.getElementById('builder-combo-name');
       const seriesBadge = document.getElementById('builder-series-badge');
 
-      // Format: [LockChip] [Blade] [Assist] [Ratchet][Bit]
+      // Format: [Material] [Blade] [Assist] [Ratchet][Bit]
       let bladePart = builderBlade;
       if (builderLockChip) {
-        bladePart = `${builderLockChip} ${builderBlade}`;
+        bladePart = `${getLockChipMaterial(builderLockChip)} ${builderBlade}`;
       }
       if (builderAssist) {
         bladePart = `${bladePart} ${builderAssist}`;
@@ -1246,10 +1247,10 @@ import Layout from '../layouts/Layout.astro';
 
   function getComboDisplayName(combo: { blade: string; ratchet: string; bit: string; lockChip: string; assist: string }) {
     if (!combo.blade) return '?';
-    // Format: [LockChip] [Blade] [Assist] or just [Blade]
+    // Format: [Material] [Blade] [Assist] or just [Blade]
     let name = combo.blade;
     if (combo.lockChip) {
-      name = `${combo.lockChip} ${combo.blade}`;
+      name = `${getLockChipMaterial(combo.lockChip)} ${combo.blade}`;
     }
     if (!combo.ratchet || !combo.bit) return name;
     if (combo.assist) {
@@ -1329,10 +1330,10 @@ import Layout from '../layouts/Layout.astro';
 
     const { combo1: c1, combo2: c2, head_to_head } = result;
 
-    // Format blade name with lock chip and assist if present
+    // Format blade name with material and assist if present
     const formatBladeName = (c: typeof c1) => {
       let name = c.blade;
-      if (c.lockChip) name = `${c.lockChip} ${name}`;
+      if (c.lockChip) name = `${getLockChipMaterial(c.lockChip)} ${name}`;
       if (c.assist) name = `${name} ${c.assist}`;
       return name;
     };
@@ -1816,10 +1817,10 @@ import Layout from '../layouts/Layout.astro';
 
     if (combo.blade && combo.ratchet && combo.bit) {
       preview?.classList.remove('hidden');
-      // Build combo name including lock chip for CX blades
+      // Build combo name including material type for CX blades
       let bladeName = combo.blade;
       if (combo.lockChip && isCXMainBlade(combo.blade)) {
-        bladeName = `${combo.lockChip} ${combo.blade}`;
+        bladeName = `${getLockChipMaterial(combo.lockChip)} ${combo.blade}`;
       }
       if (nameEl) nameEl.textContent = `${bladeName} ${combo.ratchet}${combo.bit}`;
       if (tierEl) tierEl.textContent = '...';

@@ -12,6 +12,12 @@ import Layout from '../layouts/Layout.astro';
       <p class="text-fg-secondary">
         Lock chips ranked by weighted tournament performance. These are the swappable character chips on CX blades.
       </p>
+      {/* Material Filter */}
+      <div class="flex gap-2 mt-4" id="material-filter">
+        <button class="filter-btn active px-4 py-1.5 text-sm font-mono rounded-lg border border-stroke transition-all" data-filter="all">All</button>
+        <button class="filter-btn px-4 py-1.5 text-sm font-mono rounded-lg border border-stroke transition-all" data-filter="metal">Metal</button>
+        <button class="filter-btn px-4 py-1.5 text-sm font-mono rounded-lg border border-stroke transition-all" data-filter="plastic">Plastic</button>
+      </div>
     </div>
 
     {/* Rankings Table */}
@@ -102,8 +108,11 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getRankedLockChips, getBestCombosForLockChip, type Region } from '../lib/db';
+  import { initDB, getRankedLockChips, getBestCombosForLockChip, getLockChipMaterial, type Region } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
+
+  let currentFilter: 'all' | 'metal' | 'plastic' = 'all';
+  let allLockChipData: Awaited<ReturnType<typeof getRankedLockChips>> = [];
 
   function getSelectedRegion(): Region {
     if (typeof localStorage !== 'undefined') {
@@ -116,16 +125,16 @@ import Layout from '../layouts/Layout.astro';
     try {
       await initDB();
       const region = getSelectedRegion();
-      const lockChips = await getRankedLockChips(25, 1, region);
+      allLockChipData = await getRankedLockChips(25, 1, region);
 
-      if (lockChips.length === 0) {
+      if (allLockChipData.length === 0) {
         // Show empty state
         document.getElementById('rankings-table')?.closest('.card')?.classList.add('hidden');
         document.getElementById('empty-state')?.classList.remove('hidden');
         return;
       }
 
-      renderTable(lockChips);
+      applyFilter();
     } catch (error) {
       console.error('Failed to load rankings:', error);
       const tbody = document.getElementById('rankings-body');
@@ -155,6 +164,10 @@ import Layout from '../layouts/Layout.astro';
           <span class="px-3 py-1 text-sm font-mono font-bold rounded bg-series-cx/20 text-series-cx border border-series-cx/40">
             ${chip.name}
           </span>
+          ${getLockChipMaterial(chip.name) === 'Metal'
+            ? '<span class="ml-2 px-2 py-0.5 text-xs font-mono rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Metal</span>'
+            : '<span class="ml-2 px-2 py-0.5 text-xs font-mono rounded bg-fg-muted/20 text-fg-muted border border-fg-muted/30">Plastic</span>'
+          }
         </td>
         <td class="text-right font-mono text-accent">${chip.raw_score.toFixed(1)}</td>
         <td class="text-right font-mono">${chip.uses}</td>
@@ -306,7 +319,29 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  document.addEventListener('DOMContentLoaded', loadRankings);
+  function applyFilter() {
+    let filtered = allLockChipData;
+    if (currentFilter === 'metal') {
+      filtered = allLockChipData.filter(c => getLockChipMaterial(c.name) === 'Metal');
+    } else if (currentFilter === 'plastic') {
+      filtered = allLockChipData.filter(c => getLockChipMaterial(c.name) === 'Plastic');
+    }
+    renderTable(filtered);
+  }
+
+  function initFilterButtons() {
+    document.querySelectorAll('#material-filter .filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentFilter = (btn.getAttribute('data-filter') as typeof currentFilter) || 'all';
+        document.querySelectorAll('#material-filter .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        collapseDetail();
+        applyFilter();
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => { initFilterButtons(); loadRankings(); });
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {

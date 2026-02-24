@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-BeybladeX-Database is a tournament meta analysis tool for Beyblade X competitive play. It scrapes tournament results from multiple sources (WBO, Japan, Germany), stores data in DuckDB, and serves an interactive static site with in-browser SQL queries via DuckDB-WASM.
+BeybladeX-Database is a tournament meta analysis tool for Beyblade X competitive play. It scrapes tournament results from multiple sources (WBO, Japan, Germany, official championships), scrapes official part stats from the Fandom wiki, stores data in DuckDB, and serves an interactive static site with in-browser SQL queries via DuckDB-WASM.
 
 ## Commands
 
@@ -13,6 +13,7 @@ BeybladeX-Database is a tournament meta analysis tool for Beyblade X competitive
 uv sync                                    # Install dependencies
 python scripts/refresh_all.py              # Full refresh all data sources
 python scripts/refresh_all.py --sources wbo,jp  # Specific sources
+python scripts/refresh_all.py --sources fandom  # Fandom wiki part attributes only
 python scripts/refresh_all.py --stats      # Show database statistics
 python scripts/refresh_all.py --incremental  # Add new data without clearing
 ```
@@ -35,29 +36,55 @@ Data Pipeline (Python)           Static Site (Astro)
 │  - refresh_all.py   │         │  - lib/db.ts (WASM)  │
 │  - scrapers/*.py    │───────► │  - pages/*.astro     │
 │  - db.py            │         │  - components/       │
-└─────────────────────┘         └──────────────────────┘
-         │                                │
-         ▼                                ▼
+│  - import_champ.py  │         │  - lib/animations.ts │
+└─────────────────────┘         │  - lib/sparkline.ts  │
+         │                      └──────────────────────┘
+         ▼                                │
    data/beyblade.duckdb    site/public/data/beyblade.duckdb
    (source of truth)              (copy for website)
 ```
 
 **Key files:**
-- `scripts/db.py` - Database schema, CX blade parsing, normalization
-- `scripts/refresh_all.py` - Main CLI orchestrating all scrapers
-- `scripts/scrapers/` - Modular scraper implementations (wbo.py, jp.py, de.py)
-- `site/src/lib/db.ts` - DuckDB-WASM client and scoring system
+- `scripts/db.py` - Database schema, CX blade parsing, normalization, part lists
+- `scripts/refresh_all.py` - Main CLI orchestrating all scrapers (DEFAULT_ORDER: wbo, jp, de, champ, fandom)
+- `scripts/scrapers/` - Modular scraper implementations:
+  - `wbo.py` - World Beyblade Organization forum data (reads from `data/wbo_pages.json`)
+  - `jp.py` - Japanese tournaments from okuyama3093.com
+  - `de.py` - German tournaments from Blader League Germany (Instagram via instaloader)
+  - `fandom.py` - Fandom wiki scraper for official Takara Tomy part stats (part_attributes table)
+- `scripts/import_championships.py` - Official championship data (World Championship 2025, Asia Championship 2024)
+- `site/src/lib/db.ts` - DuckDB-WASM client, scoring system, 50+ query functions, radar chart stats
+
+**Site pages (site/src/pages/):**
+- `index.astro` - Main dashboard with meta analysis
+- `blades.astro` - Ranked blades by tournament performance
+- `combos.astro` - Full combo rankings with tier system (SS/S/A/B/C/D/F), radar charts, over blade column
+- `assist.astro` - Ranked CX assist blades
+- `ratchets.astro` - Ranked ratchets with click-to-expand detail panels
+- `bits.astro` - Ranked bits with click-to-expand detail panels
+- `lockchips.astro` - Ranked CX lock chips
+- `overblades.astro` - Ranked CX over blades (Break, Flow, Guard)
+- `tools.astro` - Advanced analysis (hidden gems, deck ratings, meta evolution chart)
+- `projections.astro` - Tournament projections
+- `methodology.astro` - Scoring system documentation
 
 ## Data Model
 
-**Tables:** tournaments, placements, parts
+**Tables:** tournaments, placements, parts, part_attributes
 
-**Combo structure:** Blade + Ratchet + Bit (+ optional Lock Chip + Assist blade for CX series)
+- **tournaments** - Tournament metadata (id, name, date, region, format, etc.)
+- **placements** - Top 3 finishers with up to 3 combo slots each. Each slot has: blade, ratchet, bit, assist, lock_chip, over_blade, stage
+- **parts** - Master parts reference catalog
+- **part_attributes** - Official Takara Tomy stats from Fandom wiki (attack, defense, stamina, dash, burst_resistance, weight, spin_direction)
+
+**Combo structure:** Blade + Ratchet + Bit (+ optional Lock Chip + Assist + Over Blade for CX series)
 
 **Scoring system (in db.ts):**
 - Placement points: 1st=3, 2nd=2, 3rd=1
 - Recency: 30-day half-life exponential decay
 - Stage multiplier: Finals=100%, both stages=115%, first stage=50%
+
+**Radar charts (combos page):** Sum part_attributes stats for blade + ratchet + bit. Ghost overlay shows meta average.
 
 ## Blade Series
 
@@ -67,19 +94,25 @@ Data Pipeline (Python)           Static Site (Astro)
 
 ## CX Blade System (IMPORTANT)
 
-CX blades are modular and consist of multiple parts. **ONLY CX blades can have assist blades. Non-CX blades (BX/UX) NEVER have assists.**
+CX blades are modular and consist of multiple parts. **ONLY CX blades can have assist blades and over blades. Non-CX blades (BX/UX) NEVER have assists or over blades.**
 
 ### CX Combo Format
 ```
-[Lock Chip] [Main Blade] [Assist Blade] [Ratchet] [Bit]
+[Lock Chip] [Main Blade] [Over Blade] [Assist Blade] [Ratchet] [Bit]
 ```
 Example: `Pegasus Blast Wheel 3-60 Low Flat` = Pegasus lock chip + Blast main blade + Wheel assist + 3-60 ratchet + Low Flat bit
 
 ### Lock Chips (prefix for CX blade names)
-Cerberus, Dran, Emperor, Fox, Hells, Hornet, Kraken, Leon, Pegasus, Perseus, Phoenix, Rhino, Sol, Stag, Valkyrie, Whale, Wizard, Wolf
+Bahamut, Cerberus, Dran, Emperor, Fox, Hells, Hornet, Knight, Kraken, Leon, Pegasus, Perseus, Phoenix, Ragna, Rhino, Sol, Stag, Valkyrie, Whale, Wizard, Wolf
 
 ### Main Blades (CX only - require a lock chip)
 Antler, Arc, Blast, Brave, Brush, Dark, Eclipse, Fang, Flame, Flare, Fort, Hunt, Might, Reaper, Volt, Wriggle
+
+### Metal Blades (CX - standalone, no lock chip)
+Blitz, Fortress, Armor, Rage
+
+### Over Blades (CX only - armor plates mounted on main blades)
+Break, Flow, Guard
 
 ### Assist Blades (CX only - single letter abbreviations)
 | Abbrev | Full Name |
@@ -97,12 +130,20 @@ Antler, Arc, Blast, Brave, Brush, Dark, Eclipse, Fang, Flame, Flare, Fort, Hunt,
 | F | Free |
 | D | Dual |
 
+### Metal vs Plastic Lock Chips
+In competitive play, the specific lock chip identity doesn't affect performance — only whether it's **metal** or **plastic** matters. The frontend normalizes lock chip names to "Metal" or "Plastic" in combo display (combos page, tools page) to aggregate stats meaningfully. The DB retains actual lock chip names. The lock chips page still shows individual names with material badges.
+
+- **Metal lock chips**: Emperor, Valkyrie
+- **Plastic lock chips**: All others (Bahamut, Cerberus, Dran, Fox, Hells, Hornet, Knight, Kraken, Leon, Pegasus, Perseus, Phoenix, Ragna, Rhino, Sol, Stag, Whale, Wizard, Wolf)
+- **To add a new metal lock chip**: Add it to `METAL_LOCK_CHIPS` in `site/src/lib/db.ts`
+
 ### Key Rules
 1. **Only CX main blades can have assist blades** - if you see an assist on a non-CX blade, it's a parsing error
 2. **CX blades are named [LockChip] [MainBlade]** - e.g., "Pegasus Blast" = Pegasus lock chip + Blast main blade
 3. **Assist blade abbreviations are NOT bit abbreviations** - W=Wheel (assist), not Wedge (bit); H=Heavy (assist), not Hexa (bit); Z=Zillion (assist), not Zap (bit)
 4. **A standalone main blade name without lock chip is incomplete** - e.g., just "Blast" without "Pegasus Blast" is invalid/incomplete data
 5. **Context determines letter meaning** - Single letters BEFORE ratchet on CX blades = assist; AFTER ratchet = bit
+6. **Over blades are CX-exclusive** - Only CX combos can have over blades
 
 ## Valid Ratchets
 Format: `[height]-[disc diameter]` (e.g., 3-60 = height 3, disc 60)
@@ -113,11 +154,11 @@ Format: `[height]-[disc diameter]` (e.g., 3-60 = height 3, disc 60)
 ## Valid Bits (tips)
 Single letter abbreviations: A(Accel), B(Ball), C(Cyclone), D(Dot), E(Elevate), F(Flat), G(Glide), H(Hexa), J(Jolt), K(Kick), L(Level), M(Merge), N(Needle), O(Orb), P(Point), Q(Quake), R(Rush), S(Spike), T(Taper), U(Unite), V(Vanguard), W(Wedge), Z(Zap)
 
-Multi-word bits: Bound Spike, Disc Ball, Free Ball, Gear Ball/Flat/Needle/Point/Rush, High Needle/Taper, Low Flat/Needle/Orb/Rush, Metal Needle, Rubber Accel, Trans Kick/Point, Under Flat/Needle, Wall Ball/Wedge, Vortex
+Multi-word bits: Bound Spike, Disc Ball, Free Ball, Gear Ball/Flat/Needle/Point/Rush, High Needle/Taper, Low Flat/Needle/Orb/Rush, Metal Needle, Rubber Accel, Trans Kick/Point, Under Flat/Needle, Vortex, Wall Ball/Wedge
 
 ## Deployment
 
-### Server Details
+### Production Server
 - **SSH host**: `beybladex-database` (ubuntu@192.168.88.62, configured in ~/.ssh/config)
 - **Repo on server**: `/opt/beybladex` (owned by root, use sudo)
 - **Web server**: nginx serving `/opt/beybladex/site/dist` on port 80
@@ -141,6 +182,10 @@ ssh -o BatchMode=yes -o ConnectTimeout=10 beybladex-database \
   "cd /opt/beybladex && sudo git pull && cd site && sudo npm run build"
 ```
 No nginx restart needed — it serves static files directly from `dist/`.
+
+### GitHub Actions
+- `.github/workflows/rebuild.yml` - Triggers on `data/wbo_pages.json` push or manual dispatch
+- Runs WBO scraper, copies DB to site, auto-commits changes
 
 ## Design System
 
