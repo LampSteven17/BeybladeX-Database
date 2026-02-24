@@ -51,8 +51,8 @@ SCRAPERS = {
     "fandom": FandomScraper,
 }
 
-# Default order of scraping (champ is handled separately)
-DEFAULT_ORDER = ["wbo", "jp", "de", "champ"]
+# Default order of scraping (champ is handled separately, fandom scrapes part stats)
+DEFAULT_ORDER = ["wbo", "jp", "de", "champ", "fandom"]
 
 
 # =============================================================================
