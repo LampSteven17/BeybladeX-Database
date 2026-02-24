@@ -811,32 +811,84 @@ import Layout from '../layouts/Layout.astro';
           svg += `<text x="${x}" y="${padding.top + chartHeight + 12}" fill="#6b7280" font-size="8" text-anchor="end" font-family="monospace" transform="rotate(-45, ${x}, ${padding.top + chartHeight + 12})">${label}</text>`;
         });
 
-        // Draw journey lines
+        // Draw journey lines with fade-in/fade-out for entries and exits
+        const lastMonthIdx = months.length - 1;
         topJourneys.forEach((journey, idx) => {
           const color = bladeColors[idx % bladeColors.length];
-          const points: string[] = [];
 
+          // Collect ranked points with their month indices
+          type RankedPoint = { mi: number; x: number; y: number };
+          const ranked: RankedPoint[] = [];
           journey.monthlyRanks.forEach((mr, i) => {
             if (mr.rank !== null && mr.rank <= maxRank) {
-              const x = padding.left + (i / (months.length - 1)) * chartWidth;
-              const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
-              points.push(`${x},${y}`);
+              ranked.push({
+                mi: i,
+                x: padding.left + (i / (months.length - 1)) * chartWidth,
+                y: padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight,
+              });
+            }
+          });
+          if (ranked.length < 2) return;
+
+          // Split into consecutive runs (gap = non-consecutive month indices)
+          const runs: RankedPoint[][] = [];
+          let currentRun: RankedPoint[] = [ranked[0]];
+          for (let i = 1; i < ranked.length; i++) {
+            if (ranked[i].mi === ranked[i - 1].mi + 1) {
+              currentRun.push(ranked[i]);
+            } else {
+              runs.push(currentRun);
+              currentRun = [ranked[i]];
+            }
+          }
+          runs.push(currentRun);
+
+          const firstEverMi = ranked[0].mi;
+          const lastEverMi = ranked[ranked.length - 1].mi;
+          const isStillActive = lastEverMi === lastMonthIdx;
+
+          // Draw segments for each run
+          runs.forEach(run => {
+            const isFirstRun = run[0].mi === firstEverMi;
+            const isLastRun = run[run.length - 1].mi === lastEverMi;
+
+            for (let i = 0; i < run.length - 1; i++) {
+              const segFromStart = i; // 0-based index from run start
+              const segFromEnd = (run.length - 1) - i - 1; // 0-based from run end
+
+              let opacity = 0.8;
+              let dash = '';
+
+              // Entry fade: first 2 segments of the first run
+              if (isFirstRun && segFromStart < 2) {
+                opacity = segFromStart === 0 ? 0.15 : 0.4;
+              }
+              // Exit fade: last 2 segments of the last run (only if blade dropped out)
+              if (isLastRun && !isStillActive && segFromEnd < 2) {
+                const exitOp = segFromEnd === 0 ? 0.15 : 0.4;
+                // If both entry and exit apply (short run), take the lower opacity
+                opacity = (isFirstRun && segFromStart < 2) ? Math.min(opacity, exitOp) : exitOp;
+                if (segFromEnd === 0) dash = ' stroke-dasharray="4,3"';
+              }
+
+              svg += `<line x1="${run[i].x}" y1="${run[i].y}" x2="${run[i + 1].x}" y2="${run[i + 1].y}" stroke="${color}" stroke-width="2" stroke-linecap="round" opacity="${opacity}"${dash}/>`;
             }
           });
 
-          if (points.length > 1) {
-            // Draw line
-            svg += `<polyline points="${points.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>`;
-
-            // Draw dots at each point
-            journey.monthlyRanks.forEach((mr, i) => {
-              if (mr.rank !== null && mr.rank <= maxRank) {
-                const x = padding.left + (i / (months.length - 1)) * chartWidth;
-                const y = padding.top + ((mr.rank - 1) / (maxRank - 1)) * chartHeight;
-                svg += `<circle cx="${x}" cy="${y}" r="3" fill="${color}" stroke="#1a1a2e" stroke-width="1"/>`;
-              }
-            });
-          }
+          // Draw dots
+          ranked.forEach(pt => {
+            if (pt.mi === firstEverMi) {
+              // Entry dot: halo ring + solid dot
+              svg += `<circle cx="${pt.x}" cy="${pt.y}" r="7" fill="none" stroke="${color}" stroke-width="1" opacity="0.2"/>`;
+              svg += `<circle cx="${pt.x}" cy="${pt.y}" r="4" fill="${color}" stroke="#1a1a2e" stroke-width="1"/>`;
+            } else if (pt.mi === lastEverMi && !isStillActive) {
+              // Exit dot: hollow ring
+              svg += `<circle cx="${pt.x}" cy="${pt.y}" r="3.5" fill="#0d1117" stroke="${color}" stroke-width="1.5" opacity="0.5"/>`;
+            } else {
+              // Normal dot
+              svg += `<circle cx="${pt.x}" cy="${pt.y}" r="3" fill="${color}" stroke="#1a1a2e" stroke-width="1"/>`;
+            }
+          });
         });
 
         svg += '</svg>';
