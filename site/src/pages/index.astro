@@ -70,9 +70,6 @@ import Layout from '../layouts/Layout.astro';
               <div id="blade-journey-chart" class="w-full relative">
                 {/* SVG journey lines rendered by JS */}
               </div>
-              <div id="blade-journey-legend" class="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px]">
-                {/* Legend populated by JS */}
-              </div>
             </div>
           </div>
         </div>
@@ -716,7 +713,6 @@ import Layout from '../layouts/Layout.astro';
     const contentEl = document.getElementById('meta-evolution-content');
     const eraCardsEl = document.getElementById('era-cards');
     const journeyChartEl = document.getElementById('blade-journey-chart');
-    const journeyLegendEl = document.getElementById('blade-journey-legend');
 
     if (!data.eras.length) {
       if (loadingEl) loadingEl.innerHTML = '<div class="text-fg-muted text-sm text-center py-4">Not enough data for meta evolution</div>';
@@ -755,16 +751,6 @@ import Layout from '../layouts/Layout.astro';
       `}).join('');
     }
 
-    // Render compact legend with trend indicators
-    if (journeyLegendEl && data.bladeJourneys.length > 0) {
-      const topJourneys = data.bladeJourneys.slice(0, 15);
-      journeyLegendEl.innerHTML = topJourneys.map((journey, idx) => {
-        const color = bladeColors[idx % bladeColors.length];
-        const trendIcon = journey.trend === 'rising' ? '↑' : journey.trend === 'falling' ? '↓' : journey.trend === 'new' ? '★' : journey.trend === 'gone' ? '○' : '→';
-        const trendClass = journey.trend === 'rising' ? 'text-positive' : journey.trend === 'falling' ? 'text-negative' : journey.trend === 'new' ? 'text-tier-ss' : 'text-fg-muted';
-        return `<span class="inline-flex items-center gap-0.5"><span class="inline-block w-2 h-2 rounded-sm" style="background:${color}"></span><span class="font-mono" style="color:${color}">${journey.blade}</span><span class="${trendClass}">${trendIcon}</span></span>`;
-      }).join('');
-    }
 
     // Show content FIRST so we can measure width
     loadingEl?.classList.add('hidden');
