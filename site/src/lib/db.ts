@@ -3478,8 +3478,11 @@ export async function getMetaEvolution(region?: Region): Promise<MetaEvolutionDa
     };
   });
 
-  // Build timeline
-  const sortedMonths = Object.keys(monthlyData).sort();
+  // Build timeline - exclude the current (incomplete) month to avoid
+  // falsely showing blades as "gone" when the month simply isn't over yet
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const allMonths = Object.keys(monthlyData).sort();
+  const sortedMonths = allMonths.filter(m => m !== currentMonth);
   const timeline = sortedMonths.map(month => {
     const data = monthlyData[month];
     const topBlade = Object.entries(data.blades).sort((a, b) => b[1] - a[1])[0];
