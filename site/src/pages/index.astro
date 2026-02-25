@@ -869,8 +869,12 @@ import Layout from '../layouts/Layout.astro';
             }
           });
 
-          // Draw dots
-          ranked.forEach(pt => {
+          // Collect month indices that belong to runs with 2+ points (have visible segments)
+          const connectedMis = new Set<number>();
+          runs.forEach(run => { if (run.length >= 2) run.forEach(pt => connectedMis.add(pt.mi)); });
+
+          // Draw dots only for connected points (skip orphan single-month appearances)
+          ranked.filter(pt => connectedMis.has(pt.mi)).forEach(pt => {
             if (pt.mi === firstEverMi) {
               // Entry dot: halo ring + solid dot
               svg += `<circle cx="${pt.x}" cy="${pt.y}" r="7" fill="none" stroke="${color}" stroke-width="1" opacity="0.2"/>`;
@@ -884,8 +888,10 @@ import Layout from '../layouts/Layout.astro';
             }
           });
 
-          // Inline label at the last ranked point
-          const lastPt = ranked[ranked.length - 1];
+          // Inline label at the last connected point
+          const connectedPts = ranked.filter(pt => connectedMis.has(pt.mi));
+          if (connectedPts.length === 0) return;
+          const lastPt = connectedPts[connectedPts.length - 1];
           const labelOpacity = isStillActive ? 0.9 : 0.4;
           const labelName = journey.blade.length > 10 ? journey.blade.slice(0, 9) + '…' : journey.blade;
           svg += `<text x="${lastPt.x + 6}" y="${lastPt.y + 3}" fill="${color}" font-size="8" font-family="'JetBrains Mono', monospace" opacity="${labelOpacity}">${labelName}</text>`;
