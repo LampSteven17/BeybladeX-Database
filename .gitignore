@@ -20,9 +20,8 @@ node_modules/
 site/dist/
 site/.astro/
 
-# Database files (regeneratable)
+# Database staging area (source DB is tracked at site/public/data/beyblade.duckdb)
 data/beyblade.duckdb
-site/public/data/beyblade.duckdb
 
 # OS
 .DS_Store
