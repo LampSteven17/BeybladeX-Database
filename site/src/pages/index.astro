@@ -730,7 +730,7 @@ import Layout from '../layouts/Layout.astro';
       { border: 'border-series-cx/30', bg: 'bg-series-cx', text: 'text-series-cx' },
       { border: 'border-tier-ss/30', bg: 'bg-tier-ss', text: 'text-tier-ss' },
     ];
-    const bladeColors = ['#22d3ee', '#f87171', '#4ade80', '#fbbf24', '#a78bfa', '#fb923c', '#f472b6', '#2dd4bf', '#e879f9', '#84cc16'];
+    const bladeColors = ['#22d3ee', '#f87171', '#4ade80', '#fbbf24', '#a78bfa', '#fb923c', '#f472b6', '#2dd4bf', '#e879f9', '#84cc16', '#facc15', '#38bdf8', '#f43f5e', '#34d399', '#c084fc'];
 
     // Render era cards
     if (eraCardsEl) {
@@ -757,7 +757,7 @@ import Layout from '../layouts/Layout.astro';
 
     // Render compact legend with trend indicators
     if (journeyLegendEl && data.bladeJourneys.length > 0) {
-      const topJourneys = data.bladeJourneys.slice(0, 10);
+      const topJourneys = data.bladeJourneys.slice(0, 15);
       journeyLegendEl.innerHTML = topJourneys.map((journey, idx) => {
         const color = bladeColors[idx % bladeColors.length];
         const trendIcon = journey.trend === 'rising' ? '↑' : journey.trend === 'falling' ? '↓' : journey.trend === 'new' ? '★' : journey.trend === 'gone' ? '○' : '→';
@@ -783,7 +783,7 @@ import Layout from '../layouts/Layout.astro';
         const chartHeight = height - padding.top - padding.bottom;
 
         // Show top 10 blades
-        const topJourneys = data.bladeJourneys.slice(0, 10);
+        const topJourneys = data.bladeJourneys.slice(0, 15);
         const maxRank = 10; // Show ranks 1-10
 
         // Create SVG with measured width

@@ -3557,7 +3557,22 @@ export async function getMetaEvolution(region?: Region): Promise<MetaEvolutionDa
       currentRank,
       trend,
     };
-  }).sort((a, b) => a.peakRank - b.peakRank).slice(0, 10);
+  }).sort((a, b) => {
+    // Score: weight recent presence heavily so current meta blades always show.
+    // Recent months (last 3) count 3x, older months count 1x, better peak rank breaks ties.
+    const totalMonths = a.monthlyRanks.length;
+    const recentCutoff = totalMonths - 3;
+    const score = (j: typeof a) => {
+      let s = 0;
+      j.monthlyRanks.forEach((m, i) => {
+        if (m.rank !== null && m.rank <= 10) s += i >= recentCutoff ? 3 : 1;
+      });
+      return s;
+    };
+    const diff = score(b) - score(a);
+    if (diff !== 0) return diff;
+    return a.peakRank - b.peakRank;
+  }).slice(0, 15);
 
   return { eras, timeline, bladeJourneys };
 }
