@@ -3978,11 +3978,12 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     bit: string;
     lock_chip: string | null;
     assist: string | null;
+    over_blade: string | null;
     place: number;
     tournament_date: string;
     stage: string | null;
   }>(`
-    SELECT blade, ratchet, bit, lock_chip, assist, place, tournament_date::VARCHAR as tournament_date, stage
+    SELECT blade, ratchet, bit, lock_chip, assist, over_blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
     ORDER BY tournament_date DESC
@@ -4015,6 +4016,7 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
   // Helper function to calculate stats for a set of rows
   function calculateStats(dataRows: typeof rows, minUses: number) {
     const comboStats: Record<string, {
+      combo: string;
       blade: string;
       ratchet: string;
       bit: string;
@@ -4024,19 +4026,28 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     }> = {};
 
     let totalPlacements = 0;
+    const referenceDate = new Date();
 
     for (const row of dataRows) {
-      const baseBlade = normalizeBladeDisplay(row.blade);
+      // Skip invalid CX combos - main blades that require a lock chip but don't have one
+      if (CX_BLADES_REQUIRING_LOCKCHIP.has(row.blade) && !row.lock_chip) {
+        continue;
+      }
+
       const ratchet = normalizeRatchet(row.ratchet);
       const bit = normalizeBit(row.bit);
-      // Build full blade name with lock chip for CX blades
-      const blade = row.lock_chip ? `${row.lock_chip} ${baseBlade}` : baseBlade;
-      // Include assist in combo for CX blades
-      const combo = row.assist ? `${blade} ${row.assist} ${ratchet} ${bit}` : `${blade} ${ratchet} ${bit}`;
+      const blade = getFullBladeName(row.blade, row.lock_chip);
+      // Include over_blade and assist in combo for CX blades (matching getRankedCombos)
+      const comboParts = [blade, row.over_blade, row.assist, ratchet, bit].filter(Boolean);
+      const combo = comboParts.join(' ');
+      const key = comboParts.join('|');
+      const tournamentDate = new Date(row.tournament_date);
+      const weight = calculateRecencyWeight(tournamentDate, referenceDate);
       const points = getPlacementScore(row.place, row.stage);
 
-      if (!comboStats[combo]) {
-        comboStats[combo] = {
+      if (!comboStats[key]) {
+        comboStats[key] = {
+          combo: combo,
           blade: blade,
           ratchet: ratchet,
           bit: bit,
@@ -4046,14 +4057,13 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
         };
       }
 
-      comboStats[combo].score += points;
-      comboStats[combo].uses++;
-      if (row.place === 1) comboStats[combo].wins++;
+      comboStats[key].score += points * weight;
+      comboStats[key].uses++;
+      if (row.place === 1) comboStats[key].wins++;
       totalPlacements++;
     }
 
-    const sortedCombos = Object.entries(comboStats)
-      .map(([combo, stats]) => ({ combo, ...stats }))
+    const sortedCombos = Object.values(comboStats)
       .filter(c => c.uses >= minUses)
       .sort((a, b) => b.score - a.score);
 
@@ -4094,41 +4104,41 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
 
     const recentRanking = Object.entries(recentStats.comboStats)
       .sort((a, b) => b[1].score - a[1].score)
-      .map(([combo, stats], i) => ({ combo, ...stats, rank: i + 1 }));
+      .map(([key, stats], i) => ({ key, ...stats, rank: i + 1 }));
 
     const olderRanking = Object.entries(olderStats.comboStats)
       .sort((a, b) => b[1].score - a[1].score)
-      .map(([combo, stats], i) => ({ combo, ...stats, rank: i + 1 }));
+      .map(([key, stats], i) => ({ key, ...stats, rank: i + 1 }));
 
     const olderRankMap: Record<string, number> = {};
-    olderRanking.forEach(({ combo, rank }) => { olderRankMap[combo] = rank; });
+    olderRanking.forEach(({ key, rank }) => { olderRankMap[key] = rank; });
 
     const recentRankMap: Record<string, number> = {};
-    recentRanking.forEach(({ combo, rank }) => { recentRankMap[combo] = rank; });
+    recentRanking.forEach(({ key, rank }) => { recentRankMap[key] = rank; });
 
     risers = recentRanking
-      .filter(({ combo, rank }) => {
-        const oldRank = olderRankMap[combo];
+      .filter(({ key, rank }) => {
+        const oldRank = olderRankMap[key];
         return oldRank && oldRank - rank >= 3;
       })
-      .map(({ combo, blade, ratchet, bit, rank }) => ({
+      .map(({ key, combo, blade, ratchet, bit, rank }) => ({
         combo, blade, ratchet, bit,
-        change: olderRankMap[combo] - rank,
+        change: olderRankMap[key] - rank,
         newRank: rank,
       }))
       .sort((a, b) => b.change - a.change)
       .slice(0, 3);
 
     fallers = olderRanking
-      .filter(({ combo }) => {
-        const newRank = recentRankMap[combo];
-        const oldRank = olderRankMap[combo];
+      .filter(({ key }) => {
+        const newRank = recentRankMap[key];
+        const oldRank = olderRankMap[key];
         return newRank && oldRank && newRank - oldRank >= 3;
       })
-      .map(({ combo, blade, ratchet, bit }) => ({
+      .map(({ key, combo, blade, ratchet, bit }) => ({
         combo, blade, ratchet, bit,
-        change: olderRankMap[combo] - recentRankMap[combo],
-        newRank: recentRankMap[combo],
+        change: olderRankMap[key] - recentRankMap[key],
+        newRank: recentRankMap[key],
       }))
       .sort((a, b) => a.change - b.change)
       .slice(0, 3);
