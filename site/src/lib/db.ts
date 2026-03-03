@@ -4081,13 +4081,14 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
     return { champion, comboStats, totalPlacements };
   }
 
-  // Filter to the 30-day window ending at the most recent tournament
+  // Filter to the 30-day window ending at the most recent tournament (for risers/fallers)
   const recentRows = rows.filter(row => {
     const d = new Date(row.tournament_date);
     return d >= recentCutoff && d <= anchorDate;
   });
 
-  const { champion } = calculateStats(recentRows, 2);
+  // Champion uses ALL data with recency decay (matching getRankedCombos scoring)
+  const { champion } = calculateStats(rows, 2);
 
   // Calculate risers and fallers by comparing recent 30 days vs previous 30 days
   const olderRows = rows.filter(row => {
