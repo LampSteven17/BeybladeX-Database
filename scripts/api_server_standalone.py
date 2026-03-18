@@ -67,7 +67,7 @@ def run_scrape(sources: list[str] = None):
     def _scrape():
         global scrape_status
         try:
-            cmd = ["uv", "run", "python", "scripts/refresh_all.py"]
+            cmd = ["uv", "run", "python", "scripts/refresh_all.py", "--incremental"]
             if sources:
                 cmd.extend(["--sources", ",".join(sources)])
 
