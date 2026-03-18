@@ -144,6 +144,11 @@ CX_BLADE_COMPONENTS: dict[str, tuple[str, str]] = {
     "Valkyrie Volt": ("Valkyrie", "Volt"),
     "Valkyrie Volt A": ("Valkyrie", "Volt"),
     # NOTE: Dragoon Storm and Driger Slash are BX blades (classic remakes), NOT CX
+    # Hasbro CX name variants
+    "Courage Dran": ("Dran", "Brave"),  # Hasbro name for Dran Brave
+    # CX with custom/Hasbro lock chips
+    "Umbra Hornet Assault": ("Umbra", "Hornet"),  # Umbra lock chip, Hornet main blade, Assault assist
+    "Umbra Hornet": ("Umbra", "Hornet"),
 }
 
 
@@ -162,6 +167,7 @@ CX_MAIN_BLADES = {
     "Flame",
     "Flare",
     "Fort",
+    "Hornet",
     "Hunt",
     "Might",
     "Reaper",
@@ -189,6 +195,7 @@ CX_LOCK_CHIPS = {
     "Rhino",
     "Sol",
     "Stag",
+    "Umbra",
     "Valkyrie",
     "Whale",
     "Wizard",
@@ -413,6 +420,29 @@ BLADE_SERIES = {
     "Gill Shark": "BX",  # BX (in CX-11 deck set but blade is BX)
     "Driger Slash": "BX",  # BX remake of classic Driger
     "Dragoon Storm": "BX",  # BX remake of classic Dragoon
+    # Crossover/collab BX blades
+    "Bumblebee": "BX",  # Transformers collab
+    "Megatron": "BX",  # Transformers collab
+    "Shockwave": "BX",  # Transformers collab
+    "Darth Vader": "BX",  # Star Wars collab
+    "General Grievous": "BX",  # Star Wars collab
+    "Moff Gideon": "BX",  # Star Wars collab
+    "Obi-Wan Kenobi": "BX",  # Star Wars collab
+    "Red Hulk": "BX",  # Marvel collab
+    "Spider-Man": "BX",  # Marvel collab
+    "Mosasaurus": "BX",  # Jurassic World collab
+    "Quetzalcoatlus": "BX",  # Jurassic World collab
+    "Spinosaurus": "BX",  # Jurassic World collab
+    "Tyrannosaurus": "BX",  # Jurassic World collab
+    # Classic series remakes/crossovers (X-Over Project)
+    "L-Drago (Upper)": "BX",  # Metal Fight crossover
+    "L-Drago (Lower)": "BX",  # Metal Fight crossover
+    "Storm Pegasis": "BX",  # Metal Fight crossover
+    "Rock Leone": "BX",  # Metal Fight crossover
+    "Victory Valkyrie": "BX",  # Burst crossover
+    # Other BX
+    "Yell Kong": "BX",
+    "Tackle Goat": "BX",
     # ==========================================================================
     # UX Series (Unique Line) - More metal to perimeter, plastic interior hooks
     # ==========================================================================
@@ -466,6 +496,7 @@ BLADE_SERIES = {
     "Fortress": "CX",  # CX metal blade
     "Armor": "CX",  # CX metal blade
     "Rage": "CX",  # CX metal blade
+    "Hornet": "CX",  # CX main blade (Hasbro)
     # Also keep full names for backwards compatibility with existing data
     "Dran Brave": "CX",
     "Wizard Arc": "CX",
@@ -882,25 +913,40 @@ BLADE_NORMALIZATIONS = {
     # Typos - Aero Pegasus
     "Aero Pegaus": "Aero Pegasus",
     "Aero Pegesus": "Aero Pegasus",
+    "Aero Pegauss": "Aero Pegasus",
     "Aerp Pegasus": "Aero Pegasus",
     "[ ] Aero Pegasus": "Aero Pegasus",
     # Typos - Cobalt Dragoon
     "Coablt Dragoon": "Cobalt Dragoon",
     "Cobal Dragoon": "Cobalt Dragoon",
     "Cobalt Dragon": "Cobalt Dragoon",
+    "Cobalt Fragoon": "Cobalt Dragoon",
+    "Cobalt Goon": "Cobalt Dragoon",
     "Colbat Dragoon": "Cobalt Dragoon",
+    "Colbalt Dragoon": "Cobalt Dragoon",
+    "Obalt Dragoon": "Cobalt Dragoon",
+    "cobalt": "Cobalt Dragoon",
     "Side: Cobalt Dragoon": "Cobalt Dragoon",
     "[ ] Cobalt Dragoon": "Cobalt Dragoon",
+    # Typos - Cobalt Drake
+    "Colbalt Drake": "Cobalt Drake",
+    "Obalt Drake": "Cobalt Drake",
     # Typos - Hover Wyvern
     "Hovern Wyvern": "Hover Wyvern",
+    "Hoover Wyvern": "Hover Wyvern",
+    "Hover Wyven": "Hover Wyvern",
+    "Hover Wyvren": "Hover Wyvern",
     "Hover": "Hover Wyvern",
     # Typos - Roar Tyranno
     "Roar Tyrnano": "Roar Tyranno",
     "Roar Tryanno": "Roar Tyranno",
+    "Roar Tyrano": "Roar Tyranno",
     "Tyrano Roar": "Roar Tyranno",
     # Typos - Tyranno Beat
     "Tyranno Beat,": "Tyranno Beat",
     "Tyrano Beat": "Tyranno Beat",
+    "Tryanno Beat": "Tyranno Beat",
+    "Tyrannno Beat": "Tyranno Beat",
     "Tyranno": "Tyranno Beat",
     "T. Rex": "Tyranno Beat",
     "Beat Tyranno": "Tyranno Beat",
@@ -912,15 +958,21 @@ BLADE_NORMALIZATIONS = {
     "Wizardr Rod": "Wizard Rod",
     "Wizarz Rod": "Wizard Rod",
     "Wizard Rod,": "Wizard Rod",
+    "Wizard Rob": "Wizard Rod",
+    "Wizzard Rod": "Wizard Rod",
+    "Izard Rod": "Wizard Rod",
     "Side Board) Wizard Rod": "Wizard Rod",
     "[ ] Wizard Rod": "Wizard Rod",
     "Wand Wizard": "Wizard Rod",  # German name variant
     # Typos - Silver Wolf
     "Sliver Wolf": "Silver Wolf",
+    "Sillver Wolf": "Silver Wolf",
+    "Ilver Wolf": "Silver Wolf",
     "Sterling Wolf": "Silver Wolf",
     "Side: Silver Wolf": "Silver Wolf",
     # Typos - Shark Scale
     "Shake Scale": "Shark Scale",
+    "Scark Scale": "Shark Scale",
     # Typos - Whale Wave / Tide Whale (same blade)
     "Wave Wave": "Whale Wave",
     "Tide Whale": "Whale Wave",
@@ -930,11 +982,55 @@ BLADE_NORMALIZATIONS = {
     # Typos - Phoenix Wing
     "Soar Phoenix": "Phoenix Wing",  # Old name -> correct name
     "Phoenix2ing": "Phoenix Wing",
+    "Pheonix Wing": "Phoenix Wing",
+    "Phoneix Wing": "Phoenix Wing",
+    "Phoenixx Wing": "Phoenix Wing",
+    "Hoenix Wing": "Phoenix Wing",
+    "Phoenix Ing": "Phoenix Wing",
     "phoenix": "Phoenix Wing",
     "Phoenix": "Phoenix Wing",
     "[ ] Phoenix Wing": "Phoenix Wing",
     # Typos - Hells Scythe
+    "Hells Sythe": "Hells Scythe",
     "[ ] Hells Scythe": "Hells Scythe",
+    # Typos - Hells Chain
+    "Hellshain": "Hells Chain",
+    # Typos - Dran Buster
+    "Dranzbuster": "Dran Buster",
+    # Typos - Scorpio Spear
+    "Scorpion Spear": "Scorpio Spear",
+    "Scorpion Sting": "Scorpio Spear",
+    "Rpio Spear": "Scorpio Spear",
+    # Typos - Eclipse
+    "Sol Ecllipse": "Eclipse",
+    # Swapped names
+    "Sting Unicorn": "Unicorn Sting",
+    "Goat Tackle": "Tackle Goat",
+    # Hasbro alternate names
+    "Croc Crunch": "Bite Croc",
+    "Dragon Buster": "Dran Buster",
+    "Draciel Shield": "Knight Shield",  # Hasbro classic remake name
+    "Pearl Tiger": "Weiss Tiger",
+    "Scarlet Garuda": "Crimson Garuda",
+    "Ptera Swing": "Talon Ptera",
+    "Tricera Spiky": "Tricera Press",
+    "Savage Bear": "Bear Scratch",
+    "Helm Knight": "Knight Mail",  # Hasbro UX name
+    "Hammer Incendio": "Hells Hammer",  # Incendio = Hasbro for Hells
+    "Optimus Prime": "Optimus Primal",
+    # L-Drago variants → normalize to L-Drago (Upper) or L-Drago (Lower)
+    "Lightning L-Drago": "L-Drago (Upper)",
+    "Lighting L-Drago": "L-Drago (Upper)",
+    "Lightning L-Drago (Upper)": "L-Drago (Upper)",
+    "Lightning L-Drago(Upper)": "L-Drago (Upper)",
+    # Standalone Dragoon → Dragoon Storm
+    "Dragoon": "Dragoon Storm",
+    # Storm Pegasus variant
+    "Storm Pegasus": "Storm Pegasis",
+    # Scythe alone → Hells Scythe
+    "Scythe": "Hells Scythe",
+    # Wizard alone → Wizard Rod (most common)
+    "Wizard": "Wizard Rod",
     # Typos - Other
     "Wizard Arrow.": "Wizard Arrow",
     "Arrow Wizard": "Wizard Arrow",
@@ -969,6 +1065,81 @@ BLADE_NORMALIZATIONS = {
     "Drice: Pegasus Blast": "Pegasus Blast",
     "Zero: Buster Dran": "Dran Buster",
     "Der Grillmeister: Hover Wyvern": "Hover Wyvern",
+    # Prefix garbage - combo labels
+    "(Both) Shark Edge": "Shark Edge",
+    "(Both) Wizard Rod": "Wizard Rod",
+    "Combo 1 - Wizard Rod": "Wizard Rod",
+    "Combo 1 – Hover Wyvern": "Hover Wyvern",
+    "Combo 2 - Cobalt Dragoon": "Cobalt Dragoon",
+    "Combo 2 - Scorpio Spear": "Scorpio Spear",
+    "Combo 2 – Fox Blast": "Brush",
+    "Combo 3 - Shark Scale": "Shark Scale",
+    "Combo 3 – Shark Scale": "Shark Scale",
+    # Prefix garbage - number prefixes
+    "1- Phoenix Wing": "Phoenix Wing",
+    "1- Tyranno Beat": "Tyranno Beat",
+    "1- Wizard Rod": "Wizard Rod",
+    "2- Aero Pegasus": "Aero Pegasus",
+    "2- Phoenix Wing": "Phoenix Wing",
+    "3- Cobalt Dragoon": "Cobalt Dragoon",
+    "3- Silver Wolf": "Silver Wolf",
+    "3- Wizard Rod": "Wizard Rod",
+    # Prefix garbage - special characters
+    ". Monz Steel Samurai": "Steel Samurai",
+    "]Golem Rock": "Golem Rock",
+    "]Phoenix Rudder": "Phoenix Rudder",
+    "]Shark Edge": "Shark Edge",
+    "[Size=Medium]Phoenix Wing": "Phoenix Wing",
+    "|| Hells Chain": "Hells Chain",
+    "🦅 Phoenix Wing": "Phoenix Wing",
+    "🦈 Shark Scale": "Shark Scale",
+    "🦖Tyranno Beat": "Tyranno Beat",
+    # Prefix garbage - @ mentions
+    "@Hunter Xhuntress Whale Wave": "Whale Wave",
+    "@Raatch Tyranno Beat": "Tyranno Beat",
+    "@Tyranno Beat": "Tyranno Beat",
+    # Prefix garbage - player names
+    "A-Pac Cobalt Dragoon": "Cobalt Dragoon",
+    "Beezo Phoenix Wing": "Phoenix Wing",
+    "Beyblader Nick Wizard Rod": "Wizard Rod",
+    "Cyrus25 1St Wizard Rod": "Wizard Rod",
+    "Delimaker00 Silver Wolf": "Silver Wolf",
+    "Doompend1Ng Wizard Rod": "Wizard Rod",
+    "Felipe X - Wizard Rod": "Wizard Rod",
+    "Hylian Alchemist Tyranno Beat": "Tyranno Beat",
+    "Jeto-Jaguar Cobalt Dragoon": "Cobalt Dragoon",
+    "Joint 3Rd. Big Strike Hells Scythe": "Hells Scythe",
+    "Jont 3Rd. Le Xshaken Dran Sword": "Dran Sword",
+    "Just A - Aero Pegasus": "Aero Pegasus",
+    "Just A - Hells Chain": "Hells Chain",
+    "Liliz Wizard Rod": "Wizard Rod",
+    "The Rogue Blader Cobalt Dragoon": "Cobalt Dragoon",
+    # Prefix garbage - color labels
+    "Blue Blade - Dran Buster": "Dran Buster",
+    "Blue Blade - Hells Chain": "Hells Chain",
+    "Red Blade - Phoenix Wing": "Phoenix Wing",
+    "Red Blade - Tyranno Beat": "Tyranno Beat",
+    "Red Blade - Unicorn Sting": "Unicorn Sting",
+    "White Blade - Weiss Tiger": "Weiss Tiger",
+    # Multi-combo dumps (extract first blade)
+    "Cobalt Dragoon 1-60P + Pegasus Blast": "Cobalt Dragoon",
+    "Hells Chain 5-70Fb + Dran Buster": "Hells Chain",
+    "Shark Scale 1-70 Hexa     /    Shark Scale": "Shark Scale",
+    "Tyranno Beat 9-70R, Tyranno Beat": "Tyranno Beat",
+    "Wizard Rod 1-60 Free Ball     /     Wizard Rod": "Wizard Rod",
+    # Long multi-combo dumps (all combos in one blade field)
+    "Bite Croc 3-60R                                                              Impact Drake 1-60Lr                                                   Tyranno Beat": "Bite Croc",
+    "Knight Mail 9-60P                                                            Wizard Rod 3-60Fb                                                                           Knight Mail": "Knight Mail",
+    "Knight Mail 9-60Un                                                         Wizard Rod 9-60Un                                                               Tyranno Beat": "Knight Mail",
+    "Optimus Primal 1-60Lr                                                    Wizard Rod 9-60H                                                       Wizard Rod": "Optimus Primal",
+    "Phoenix Wing 3-60R                                                        Silver Wolf 9-70H                                                                  Wizard Rod": "Phoenix Wing",
+    "Phoenix Wing 3-60R                                                        Tyranno Beat 7-80R                                                                          Cobalt Dragoon": "Phoenix Wing",
+    "Shark Edge 4-60Lf                                                         Wizard Rod 9-60B                                                        Phoenix Wing": "Shark Edge",
+    "Tyranno Beat 1-60Lr                                                       Leon Crest 0-80Lr                                                                 Keel Shark": "Tyranno Beat",
+    "Tyranno Beat 1-60Lr                                                       Phoenix Wing 1-60Lr                                                                        Aero Pegasus": "Tyranno Beat",
+    # Japanese names
+    "フェニックスウィング": "Phoenix Wing",
+    "ペルセウスブラストW": "Blast",
     # Black Shell variant
     "Obsidian Shell": "Black Shell",
     # ==========================================================================
@@ -995,6 +1166,7 @@ BLADE_NORMALIZATIONS = {
     "Blast Flare": "Phoenix Flare",
     "Volt Blast": "Valkyrie Volt",
     "Blast Volt": "Valkyrie Volt",
+    "Fort Blast": "Fort",  # Two CX main blades - keep first
     # Typos - Knight Mail
     "Mail Knight": "Knight Mail",
     # Parsing errors
@@ -1046,6 +1218,12 @@ BLADE_NORMALIZATIONS = {
     "ソルブラストJ": "Blast",
     "Pegasus Blast (Ultra Instinct)": "Blast",
     "Pegasus (Ultra Instinct) Blast": "Blast",
+    "Pegaus Blast": "Blast",
+    "Emporer Blast": "Blast",
+    "Valk Blast": "Blast",
+    "Hell'S Blast": "Blast",
+    "Blast Assult": "Blast",
+    "Valkyrie Blast Wheel": "Blast",  # Wheel is assist, handled separately
     # Hunt main blade variants
     "Emperor Hunt": "Hunt",
     "Wolf Hunt": "Hunt",
@@ -1146,7 +1324,7 @@ BLADE_NORMALIZATIONS = {
     "BearScratch": "Bear Scratch",
     "XenoXcalibur": "Xeno Xcalibur",
     "SteelSamurai": "Steel Samurai",
-    "BurnWyvern": "Burn Wyvern",
+    "BurnWyvern": "Hover Wyvern",
     "TuskMammoth": "Tusk Mammoth",
     "DranzerSpiral": "Dranzer Spiral",
     "MeteorDragoon": "Meteor Dragoon",
@@ -1160,9 +1338,9 @@ BLADE_NORMALIZATIONS = {
     "GillShark": "Gill Shark",
     "MummyCurse": "Mummy Curse",
     "ScytheIncendio": "Scythe Incendio",
-    "StingUnicorn": "Sting Unicorn",
+    "StingUnicorn": "Unicorn Sting",
     "WandWizard": "Wizard Rod",
-    "ProminencePhoenix": "Prominence Phoenix",
+    "ProminencePhoenix": "Phoenix Wing",
     "PhoenixRudder": "Phoenix Rudder",
 }
 
@@ -1315,67 +1493,82 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
                 "ratchet_1", "ratchet_2", "ratchet_3"]:
         conn.execute(f"UPDATE placements SET {col} = TRIM({col}) WHERE {col} != TRIM({col})")
 
+    # Extract lock chips from CX blade names FIRST (before normalizations)
+    # This must run before BLADE_NORMALIZATIONS to preserve lock chip info
+    for cx_name, (lock_chip, main_blade) in CX_BLADE_COMPONENTS.items():
+        for i in [1, 2, 3]:
+            blade_col = f"blade_{i}"
+            lock_col = f"lock_chip_{i}"
+            # Update blade to main blade and set lock chip where lock_chip is NULL
+            count = conn.execute(
+                f"SELECT COUNT(*) FROM placements WHERE {blade_col} = ? AND {lock_col} IS NULL",
+                [cx_name],
+            ).fetchone()[0]
+            if count > 0:
+                conn.execute(
+                    f"UPDATE placements SET {blade_col} = ?, {lock_col} = ? WHERE {blade_col} = ? AND {lock_col} IS NULL",
+                    [main_blade, lock_chip, cx_name],
+                )
+                total_fixed += count
+
+    # Special fixups for entries where assist blade was baked into blade name
+    _assist_fixups = {
+        # (blade_value, lock_chip_value) -> (new_blade, new_assist)
+        # "Valkyrie Blast Wheel" already has lock_chip="Valkyrie", blade needs fixing
+        "Valkyrie Blast Wheel": ("Blast", "Wheel"),
+    }
+    for blade_val, (new_blade, new_assist) in _assist_fixups.items():
+        for i in [1, 2, 3]:
+            blade_col = f"blade_{i}"
+            assist_col = f"assist_{i}"
+            count = conn.execute(
+                f"SELECT COUNT(*) FROM placements WHERE {blade_col} = ?", [blade_val]
+            ).fetchone()[0]
+            if count > 0:
+                conn.execute(
+                    f"UPDATE placements SET {blade_col} = ?, {assist_col} = COALESCE({assist_col}, ?) WHERE {blade_col} = ?",
+                    [new_blade, new_assist, blade_val],
+                )
+                total_fixed += count
+
+    # For "Umbra Hornet Assault": CX extraction set blade="Hornet", lock_chip="Umbra"
+    # but "Assault" assist was lost. Fix assist for entries with Umbra lock chip + Hornet blade
+    for i in [1, 2, 3]:
+        blade_col = f"blade_{i}"
+        lock_col = f"lock_chip_{i}"
+        assist_col = f"assist_{i}"
+        count = conn.execute(
+            f"SELECT COUNT(*) FROM placements WHERE {blade_col} = 'Hornet' AND {lock_col} = 'Umbra' AND {assist_col} IS NULL"
+        ).fetchone()[0]
+        if count > 0:
+            conn.execute(
+                f"UPDATE placements SET {assist_col} = 'Assault' WHERE {blade_col} = 'Hornet' AND {lock_col} = 'Umbra' AND {assist_col} IS NULL"
+            )
+            total_fixed += count
+
     # Fix blade normalizations
     for wrong, correct in BLADE_NORMALIZATIONS.items():
-        # Count and fix blade_1
-        count1 = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE blade_1 = ?", [wrong]
-        ).fetchone()[0]
-        if count1 > 0:
-            conn.execute(
-                "UPDATE placements SET blade_1 = ? WHERE blade_1 = ?", [correct, wrong]
-            )
-
-        # Count and fix blade_2
-        count2 = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE blade_2 = ?", [wrong]
-        ).fetchone()[0]
-        if count2 > 0:
-            conn.execute(
-                "UPDATE placements SET blade_2 = ? WHERE blade_2 = ?", [correct, wrong]
-            )
-
-        # Count and fix blade_3
-        count3 = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE blade_3 = ?", [wrong]
-        ).fetchone()[0]
-        if count3 > 0:
-            conn.execute(
-                "UPDATE placements SET blade_3 = ? WHERE blade_3 = ?", [correct, wrong]
-            )
-
-        total_fixed += count1 + count2 + count3
+        for col in ["blade_1", "blade_2", "blade_3"]:
+            count = conn.execute(
+                f"SELECT COUNT(*) FROM placements WHERE {col} = ?", [wrong]
+            ).fetchone()[0]
+            if count > 0:
+                conn.execute(
+                    f"UPDATE placements SET {col} = ? WHERE {col} = ?", [correct, wrong]
+                )
+                total_fixed += count
 
     # Fix bit normalizations
     for wrong, correct in BIT_NORMALIZATIONS.items():
-        # Count and fix bit_1
-        count1 = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE bit_1 = ?", [wrong]
-        ).fetchone()[0]
-        if count1 > 0:
-            conn.execute(
-                "UPDATE placements SET bit_1 = ? WHERE bit_1 = ?", [correct, wrong]
-            )
-
-        # Count and fix bit_2
-        count2 = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE bit_2 = ?", [wrong]
-        ).fetchone()[0]
-        if count2 > 0:
-            conn.execute(
-                "UPDATE placements SET bit_2 = ? WHERE bit_2 = ?", [correct, wrong]
-            )
-
-        # Count and fix bit_3
-        count3 = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE bit_3 = ?", [wrong]
-        ).fetchone()[0]
-        if count3 > 0:
-            conn.execute(
-                "UPDATE placements SET bit_3 = ? WHERE bit_3 = ?", [correct, wrong]
-            )
-
-        total_fixed += count1 + count2 + count3
+        for col in ["bit_1", "bit_2", "bit_3"]:
+            count = conn.execute(
+                f"SELECT COUNT(*) FROM placements WHERE {col} = ?", [wrong]
+            ).fetchone()[0]
+            if count > 0:
+                conn.execute(
+                    f"UPDATE placements SET {col} = ? WHERE {col} = ?", [correct, wrong]
+                )
+                total_fixed += count
 
     # Fix ratchet normalizations
     for wrong, correct in RATCHET_NORMALIZATIONS.items():
@@ -1398,23 +1591,6 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
             if count > 0:
                 conn.execute(
                     f"UPDATE placements SET {col} = ? WHERE {col} = ?", [correct, wrong]
-                )
-                total_fixed += count
-
-    # Extract lock chips from CX blade names and update lock_chip columns
-    for cx_name, (lock_chip, main_blade) in CX_BLADE_COMPONENTS.items():
-        for i in [1, 2, 3]:
-            blade_col = f"blade_{i}"
-            lock_col = f"lock_chip_{i}"
-            # Update blade to main blade and set lock chip where lock_chip is NULL
-            count = conn.execute(
-                f"SELECT COUNT(*) FROM placements WHERE {blade_col} = ? AND {lock_col} IS NULL",
-                [cx_name],
-            ).fetchone()[0]
-            if count > 0:
-                conn.execute(
-                    f"UPDATE placements SET {blade_col} = ?, {lock_col} = ? WHERE {blade_col} = ? AND {lock_col} IS NULL",
-                    [main_blade, lock_chip, cx_name],
                 )
                 total_fixed += count
 

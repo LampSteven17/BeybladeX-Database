@@ -71,6 +71,29 @@ export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Gill Shark': 'BX',        // BX (in CX-11 deck set but blade is BX)
   'Driger Slash': 'BX',      // BX remake of classic Driger
   'Dragoon Storm': 'BX',     // BX remake of classic Dragoon
+  // Crossover/collab BX blades
+  'Bumblebee': 'BX',         // Transformers collab
+  'Megatron': 'BX',          // Transformers collab
+  'Shockwave': 'BX',         // Transformers collab
+  'Darth Vader': 'BX',       // Star Wars collab
+  'General Grievous': 'BX',  // Star Wars collab
+  'Moff Gideon': 'BX',       // Star Wars collab
+  'Obi-Wan Kenobi': 'BX',   // Star Wars collab
+  'Red Hulk': 'BX',          // Marvel collab
+  'Spider-Man': 'BX',        // Marvel collab
+  'Mosasaurus': 'BX',        // Jurassic World collab
+  'Quetzalcoatlus': 'BX',   // Jurassic World collab
+  'Spinosaurus': 'BX',       // Jurassic World collab
+  'Tyrannosaurus': 'BX',     // Jurassic World collab
+  // Classic series remakes/crossovers (X-Over Project)
+  'L-Drago (Upper)': 'BX',   // Metal Fight crossover
+  'L-Drago (Lower)': 'BX',   // Metal Fight crossover
+  'Storm Pegasis': 'BX',     // Metal Fight crossover
+  'Rock Leone': 'BX',        // Metal Fight crossover
+  'Victory Valkyrie': 'BX',  // Burst crossover
+  // Other BX
+  'Yell Kong': 'BX',
+  'Tackle Goat': 'BX',
 
   // ==========================================================================
   // UX Series (Unique Line) - More metal to perimeter, plastic interior hooks
@@ -126,6 +149,7 @@ export const BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Fortress': 'CX',          // CX metal blade
   'Armor': 'CX',             // CX metal blade
   'Rage': 'CX',              // CX metal blade
+  'Hornet': 'CX',            // CX main blade (Hasbro)
   // Also keep full names for backwards compatibility with existing data
   'Dran Brave': 'CX',
   'Wizard Arc': 'CX',
@@ -157,11 +181,15 @@ const BLADE_DISPLAY_NAMES: Record<string, string> = {
 const CX_BLADES_REQUIRING_LOCKCHIP = new Set([
   'Brave', 'Arc', 'Dark', 'Reaper', 'Brush', 'Blast',
   'Eclipse', 'Hunt', 'Might', 'Flare', 'Flame', 'Fang', 'Fort',
-  'Antler', 'Wriggle', 'Volt'
+  'Antler', 'Wriggle', 'Volt', 'Hornet'
 ]);
 
 // Metal lock chips (all others are plastic — lock chip identity doesn't affect competitive performance)
 const METAL_LOCK_CHIPS = new Set(['Emperor', 'Valkyrie']);
+
+// Non-legitimate lock chips that should be hidden from the lock chips page
+// but still count as plastic in combo aggregation
+const HIDDEN_LOCK_CHIPS = new Set(['Umbra']);
 
 export function getLockChipMaterial(name: string): 'Metal' | 'Plastic' {
   return METAL_LOCK_CHIPS.has(name) ? 'Metal' : 'Plastic';
@@ -1973,6 +2001,8 @@ export async function getRankedLockChips(limit = 15, minUses = 2, region?: Regio
 
   for (const row of rows) {
     const lockChip = row.lock_chip;
+    // Skip non-legitimate lock chips (they still count as plastic in combo views)
+    if (HIDDEN_LOCK_CHIPS.has(lockChip)) continue;
     if (!lockChipScores[lockChip]) {
       lockChipScores[lockChip] = {
         name: lockChip,
