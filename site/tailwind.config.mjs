@@ -5,41 +5,51 @@ export default {
     extend: {
       colors: {
         // ===========================================
-        // Terminal Background hierarchy (Bloomberg style)
+        // Background hierarchy (Marathon-inspired)
         // ===========================================
-        'terminal-bg': '#0d1117',       // Main background
-        'terminal-surface': '#161b22',  // Cards, panels
-        'terminal-elevated': '#21262d', // Elevated elements
-        'terminal-border': '#30363d',   // Borders
+        'terminal-bg': '#080808',       // Deep black base
+        'terminal-surface': '#111111',  // Cards, panels
+        'terminal-elevated': '#1a1a1a', // Elevated elements
+        'terminal-border': '#2a2a2a',   // Borders
 
-        // Legacy aliases (for backwards compatibility during transition)
-        'canvas': '#0d1117',
-        'surface': '#161b22',
-        'panel': '#21262d',
-        'hover': '#30363d',
+        // Legacy aliases
+        'canvas': '#080808',
+        'surface': '#111111',
+        'panel': '#1a1a1a',
+        'hover': '#2a2a2a',
 
         // ===========================================
         // Text hierarchy
         // ===========================================
-        'fg': '#f5f5f5',                // Main text, headings
-        'fg-secondary': '#a3a3a3',      // Body text, descriptions
-        'fg-muted': '#666666',          // Subtle text, labels
-        'fg-disabled': '#404040',       // Disabled states
+        'fg': '#f0f0f0',                // Main text, headings
+        'fg-secondary': '#999999',      // Body text, descriptions
+        'fg-muted': '#555555',          // Subtle text, labels
+        'fg-disabled': '#333333',       // Disabled states
 
         // ===========================================
         // Border colors
         // ===========================================
-        'stroke': '#30363d',            // Main borders (terminal style)
-        'stroke-subtle': '#21262d',     // Subtle dividers
-        'stroke-hover': '#484f58',      // Hover state borders
+        'stroke': '#2a2a2a',            // Main borders
+        'stroke-subtle': '#1a1a1a',     // Subtle dividers
+        'stroke-hover': '#3a3a3a',      // Hover state borders
 
         // ===========================================
-        // Accent colors - Primary (Orange)
+        // Accent colors - Primary (Orange - Beyblade X)
         // ===========================================
-        'accent': '#f97316',            // Primary accent (orange-500)
-        'accent-light': '#fb923c',      // Lighter accent
-        'accent-dark': '#c2410c',       // Darker accent
-        'accent-muted': '#431407',      // Very subtle orange bg
+        'accent': '#ff6b00',            // Hotter orange accent
+        'accent-light': '#ff8a33',      // Lighter accent
+        'accent-dark': '#cc5500',       // Darker accent
+        'accent-muted': '#331500',      // Very subtle orange bg
+
+        // ===========================================
+        // Pink accent (NuCore / Marathon influence)
+        // ===========================================
+        'pink': {
+          DEFAULT: '#ff2d78',           // Hot pink accent
+          light: '#ff5c9a',             // Lighter pink
+          dark: '#cc1a5e',              // Darker pink
+          muted: '#330a1e',             // Subtle pink bg
+        },
 
         // ===========================================
         // Gold - Champion/Hero color
@@ -97,13 +107,15 @@ export default {
         'sm': '0 1px 2px rgba(0, 0, 0, 0.4)',
         'card': '0 1px 3px rgba(0, 0, 0, 0.3)',
         'card-hover': '0 4px 12px rgba(0, 0, 0, 0.5)',
-        'glow-accent': '0 0 20px rgba(249, 115, 22, 0.15)',
+        'glow-accent': '0 0 20px rgba(255, 107, 0, 0.15)',
+        'glow-pink': '0 0 20px rgba(255, 45, 120, 0.15)',
         'glow-gold': '0 0 30px rgba(251, 191, 36, 0.3)',
         'glow-gold-lg': '0 0 60px rgba(251, 191, 36, 0.2)',
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'SF Mono', 'Consolas', 'monospace'],
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        display: ['Bebas Neue', 'Impact', 'Arial Narrow', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fade-in 0.15s ease-out',

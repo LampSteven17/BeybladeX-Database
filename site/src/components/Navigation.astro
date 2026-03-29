@@ -31,26 +31,26 @@ function isActive(href: string): boolean {
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-14">
       <!-- Logo -->
-      <a href="/" class="flex items-center gap-2 group">
-        <div class="w-7 h-7 rounded bg-accent flex items-center justify-center">
-          <span class="text-white font-bold text-sm">X</span>
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-8 h-8 bg-pink flex items-center justify-center" style="clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);">
+          <span class="text-white font-display text-lg">X</span>
         </div>
-        <span class="font-semibold tracking-tight">
-          <span class="text-fg">BeybladeX</span>
-          <span class="text-fg-muted ml-1 text-sm font-normal hidden sm:inline">Database</span>
+        <span class="tracking-tight">
+          <span class="font-display text-xl uppercase tracking-wider text-fg">BeybladeX</span>
+          <span class="text-fg-muted ml-1 text-[10px] font-mono uppercase tracking-widest hidden sm:inline">Database</span>
         </span>
       </a>
 
       <!-- Desktop Navigation -->
-      <div class="hidden lg:flex items-center gap-1">
+      <div class="hidden lg:flex items-center gap-0.5">
         {navItems.map((item) => (
           <a
             href={item.href}
             class:list={[
-              'px-3 py-1.5 rounded text-sm transition-all duration-150 whitespace-nowrap',
+              'px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-all duration-150 whitespace-nowrap border-b-2',
               isActive(item.href)
-                ? 'bg-panel text-fg'
-                : 'text-fg-secondary hover:text-fg hover:bg-panel',
+                ? 'border-pink text-fg bg-panel'
+                : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50',
             ]}
           >
             {item.label}
@@ -64,7 +64,7 @@ function isActive(href: string): boolean {
       <!-- Mobile Menu Button -->
       <button
         id="mobile-menu-btn"
-        class="lg:hidden p-2 rounded text-fg-secondary hover:text-fg hover:bg-panel transition-colors"
+        class="lg:hidden p-2 text-fg-secondary hover:text-pink transition-colors"
         aria-label="Toggle menu"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,10 +81,10 @@ function isActive(href: string): boolean {
         <a
           href={item.href}
           class:list={[
-            'block px-4 py-2.5 rounded text-sm transition-all duration-150',
+            'block px-4 py-2.5 text-sm font-mono uppercase tracking-wider transition-all duration-150 border-l-2',
             isActive(item.href)
-              ? 'bg-panel text-fg'
-              : 'text-fg-secondary hover:text-fg hover:bg-panel',
+              ? 'border-pink text-fg bg-panel'
+              : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50 hover:bg-panel',
           ]}
         >
           {item.label}

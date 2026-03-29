@@ -24,6 +24,8 @@ const currentPath = Astro.url.pathname;
     <!-- Preconnect to external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preload display font for faster rendering -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" as="style" />
   </head>
   <body class="min-h-screen">
     <Navigation currentPath={currentPath} />
@@ -49,14 +51,20 @@ const currentPath = Astro.url.pathname;
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-terminal-border py-12 mt-16 bg-terminal-surface">
+    <footer class="border-t border-terminal-border py-12 mt-16 bg-terminal-surface stripe-accent">
       <div class="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Footer header -->
+        <div class="mb-8">
+          <h2 class="font-display text-3xl uppercase tracking-wider text-fg">BeybladeX Database</h2>
+          <div class="w-16 h-0.5 bg-pink mt-2"></div>
+        </div>
+
         <!-- Main Footer Content -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <!-- About -->
           <div>
-            <h3 class="font-semibold text-fg mb-3">
-              BeybladeX Database
+            <h3 class="font-mono text-xs uppercase tracking-widest text-fg-muted mb-3">
+              About
             </h3>
             <p class="text-fg-secondary text-sm leading-relaxed">
               Tournament meta analysis powered by competitive data from multiple sources worldwide.
@@ -66,34 +74,34 @@ const currentPath = Astro.url.pathname;
 
           <!-- Data Sources -->
           <div>
-            <h3 class="font-semibold text-fg mb-3">
+            <h3 class="font-mono text-xs uppercase tracking-widest text-fg-muted mb-3">
               Data Sources
             </h3>
             <ul class="space-y-2 text-sm">
               <li>
                 <a href="https://worldbeyblade.org" target="_blank" rel="noopener noreferrer"
-                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-pink transition-colors flex items-center gap-2">
                   <span>World Beyblade Organization</span>
                   <span class="text-xs text-fg-muted">(NA/Global)</span>
                 </a>
               </li>
               <li>
                 <a href="https://www.instagram.com/bladerleaguegermany/" target="_blank" rel="noopener noreferrer"
-                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-pink transition-colors flex items-center gap-2">
                   <span>Blader League Germany</span>
                   <span class="text-xs text-fg-muted">(EU)</span>
                 </a>
               </li>
               <li>
                 <a href="https://okuyama3093.com" target="_blank" rel="noopener noreferrer"
-                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-pink transition-colors flex items-center gap-2">
                   <span>okuyama3093.com</span>
                   <span class="text-xs text-fg-muted">(Japan)</span>
                 </a>
               </li>
               <li>
                 <a href="https://hobby.watch.impress.co.jp" target="_blank" rel="noopener noreferrer"
-                   class="text-fg-secondary hover:text-accent transition-colors flex items-center gap-2">
+                   class="text-fg-secondary hover:text-pink transition-colors flex items-center gap-2">
                   <span>Hobby Watch</span>
                   <span class="text-xs text-fg-muted">(Japan)</span>
                 </a>
@@ -103,7 +111,7 @@ const currentPath = Astro.url.pathname;
 
           <!-- Disclaimer -->
           <div>
-            <h3 class="font-semibold text-fg mb-3">
+            <h3 class="font-mono text-xs uppercase tracking-widest text-fg-muted mb-3">
               Disclaimer
             </h3>
             <p class="text-fg-secondary text-sm leading-relaxed mb-2">
@@ -117,14 +125,14 @@ const currentPath = Astro.url.pathname;
         </div>
 
         <!-- Bottom Bar -->
-        <div class="pt-6 border-t border-stroke-subtle flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-fg-muted">
+        <div class="pt-6 border-t border-stroke-subtle flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-fg-muted font-mono uppercase tracking-widest">
           <div class="flex items-center gap-2">
             <span>BeybladeX Database</span>
-            <span class="text-border-primary">·</span>
-            <span>Open source meta analysis</span>
+            <span class="text-pink">///</span>
+            <span>Meta Analysis</span>
           </div>
           <div class="flex items-center gap-4">
-            <span>Built with Astro + DuckDB</span>
+            <span>Astro + DuckDB</span>
           </div>
         </div>
       </div>
