@@ -152,6 +152,7 @@ def main():
             )
             lock_chip_1 = combos[0].get("lock_chip") if len(combos) > 0 else None
             assist_1 = combos[0].get("assist") if len(combos) > 0 else None
+            over_blade_1 = combos[0].get("over_blade") if len(combos) > 0 else None
 
             blade_2 = (
                 normalize_blade_name(combos[1].get("blade"))
@@ -164,6 +165,7 @@ def main():
             )
             lock_chip_2 = combos[1].get("lock_chip") if len(combos) > 1 else None
             assist_2 = combos[1].get("assist") if len(combos) > 1 else None
+            over_blade_2 = combos[1].get("over_blade") if len(combos) > 1 else None
 
             blade_3 = (
                 normalize_blade_name(combos[2].get("blade"))
@@ -176,6 +178,7 @@ def main():
             )
             lock_chip_3 = combos[2].get("lock_chip") if len(combos) > 2 else None
             assist_3 = combos[2].get("assist") if len(combos) > 2 else None
+            over_blade_3 = combos[2].get("over_blade") if len(combos) > 2 else None
 
             # Skip if no valid combo
             if not blade_1 or not ratchet_1 or not bit_1:
@@ -199,19 +202,19 @@ def main():
                     ratchet_1,
                     bit_1,
                     lock_chip_1,
-                    None,  # over_blade_1
+                    over_blade_1,
                     assist_1,
                     blade_2,
                     ratchet_2,
                     bit_2,
                     lock_chip_2,
-                    None,  # over_blade_2
+                    over_blade_2,
                     assist_2,
                     blade_3,
                     ratchet_3,
                     bit_3,
                     lock_chip_3,
-                    None,  # over_blade_3
+                    over_blade_3,
                     assist_3,
                 ],
             )

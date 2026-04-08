@@ -43,349 +43,129 @@ HEADERS = {
     "Cache-Control": "max-age=0",
 }
 
-# Canonical blade names - the "correct" order for two-word blade names
-# This is the authoritative list of blade names in proper order
-CANONICAL_BLADES = {
-    # BX Series
-    "Dran Sword",
-    "Hells Scythe",
-    "Knight Shield",
-    "Knight Lance",
-    "Wizard Arrow",
-    "Shark Edge",
-    "Viper Tail",
-    "Dran Dagger",
-    "Hells Hammer",
-    "Leon Claw",
-    "Dran Buster",
-    "Hells Chain",
-    "Rhino Horn",
-    "Black Shell",
-    "Tyranno Beat",
-    "Unicorn Sting",
-    "Phoenix Wing",
-    "Wizard Rod",
-    "Aero Pegasus",
-    "Silver Wolf",
-    "Shark Slayer",
-    "Samurai Saber",
-    "Weiss Tiger",
-    "Talon Ptera",
-    "Spike Cadeus",
-    "Roar Tyranno",
-    # CX Series
-    "Cobalt Dragoon",
-    "Cobalt Drake",
-    "Steel Samurai",
-    "Burn Wyvern",
-    "Prominence Phoenix",
-    # UX Series
-    "Phoenix Wing",
-    "Whale Wave",
-    "Knight Mail",
-    "Leon Crest",
-    "Wyvern Gale",
-    "Phoenix Feather",
-    "Tusk Mammoth",
-    "Phoenix Rudder",
-    "Dranzer Spiral",
-    # Newer blades
-    "Pegasus Blast",
-    "Wizard Arc",
-    "Fox Brush",
-    "Hells Blast",
-    "Valkyrie Volt",
-    "Blast Emperor",
-    "Emperor Brave",
-    "Dran Brave",
-    "Might Blast",
-    "Hover Wyvern",
-    "Shark Scale",
-    "Meteor Dragoon",
-    "Impact Drake",
-    "Rock Golem",
-    "Samurai Calibur",
-    "Crimson Garuda",
-    "Scorpio Spear",
-    "Shinobi Shadow",
-    "Ghost Circle",
-    "Bite Croc",
-    "Keel Shark",
-    "Knife Shinobi",
-    "Shelter Drake",
-    "Sphinx Cowl",
-    "Tide Whale",
-    "Tricera Press",
-    "Bear Scratch",
-    "Chain Incendio",
-    "Clock Mirage",
-    "Dragoon Storm",
-    "Driger Slash",
-    "Gill Shark",
-    "Mummy Curse",
-    "Scythe Incendio",
-    "Sting Unicorn",
-    "Wand Wizard",
-    "Xeno Xcalibur",
-    "Cerberus Blast",
-}
+# =============================================================================
+# Catalog-derived lookups (CANONICAL_BLADES, BLADE_NORMALIZATION, KNOWN_*,
+# ASSIST_ABBREVIATIONS, BIT_ABBREVIATIONS) — all populated lazily from
+# scripts/catalog.py:PartsCatalog. Adding a new wiki part = zero edits here.
+# =============================================================================
 
-# Build normalization map automatically from canonical names
-# This handles: no-space versions, swapped word order, and common typos
-BLADE_NORMALIZATION = {}
+_LAZY_CACHE: dict = {}
 
-for blade in CANONICAL_BLADES:
-    key = blade.lower().replace(" ", "")
-    BLADE_NORMALIZATION[key] = blade
 
-    # Handle swapped word order (e.g., "Wyvern Hover" -> "Hover Wyvern")
-    words = blade.split()
-    if len(words) == 2:
-        swapped = f"{words[1]} {words[0]}"
-        swapped_key = swapped.lower().replace(" ", "")
-        BLADE_NORMALIZATION[swapped_key] = blade
-        # Also with space
-        BLADE_NORMALIZATION[swapped.lower()] = blade
+def _build_lazy(name: str):
+    """Build one of the legacy module-level constants from the parts catalog.
 
-# Add common typo variations
-BLADE_NORMALIZATION.update(
-    {
-        "hellscythe": "Hells Scythe",  # Missing 's'
-        "dranzerspiral": "Dranzer Spiral",
-    }
-)
+    Cached. Call PartsCatalog.reload() and clear _LAZY_CACHE to refresh after
+    a fandom scrape.
+    """
+    if name in _LAZY_CACHE:
+        return _LAZY_CACHE[name]
+    from catalog import PartsCatalog
+    cat = PartsCatalog.get()
+
+    if name == "CANONICAL_BLADES":
+        # All BX/UX standalone blades + every CX full combo name
+        value = set(cat.blades) | set(cat.cx_full_names)
+    elif name == "KNOWN_BLADES":
+        value = _build_lazy("CANONICAL_BLADES") | {"Venom"}
+    elif name == "KNOWN_ASSISTS":
+        value = set(cat.assists)
+    elif name == "KNOWN_ASSISTS_LOWER":
+        value = {a.lower(): a for a in cat.assists}
+    elif name == "ASSIST_ABBREVIATIONS":
+        # Catalog already merged parser_aliases.ASSIST_LETTER_ABBREVIATIONS in
+        value = dict(cat.assist_aliases)
+    elif name == "BIT_ABBREVIATIONS":
+        value = dict(cat.bit_aliases)
+    elif name == "BLADE_NORMALIZATION":
+        # Build no-space + swapped + camelcase keys -> canonical
+        canonical = _build_lazy("CANONICAL_BLADES")
+        bn = {}
+        for blade in canonical:
+            bn[blade.lower().replace(" ", "")] = blade
+            words = blade.split()
+            if len(words) == 2:
+                swapped = f"{words[1]} {words[0]}"
+                bn[swapped.lower().replace(" ", "")] = blade
+                bn[swapped.lower()] = blade
+        bn["hellscythe"] = "Hells Scythe"  # missing 's' typo
+        bn["dranzerspiral"] = "Dranzer Spiral"
+        value = bn
+    elif name == "KNOWN_BLADES_LOWER":
+        kb = _build_lazy("KNOWN_BLADES")
+        kbl = {b.lower(): b for b in kb}
+        for blade in kb:
+            no_space = blade.lower().replace(" ", "")
+            kbl.setdefault(no_space, blade)
+            words = blade.split()
+            if len(words) == 2:
+                swapped = f"{words[1]} {words[0]}"
+                kbl.setdefault(swapped.lower(), blade)
+                kbl.setdefault(swapped.lower().replace(" ", ""), blade)
+        value = kbl
+    else:
+        raise AttributeError(name)
+
+    _LAZY_CACHE[name] = value
+    return value
+
+
+def __getattr__(name):
+    """PEP 562 module-level lazy attribute resolver."""
+    if name in {
+        "CANONICAL_BLADES",
+        "BLADE_NORMALIZATION",
+        "KNOWN_BLADES",
+        "KNOWN_BLADES_LOWER",
+        "KNOWN_ASSISTS",
+        "KNOWN_ASSISTS_LOWER",
+        "ASSIST_ABBREVIATIONS",
+        "BIT_ABBREVIATIONS",
+    }:
+        return _build_lazy(name)
+    raise AttributeError(f"module 'scraper' has no attribute {name!r}")
 
 
 def normalize_blade(blade: str) -> str:
-    """Normalize blade name to canonical form.
+    """Normalize a blade name to its canonical form using the catalog.
 
-    Handles:
-    - Swapped word order (e.g., "Wyvern Hover" -> "Hover Wyvern")
-    - No spaces (e.g., "HoverWyvern" -> "Hover Wyvern")
-    - CamelCase (e.g., "HellsScythe" -> "Hells Scythe")
+    Handles swapped word order, no-space, and CamelCase variants.
     """
-    # Strip leading/trailing whitespace and dashes
     blade = blade.strip().lstrip("-").strip()
+    bn = _build_lazy("BLADE_NORMALIZATION")
 
-    # Try direct lookup (lowercase, no spaces)
     key = blade.lower().replace(" ", "")
-    if key in BLADE_NORMALIZATION:
-        return BLADE_NORMALIZATION[key]
+    if key in bn:
+        return bn[key]
 
-    # Try with spaces preserved (for swapped names like "Wyvern Hover")
     key_with_space = blade.lower()
-    if key_with_space in BLADE_NORMALIZATION:
-        return BLADE_NORMALIZATION[key_with_space]
+    if key_with_space in bn:
+        return bn[key_with_space]
 
-    # Try swapping words if it's a two-word name
     words = blade.split()
     if len(words) == 2:
         swapped_key = f"{words[1]}{words[0]}".lower()
-        if swapped_key in BLADE_NORMALIZATION:
-            return BLADE_NORMALIZATION[swapped_key]
+        if swapped_key in bn:
+            return bn[swapped_key]
 
-    # Try to split CamelCase into words
-    # e.g., "HellsScythe" -> "Hells Scythe"
     camel_split = re.sub(r"([a-z])([A-Z])", r"\1 \2", blade)
     camel_key = camel_split.lower().replace(" ", "")
-    if camel_key in BLADE_NORMALIZATION:
-        return BLADE_NORMALIZATION[camel_key]
+    if camel_key in bn:
+        return bn[camel_key]
 
-    # Try swapped CamelCase
     camel_words = camel_split.split()
     if len(camel_words) == 2:
         swapped_camel = f"{camel_words[1]}{camel_words[0]}".lower()
-        if swapped_camel in BLADE_NORMALIZATION:
-            return BLADE_NORMALIZATION[swapped_camel]
+        if swapped_camel in bn:
+            return bn[swapped_camel]
 
-    # If CamelCase split worked, use it as title case
     if " " in camel_split:
         return camel_split.title()
-
-    # If already has spaces, return as title case
     if " " in blade:
         return blade.title()
-
     return blade
 
 
-# Bit abbreviation mappings
-# Known blade names for assist detection - use CANONICAL_BLADES plus any single-word blades
-KNOWN_BLADES = CANONICAL_BLADES | {"Venom"}  # Add single-word blades here
-
-# Assist blade names (CX only - attach to CX main blades)
-# IMPORTANT: Only CX blades can have assists. Non-CX blades (BX/UX) NEVER have assists.
-KNOWN_ASSISTS = {
-    "Slash",
-    "Bumper",
-    "Jaggy",
-    "Round",
-    "Turn",
-    "Charge",
-    "Massive",
-    "Heavy",
-    "Zillion",
-    "Wheel",
-    "Free",
-    "Dual",
-}
-
-# Assist abbreviations -> full names
-# These are DIFFERENT from bit abbreviations!
-ASSIST_ABBREVIATIONS = {
-    "S": "Slash",
-    "B": "Bumper",
-    "J": "Jaggy",
-    "R": "Round",
-    "T": "Turn",
-    "C": "Charge",
-    "M": "Massive",
-    "H": "Heavy",
-    "Z": "Zillion",
-    "W": "Wheel",
-    "F": "Free",
-    "D": "Dual",
-}
-
-# Lowercase lookup for efficient matching (includes no-space and swapped variants)
-KNOWN_BLADES_LOWER = {b.lower(): b for b in KNOWN_BLADES}
-# Add no-space variants and swapped word order
-for blade in KNOWN_BLADES:
-    # No-space variant
-    no_space = blade.lower().replace(" ", "")
-    if no_space not in KNOWN_BLADES_LOWER:
-        KNOWN_BLADES_LOWER[no_space] = blade
-
-    # Swapped word order (e.g., "Wyvern Hover" -> "Hover Wyvern")
-    words = blade.split()
-    if len(words) == 2:
-        swapped = f"{words[1]} {words[0]}"
-        swapped_lower = swapped.lower()
-        swapped_no_space = swapped_lower.replace(" ", "")
-        if swapped_lower not in KNOWN_BLADES_LOWER:
-            KNOWN_BLADES_LOWER[swapped_lower] = blade
-        if swapped_no_space not in KNOWN_BLADES_LOWER:
-            KNOWN_BLADES_LOWER[swapped_no_space] = blade
-
-# Add assists to the lookup
-KNOWN_ASSISTS_LOWER = {a.lower(): a for a in KNOWN_ASSISTS}
-
-
-BIT_ABBREVIATIONS = {
-    # Single letter - NOTE: some letters overlap with assist abbreviations
-    # Context determines meaning: on CX blades before ratchet = assist, after ratchet = bit
-    "B": "Ball",
-    "F": "Flat",
-    "N": "Needle",
-    "P": "Point",
-    "T": "Taper",
-    "S": "Spike",
-    "O": "Orb",
-    "D": "Dot",
-    "A": "Accel",
-    "R": "Rush",
-    "H": "Hexa",
-    "C": "Cyclone",
-    "U": "Unite",
-    "L": "Level",
-    "E": "Elevate",
-    "G": "Glide",
-    "Q": "Quake",
-    "K": "Kick",
-    "V": "Vortex",
-    "W": "Wedge",
-    "Z": "Zap",
-    "M": "Merge",
-    "J": "Jolt",
-    # Two letter
-    "HN": "High Needle",
-    "LF": "Low Flat",
-    "LR": "Low Rush",
-    "GF": "GearFlat",
-    "GB": "GearBall",
-    "GN": "GearNeedle",
-    "GP": "GearPoint",
-    "MN": "Metal Needle",
-    "HT": "High Taper",
-    "DB": "Disc Ball",
-    "Lv": "Level",
-    "El": "Elevate",
-    "Un": "Unite",
-    "Br": "Brake",
-    "Bd": "Bound",
-    "Gl": "Glide",
-    # Inconsistent naming
-    "Hex": "Hexa",
-    # Common variations / full names
-    "Level": "Level",
-    "Elevate": "Elevate",
-    "Ball": "Ball",
-    "Flat": "Flat",
-    "Needle": "Needle",
-    "Point": "Point",
-    "Taper": "Taper",
-    "Rush": "Rush",
-    "Unite": "Unite",
-    "Accel": "Accel",
-    "Kick": "Kick",
-    "Vanguard": "Vanguard",
-    "Wedge": "Wedge",
-    "Zap": "Zap",
-    "Merge": "Merge",
-    "Jolt": "Jolt",
-    "Vortex": "Vortex",
-    "Orb": "Orb",
-    # Multi-word bits
-    "GearFlat": "Gear Flat",
-    "GearBall": "Gear Ball",
-    "GearNeedle": "Gear Needle",
-    "GearPoint": "Gear Point",
-    "GearRush": "Gear Rush",
-    "High Needle": "High Needle",
-    "Low Flat": "Low Flat",
-    "Low Rush": "Low Rush",
-    "Low Orb": "Low Orb",
-    "LowFlat": "Low Flat",
-    "LowRush": "Low Rush",
-    "LowOrb": "Low Orb",
-    "HighNeedle": "High Needle",
-    "HighTaper": "High Taper",
-    "DiscBall": "Disc Ball",
-    "Disc Ball": "Disc Ball",
-    "MetalNeedle": "Metal Needle",
-    "Metal Needle": "Metal Needle",
-    "Free Ball": "Free Ball",
-    "FreeBall": "Free Ball",
-    "FB": "Free Ball",
-    "Wall Ball": "Wall Ball",
-    "WallBall": "Wall Ball",
-    "WB": "Wall Ball",
-    "Wall Wedge": "Wall Wedge",
-    "WallWedge": "Wall Wedge",
-    "WW": "Wall Wedge",
-    "Bound Spike": "Bound Spike",
-    "BoundSpike": "Bound Spike",
-    "BS": "Bound Spike",
-    "Trans Kick": "Trans Kick",
-    "TransKick": "Trans Kick",
-    "TK": "Trans Kick",
-    "Trans Point": "Trans Point",
-    "TransPoint": "Trans Point",
-    "TP": "Trans Point",
-    "Under Flat": "Under Flat",
-    "UnderFlat": "Under Flat",
-    "UF": "Under Flat",
-    "Under Needle": "Under Needle",
-    "UnderNeedle": "Under Needle",
-    "UN": "Under Needle",
-    "Rubber Accel": "Rubber Accel",
-    "RubberAccel": "Rubber Accel",
-    "RA": "Rubber Accel",
-    # Dirty data normalizations
-    "Rrush": "Rush",
-    "Operate": "Operate",
-    "Turbo": "Turbo",
-}
 
 
 @dataclass
@@ -395,6 +175,7 @@ class Combo:
     bit: str
     assist: Optional[str] = None
     lock_chip: Optional[str] = None
+    over_blade: Optional[str] = None  # CX-only: Break, Flow, Guard
     stage: Optional[str] = None  # 'first', 'final', 'both', or None
 
 
@@ -421,57 +202,83 @@ class Tournament:
 
 
 def expand_bit(bit: str) -> str:
-    """Expand bit abbreviations to full names."""
+    """Expand bit abbreviations to full names using the catalog."""
     bit = bit.strip()
-    return BIT_ABBREVIATIONS.get(bit, bit)
+    return _build_lazy("BIT_ABBREVIATIONS").get(bit, bit)
+
+
+def split_blade_over_assist(blade_text: str) -> tuple[str, Optional[str], Optional[str]]:
+    """
+    Split blade text into (blade, over_blade, assist).
+
+    CX combos format: "[LockChip] [MainBlade] [OverBlade?] [Assist?]"
+      - Over blades (Break/Flow/Guard) sit between the main blade and the assist
+      - Either or both of over_blade and assist may be missing
+      - Both are CX-only
+
+    Strategy: walk tokens from the end. The trailing 1-2 tokens may be an assist
+    (multi-word like "Low Rush", or single-word like "Wheel", or letter like "S").
+    The token immediately before that may be an over blade (Break/Flow/Guard).
+    Whatever's left is the blade.
+
+    Examples:
+      "Pegasus Blast Wheel"            -> ("Pegasus Blast", None, "Wheel")
+      "Pegasus Blast Guard Wheel"      -> ("Pegasus Blast", "Guard", "Wheel")
+      "Pegasus Blast Guard"            -> ("Pegasus Blast", "Guard", None)
+      "Eva Blast S"                    -> ("Eva Blast", None, "Slash")
+      "Wizard Rod"                     -> ("Wizard Rod", None, None)
+    """
+    from catalog import PartsCatalog
+    cat = PartsCatalog.get()
+    over_blades_lower = cat.over_blades_lower
+    assist_aliases = _build_lazy("ASSIST_ABBREVIATIONS")
+    known_assists_lower = _build_lazy("KNOWN_ASSISTS_LOWER")
+    known_assists = _build_lazy("KNOWN_ASSISTS")
+
+    blade_text = blade_text.strip()
+    words = blade_text.split()
+    if len(words) <= 1:
+        return normalize_blade(blade_text), None, None
+
+    over_blade: Optional[str] = None
+    assist: Optional[str] = None
+
+    # Step 1: Strip a trailing assist (one or two words)
+    # Try two-word assist like "Low Rush" first if there are enough words
+    if len(words) >= 3:
+        last_two = " ".join(words[-2:])
+        if last_two.lower() in {a.lower() for a in known_assists}:
+            assist = last_two
+            words = words[:-2]
+
+    if assist is None and words:
+        last_word = words[-1]
+        if (
+            last_word in assist_aliases
+            or last_word.lower() in known_assists_lower
+            or (len(last_word) <= 2 and last_word.isupper())
+        ):
+            assist = assist_aliases.get(last_word, last_word)
+            words = words[:-1]
+
+    # Step 2: Strip a trailing over blade (Break / Flow / Guard)
+    if words and words[-1].lower() in over_blades_lower:
+        over_blade = over_blades_lower[words[-1].lower()]
+        words = words[:-1]
+
+    # Step 3: Whatever remains is the blade
+    blade = normalize_blade(" ".join(words)) if words else blade_text
+    return blade, over_blade, assist
 
 
 def split_blade_assist(blade_text: str) -> tuple[str, Optional[str]]:
+    """Legacy two-tuple shim around split_blade_over_assist().
+
+    Kept so callers that don't care about over blades still work. New code
+    should call split_blade_over_assist() and handle the over_blade slot.
     """
-    Split blade text into (blade, assist) if there's an assist code/name.
-    Format: "[Blade Name] [Assist]" where assist is typically a single letter or short word.
-
-    Examples:
-    - "Courage Dran S" -> ("Courage Dran", "S")
-    - "Pegasus Blast Jaggy" -> ("Pegasus Blast", "Jaggy")
-    - "Wizard Rod" -> ("Wizard Rod", None)
-    """
-    blade_text = blade_text.strip()
-
-    # Split into words
-    words = blade_text.split()
-    if len(words) <= 1:
-        return normalize_blade(blade_text), None
-
-    # Check if the last word is an assist (single letter, abbreviation, or known assist name)
-    last_word = words[-1]
-
-    # Check if it's a known assist abbreviation or name
-    is_assist = (
-        last_word in ASSIST_ABBREVIATIONS
-        or last_word.lower() in KNOWN_ASSISTS_LOWER
-        or (
-            len(last_word) <= 2 and last_word.isupper()
-        )  # Single/double letter uppercase
-    )
-
-    if is_assist:
-        # The last word is the assist, everything before is the blade
-        blade_words = words[:-1]
-        blade = normalize_blade(" ".join(blade_words))
-        assist = ASSIST_ABBREVIATIONS.get(last_word, last_word)
-        return blade, assist
-
-    # Check if second-to-last + last could be an assist (e.g., "Low Rush" as assist name)
-    if len(words) >= 3:
-        last_two = " ".join(words[-2:])
-        if last_two.lower() in [a.lower() for a in KNOWN_ASSISTS]:
-            blade_words = words[:-2]
-            blade = normalize_blade(" ".join(blade_words))
-            return blade, last_two
-
-    # No assist found, normalize the whole text as the blade
-    return normalize_blade(blade_text), None
+    blade, _over, assist = split_blade_over_assist(blade_text)
+    return blade, assist
 
 
 def parse_combo(combo_str: str) -> Optional[Combo]:
@@ -532,8 +339,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
         blade_part = match.group(1).strip()
         ratchet = match.group(2).strip()
         bit = expand_bit(match.group(3).strip())
-        blade, assist = split_blade_assist(blade_part)
-        # Parse CX blade to extract lock chip
+        blade, over_blade, assist = split_blade_over_assist(blade_part)
         lock_chip, blade = parse_cx_blade(blade)
         return Combo(
             blade=blade,
@@ -541,6 +347,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
             bit=bit,
             assist=assist,
             lock_chip=lock_chip,
+            over_blade=over_blade,
             stage=stage,
         )
 
@@ -550,8 +357,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
         blade_part = match.group(1).strip()
         ratchet = match.group(2).strip()
         bit = expand_bit(match.group(3).strip())
-        blade, assist = split_blade_assist(blade_part)
-        # Parse CX blade to extract lock chip
+        blade, over_blade, assist = split_blade_over_assist(blade_part)
         lock_chip, blade = parse_cx_blade(blade)
         return Combo(
             blade=blade,
@@ -559,11 +365,11 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
             bit=bit,
             assist=assist,
             lock_chip=lock_chip,
+            over_blade=over_blade,
             stage=stage,
         )
 
     # Try: Blade + AssistRatchetBit (assist concatenated with ratchet, e.g., "FoxBlast Wheel9-60Hexa")
-    # Pattern: blade_part + assist_prefix + ratchet + bit (no space between assist and ratchet)
     match = re.match(r"^(.+?)\s+([A-Za-z]+)((?:\d{1,2}|M)-\d{2,3})([A-Z][A-Za-z\s]*)$", combo_str)
     if match:
         blade_part = match.group(1).strip()
@@ -571,11 +377,12 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
         ratchet = match.group(3).strip()
         bit = expand_bit(match.group(4).strip())
 
-        # Check if potential_assist is a known assist
-        if potential_assist in ASSIST_ABBREVIATIONS or potential_assist.lower() in KNOWN_ASSISTS_LOWER:
-            assist = ASSIST_ABBREVIATIONS.get(potential_assist, potential_assist)
-            blade = normalize_blade(blade_part)
-            # Parse CX blade to extract lock chip
+        _assist_aliases = _build_lazy("ASSIST_ABBREVIATIONS")
+        _known_assists_lower = _build_lazy("KNOWN_ASSISTS_LOWER")
+        if potential_assist in _assist_aliases or potential_assist.lower() in _known_assists_lower:
+            assist = _assist_aliases.get(potential_assist, potential_assist)
+            # blade_part may contain an over blade trailing token
+            blade, over_blade, _ = split_blade_over_assist(blade_part)
             lock_chip, blade = parse_cx_blade(blade)
             return Combo(
                 blade=blade,
@@ -583,17 +390,17 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
                 bit=bit,
                 assist=assist,
                 lock_chip=lock_chip,
+                over_blade=over_blade,
                 stage=stage,
             )
 
     # Fallback: Ratchet Integrated Bits (Operate/Turbo) - no ratchet pattern
-    # These replace both ratchet + bit as one piece
     RATCHET_INTEGRATED_BITS = {"Operate", "Turbo"}
     for rib in RATCHET_INTEGRATED_BITS:
         if combo_str.endswith(rib) or combo_str.endswith(rib.lower()):
             blade_part = combo_str[: -len(rib)].strip()
             if blade_part:
-                blade, assist = split_blade_assist(blade_part)
+                blade, over_blade, assist = split_blade_over_assist(blade_part)
                 lock_chip, blade = parse_cx_blade(blade)
                 return Combo(
                     blade=blade,
@@ -601,6 +408,7 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
                     bit=rib,
                     assist=assist,
                     lock_chip=lock_chip,
+                    over_blade=over_blade,
                     stage=stage,
                 )
 
@@ -1355,21 +1163,21 @@ def insert_tournament(conn, tournament: Tournament) -> Optional[int]:
                     combos[0].bit if len(combos) > 0 else None,
                     combos[0].assist if len(combos) > 0 else None,
                     combos[0].lock_chip if len(combos) > 0 else None,
-                    None,  # over_blade_1
+                    combos[0].over_blade if len(combos) > 0 else None,
                     combos[0].stage if len(combos) > 0 else None,
                     combos[1].blade if len(combos) > 1 else None,
                     combos[1].ratchet if len(combos) > 1 else None,
                     combos[1].bit if len(combos) > 1 else None,
                     combos[1].assist if len(combos) > 1 else None,
                     combos[1].lock_chip if len(combos) > 1 else None,
-                    None,  # over_blade_2
+                    combos[1].over_blade if len(combos) > 1 else None,
                     combos[1].stage if len(combos) > 1 else None,
                     combos[2].blade if len(combos) > 2 else None,
                     combos[2].ratchet if len(combos) > 2 else None,
                     combos[2].bit if len(combos) > 2 else None,
                     combos[2].assist if len(combos) > 2 else None,
                     combos[2].lock_chip if len(combos) > 2 else None,
-                    None,  # over_blade_3
+                    combos[2].over_blade if len(combos) > 2 else None,
                     combos[2].stage if len(combos) > 2 else None,
                 ],
             )

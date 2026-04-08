@@ -38,52 +38,16 @@ JP_SOURCE_PREFIX = "okuyama_"
 
 
 # =============================================================================
-# Bit Abbreviation Expansion
+# Bit Abbreviation Expansion (catalog-driven)
 # =============================================================================
 
-BIT_ABBREVIATIONS = {
-    "B": "Ball",
-    "F": "Flat",
-    "N": "Needle",
-    "P": "Point",
-    "T": "Taper",
-    "S": "Spike",
-    "O": "Orb",
-    "D": "Dot",
-    "A": "Accel",
-    "R": "Rush",
-    "H": "Hexa",
-    "C": "Cyclone",
-    "U": "Unite",
-    "L": "Level",
-    "E": "Elevate",
-    "G": "Glide",
-    "Q": "Quake",
-    "K": "Kick",
-    "V": "Vanguard",
-    "HN": "High Needle",
-    "LF": "Low Flat",
-    "LR": "Low Rush",
-    "LN": "Low Needle",
-    "GF": "GearFlat",
-    "GB": "GearBall",
-    "GN": "GearNeedle",
-    "GP": "GearPoint",
-    "MN": "Metal Needle",
-    "HT": "High Taper",
-    "HA": "High Accel",
-    "DB": "Disc Ball",
-    "HS": "High Sword",
-    "SN": "Spiral Needle",
-}
-
-
 def expand_bit(bit: str) -> str:
-    """Expand bit abbreviations to full names."""
+    """Expand bit abbreviations to full names using the parts catalog."""
     bit = bit.strip()
     if is_japanese(bit):
         return translate_bit(bit)
-    return BIT_ABBREVIATIONS.get(bit, bit)
+    from catalog import PartsCatalog
+    return PartsCatalog.get().bit_aliases.get(bit, bit)
 
 
 # =============================================================================

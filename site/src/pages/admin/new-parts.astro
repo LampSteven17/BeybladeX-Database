@@ -1,0 +1,191 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="New Parts — Admin">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header */}
+    <div class="page-header">
+      <h1 class="page-title">New Parts Detected</h1>
+      <p class="page-subtitle">
+        Tokens seen in tournament data that aren't in the wiki catalog yet.
+        Accept = promote to canonical. Reject = mark as typo / bad data.
+      </p>
+    </div>
+
+    {/* Status banner */}
+    <div id="status-banner" class="card card-padding mb-6 hidden">
+      <span id="status-msg" class="font-mono text-sm"></span>
+    </div>
+
+    {/* Action bar */}
+    <div class="card card-padding mb-6 flex flex-wrap items-center gap-4">
+      <button id="refresh-btn" class="btn btn-secondary">Refresh list</button>
+      <button id="full-scrape-btn" class="btn btn-primary">
+        Run full rescrape (clear DB)
+      </button>
+      <span class="text-fg-muted text-sm font-mono ml-auto">
+        Pending: <span id="pending-count" class="text-accent font-bold">…</span>
+      </span>
+    </div>
+
+    {/* Pending parts table */}
+    <div class="card card-padding">
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Name</th>
+              <th class="text-right">Occurrences</th>
+              <th>Sample combo</th>
+              <th class="w-72">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pending-body">
+            <tr><td colspan="5" class="text-center text-fg-muted py-8">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mt-6 text-fg-muted text-xs font-mono">
+      <p>
+        API: <code>GET /api/pending-parts</code> · <code>POST /api/parts/accept</code> ·
+        <code>POST /api/parts/reject</code> · <code>POST /api/scrape/full</code>
+      </p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Resolve API base from current host (works in dev and prod)
+  const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:8081'
+    : window.location.origin;
+
+  type PendingPart = {
+    name: string;
+    part_type: string;
+    occurrence_count: number;
+    sample_combo: string | null;
+  };
+
+  function showStatus(msg: string, error = false) {
+    const banner = document.getElementById('status-banner')!;
+    const text = document.getElementById('status-msg')!;
+    banner.classList.remove('hidden');
+    text.textContent = msg;
+    text.style.color = error ? 'var(--color-danger, #ef4444)' : 'var(--color-accent, #f97316)';
+    setTimeout(() => banner.classList.add('hidden'), 6000);
+  }
+
+  async function loadPending() {
+    const body = document.getElementById('pending-body')!;
+    body.innerHTML = '<tr><td colspan="5" class="text-center text-fg-muted py-8">Loading…</td></tr>';
+    try {
+      const res = await fetch(`${API_BASE}/api/pending-parts`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const parts: PendingPart[] = data.parts || [];
+      document.getElementById('pending-count')!.textContent = String(parts.length);
+
+      if (parts.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" class="text-center text-fg-muted py-8">No pending parts — catalog is clean.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = parts.map(p => `
+        <tr data-name="${escapeHtml(p.name)}" data-type="${escapeHtml(p.part_type)}">
+          <td><span class="badge">${escapeHtml(p.part_type)}</span></td>
+          <td class="font-mono">${escapeHtml(p.name)}</td>
+          <td class="text-right font-mono">${p.occurrence_count}</td>
+          <td class="text-fg-muted text-sm">${p.sample_combo ? escapeHtml(p.sample_combo) : ''}</td>
+          <td>
+            <button class="btn btn-xs btn-primary accept-btn">Accept</button>
+            <button class="btn btn-xs btn-secondary reject-btn">Reject</button>
+            <button class="btn btn-xs btn-secondary alias-btn">Map to…</button>
+          </td>
+        </tr>
+      `).join('');
+
+      attachActionHandlers();
+    } catch (e) {
+      body.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-8">Failed to load: ${e}</td></tr>`;
+    }
+  }
+
+  function escapeHtml(s: string): string {
+    return s.replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]!));
+  }
+
+  function attachActionHandlers() {
+    document.querySelectorAll<HTMLButtonElement>('.accept-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('tr')!;
+        const name = row.dataset.name!;
+        const part_type = row.dataset.type!;
+        await postPartAction('accept', { name, part_type });
+      });
+    });
+    document.querySelectorAll<HTMLButtonElement>('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('tr')!;
+        const name = row.dataset.name!;
+        const part_type = row.dataset.type!;
+        if (!confirm(`Reject "${name}" as a ${part_type}?`)) return;
+        await postPartAction('reject', { name, part_type });
+      });
+    });
+    document.querySelectorAll<HTMLButtonElement>('.alias-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('tr')!;
+        const name = row.dataset.name!;
+        const part_type = row.dataset.type!;
+        const canonical = prompt(`Map "${name}" to which canonical ${part_type}?`);
+        if (!canonical) return;
+        await postPartAction('reject', { name, part_type, canonical_name: canonical });
+      });
+    });
+  }
+
+  async function postPartAction(action: 'accept' | 'reject', payload: object) {
+    try {
+      const res = await fetch(`${API_BASE}/api/parts/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showStatus(`Part ${action}ed.`);
+        loadPending();
+      } else {
+        showStatus(`Failed: ${data.error || res.statusText}`, true);
+      }
+    } catch (e) {
+      showStatus(`Network error: ${e}`, true);
+    }
+  }
+
+  document.getElementById('refresh-btn')!.addEventListener('click', loadPending);
+
+  document.getElementById('full-scrape-btn')!.addEventListener('click', async () => {
+    if (!confirm('This will CLEAR the database and rescrape every source from scratch. Continue?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/scrape/full`, { method: 'POST' });
+      const data = await res.json();
+      if (data.started) {
+        showStatus('Full rescrape started in background — check /status for progress.');
+      } else {
+        showStatus(`Could not start: ${data.message}`, true);
+      }
+    } catch (e) {
+      showStatus(`Network error: ${e}`, true);
+    }
+  });
+
+  loadPending();
+</script>

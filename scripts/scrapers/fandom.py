@@ -32,6 +32,23 @@ DISCOVERY_PAGES = {
     "CX": f"{WIKI_BASE}/wiki/List_of_Custom_Line_parts",
 }
 
+# Category pages — authoritative source for the parts catalog.
+# Each category lists every part of its type that exists on the wiki.
+# Used by populate_parts_catalog() to build parts_catalog table.
+CATEGORY_PAGES = {
+    "lock_chip":  (f"{WIKI_BASE}/wiki/Category:Lock_Chips",   "CX"),
+    "main_blade": (f"{WIKI_BASE}/wiki/Category:Main_Blades",  "CX"),
+    "over_blade": (f"{WIKI_BASE}/wiki/Category:Over_Blades",  "CX"),
+    "assist":     (f"{WIKI_BASE}/wiki/Category:Assist_Blades","CX"),
+    "metal_blade":(f"{WIKI_BASE}/wiki/Category:Metal_Blades", "CX"),
+    "bit":        (f"{WIKI_BASE}/wiki/Category:Bits",         None),
+    "ratchet":    (f"{WIKI_BASE}/wiki/Category:Ratchets",     None),
+}
+
+# Lock chips that are made of metal (affects competitive performance).
+# This isn't on the wiki — kept here as a small static list.
+METAL_LOCK_CHIPS = {"Emperor", "Valkyrie"}
+
 # Fallback parts list for BX line (in case the list page is blocked by CloudFlare)
 # These are the most commonly used BX parts that might not be discovered from UX/CX pages
 BX_FALLBACK_PARTS = [
@@ -369,6 +386,141 @@ def _extract_stats_from_page(soup: BeautifulSoup) -> dict:
     return stats
 
 
+def _normalize_wiki_name(raw: str) -> str:
+    """Convert a wiki page slug or display title to the canonical part name.
+
+    'Lock_Chip_-_Eva' / 'Lock Chip - Eva' -> 'Eva'
+    'Bit_-_Disk_Ball' -> 'Disc Ball' (with Disk -> Disc spelling fix)
+    'Main_Blade_-_Hells Hammer' -> 'Hells Hammer'
+    """
+    name = raw.replace("_", " ").strip()
+    # Strip any "Foo - " prefix
+    if " - " in name:
+        name = name.split(" - ", 1)[1].strip()
+    # Try the explicit display map first (handles CamelCase entries)
+    if name in WIKI_NAME_TO_DISPLAY:
+        return WIKI_NAME_TO_DISPLAY[name]
+    # Wiki spells some bits "Disk" but tournament data uses "Disc"
+    name = name.replace("Disk ", "Disc ")
+    return name
+
+
+def _discover_from_category(url: str, part_type: str, default_system: Optional[str]) -> list[dict]:
+    """Discover all parts from a Fandom Category page.
+
+    Returns list of dicts: {name, part_type, system, wiki_url}
+    """
+    soup = _fetch_page(url)
+    if not soup:
+        return []
+
+    members_container = soup.find("div", class_="category-page__members")
+    if not members_container:
+        return []
+
+    parts = []
+    seen_names = set()
+    for link in members_container.find_all("a", class_="category-page__member-link"):
+        title = link.get_text(strip=True)
+        if not title or title.startswith("Category:"):
+            continue
+        href = link.get("href", "")
+        if not href.startswith("/wiki/"):
+            continue
+        name = _normalize_wiki_name(title)
+        if name in seen_names:
+            continue
+        seen_names.add(name)
+        parts.append({
+            "name": name,
+            "part_type": part_type,
+            "system": default_system,
+            "wiki_url": f"{WIKI_BASE}{href}",
+        })
+    return parts
+
+
+def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
+                         wiki_url: Optional[str], is_metal: bool = False) -> None:
+    existing = conn.execute(
+        "SELECT name, status FROM parts_catalog WHERE name = ? AND part_type = ?",
+        [name, part_type],
+    ).fetchone()
+    if existing:
+        conn.execute("""
+            UPDATE parts_catalog SET
+                wiki_url = COALESCE(?, wiki_url),
+                system = COALESCE(system, ?),
+                status = 'accepted',
+                source = 'wiki',
+                metal = ?,
+                accepted_at = COALESCE(accepted_at, current_timestamp)
+            WHERE name = ? AND part_type = ?
+        """, [wiki_url, system, is_metal, name, part_type])
+    else:
+        conn.execute("""
+            INSERT INTO parts_catalog
+                (name, part_type, system, wiki_url, status, source, metal, accepted_at)
+            VALUES (?, ?, ?, ?, 'accepted', 'wiki', ?, current_timestamp)
+        """, [name, part_type, system, wiki_url, is_metal])
+
+
+def populate_parts_catalog(conn, verbose: bool = False) -> dict:
+    """Discover every Beyblade X part from the Fandom wiki and upsert
+    into the parts_catalog table. This is the source-of-truth refresh that
+    the parser depends on.
+
+    Two discovery sources:
+      1. Category:* pages — authoritative for lock_chip, main_blade,
+         over_blade, assist, metal_blade, bit, ratchet
+      2. List_of_*_parts pages — used for BX/UX standalone blades
+         (which the wiki doesn't categorize together)
+
+    Returns {part_type: count} of accepted parts written.
+    """
+    counts: dict[str, int] = {}
+
+    # 1. Category pages
+    for part_type, (cat_url, system) in CATEGORY_PAGES.items():
+        if verbose:
+            print(f"  Fetching {cat_url}")
+        parts = _discover_from_category(cat_url, part_type, system)
+        if verbose:
+            print(f"    Found {len(parts)} {part_type}")
+        counts[part_type] = len(parts)
+
+        for p in parts:
+            is_metal = (part_type == "lock_chip" and p["name"] in METAL_LOCK_CHIPS)
+            _upsert_catalog_part(conn, p["name"], part_type, p["system"], p["wiki_url"], is_metal)
+
+        time.sleep(RATE_LIMIT)
+
+    # 2. BX/UX standalone blades from list pages
+    blade_count = 0
+    for system in ("BX", "UX"):
+        list_url = DISCOVERY_PAGES[system]
+        if verbose:
+            print(f"  Fetching {list_url}")
+        parts = _discover_parts_from_list_page(list_url, system)
+        if not parts and system == "BX":
+            if verbose:
+                print(f"    BX list page blocked, using fallback ({len(BX_FALLBACK_PARTS)})")
+            parts = list(BX_FALLBACK_PARTS)
+        for p in parts:
+            # Only standalone blades (not lock chips, not main blades, not bits, etc.)
+            if p["part_type"] != "blade":
+                continue
+            _upsert_catalog_part(conn, p["name"], "blade", system, p["url"], False)
+            blade_count += 1
+        time.sleep(RATE_LIMIT)
+    counts["blade"] = blade_count
+    if verbose:
+        print(f"    Found {blade_count} BX/UX blades from list pages")
+
+    conn.commit()
+    return counts
+
+
 def _discover_parts_from_list_page(url: str, system: str) -> list[dict]:
     """Discover parts from a list page, extracting URLs and part types.
 
@@ -434,7 +586,32 @@ class FandomScraper(BaseScraper):
         return None
 
     def scrape(self, conn, verbose: bool = False) -> tuple[int, int]:
-        """Scrape part attributes from Fandom wiki and upsert into part_attributes table."""
+        """Scrape part catalog and stats from Fandom wiki.
+
+        Phase 0: Populate parts_catalog from Category:* pages (source of truth for the parser)
+        Phase 1: Discovery — collect all part URLs from List_of_*_parts pages (for stats)
+        Phase 2: Extraction — fetch each part page and extract stats into part_attributes
+        Phase 3: Emit site/public/data/parts_catalog.json for the frontend
+        """
+        # Phase 0: Catalog refresh
+        if verbose:
+            print("  Refreshing parts_catalog from wiki Category pages...")
+        catalog_counts = populate_parts_catalog(conn, verbose=verbose)
+        if verbose:
+            total = sum(catalog_counts.values())
+            print(f"  Catalog: {total} parts across {len(catalog_counts)} types")
+
+        # Phase 3 (executed at the end): export JSON for the frontend.
+        # We do it inside scrape() so a single fandom run keeps the file fresh.
+        try:
+            from catalog import export_catalog_json  # local import to avoid cycles
+            export_catalog_json(conn)
+            if verbose:
+                print("  Exported parts_catalog.json for frontend")
+        except Exception as e:
+            if verbose:
+                print(f"  Warning: failed to export catalog JSON: {e}")
+
         # Phase 1: Discovery - collect all part URLs from list pages
         all_parts = []
         for system, url in DISCOVERY_PAGES.items():

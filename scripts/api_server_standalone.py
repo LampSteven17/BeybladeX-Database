@@ -51,8 +51,13 @@ def copy_db_to_dist():
         print(f"[{datetime.now().isoformat()}] Database copied to dist")
 
 
-def run_scrape(sources: list[str] = None):
-    """Run the scraper in background."""
+def run_scrape(sources: list[str] = None, full: bool = False):
+    """Run the scraper in background.
+
+    Args:
+        sources: list of source keys (wbo/jp/de/fandom/champ); None = all
+        full: if True, runs a full clear+rescrape (no --incremental)
+    """
     global scrape_status
 
     if scrape_status["running"]:
@@ -67,7 +72,9 @@ def run_scrape(sources: list[str] = None):
     def _scrape():
         global scrape_status
         try:
-            cmd = ["uv", "run", "python", "scripts/refresh_all.py", "--incremental"]
+            cmd = ["uv", "run", "python", "scripts/refresh_all.py"]
+            if not full:
+                cmd.append("--incremental")
             if sources:
                 cmd.extend(["--sources", ",".join(sources)])
 
@@ -125,6 +132,60 @@ class APIHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
+    def _query_pending_parts(self):
+        """Read pending parts from the catalog as a list of dicts."""
+        try:
+            import duckdb
+            conn = duckdb.connect(str(DIST_DB), read_only=True)
+            try:
+                rows = conn.execute("""
+                    SELECT name, part_type, occurrence_count, sample_combo
+                    FROM parts_catalog
+                    WHERE status = 'pending'
+                    ORDER BY occurrence_count DESC
+                """).fetchall()
+                return [
+                    {
+                        "name": r[0],
+                        "part_type": r[1],
+                        "occurrence_count": r[2] or 0,
+                        "sample_combo": r[3],
+                    }
+                    for r in rows
+                ]
+            finally:
+                conn.close()
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _update_part_status(self, name, part_type, status, canonical_name=None):
+        """Mark a pending part as accepted or rejected."""
+        try:
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_connection  # noqa
+            conn = get_connection()
+            try:
+                if status == "accepted":
+                    conn.execute("""
+                        UPDATE parts_catalog
+                        SET status = 'accepted', accepted_at = current_timestamp,
+                            canonical_name = COALESCE(?, canonical_name)
+                        WHERE name = ? AND part_type = ?
+                    """, [canonical_name, name, part_type])
+                elif status == "rejected":
+                    conn.execute("""
+                        UPDATE parts_catalog
+                        SET status = 'rejected', canonical_name = COALESCE(?, canonical_name)
+                        WHERE name = ? AND part_type = ?
+                    """, [canonical_name, name, part_type])
+                conn.commit()
+                copy_db_to_dist()
+                return True, None
+            finally:
+                conn.close()
+        except Exception as e:
+            return False, str(e)
+
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
@@ -138,6 +199,19 @@ class APIHandler(BaseHTTPRequestHandler):
             db_size = DIST_DB.stat().st_size if db_exists else 0
             db_modified = datetime.fromtimestamp(DIST_DB.stat().st_mtime).isoformat() if db_exists else None
 
+            # Pending parts count
+            pending_count = 0
+            try:
+                import duckdb
+                if db_exists:
+                    c = duckdb.connect(str(DIST_DB), read_only=True)
+                    pending_count = c.execute(
+                        "SELECT COUNT(*) FROM parts_catalog WHERE status='pending'"
+                    ).fetchone()[0]
+                    c.close()
+            except Exception:
+                pass
+
             self._send_json({
                 "database": {
                     "exists": db_exists,
@@ -146,6 +220,7 @@ class APIHandler(BaseHTTPRequestHandler):
                     "locked": is_database_locked(),
                 },
                 "scraper": scrape_status,
+                "pending_parts_count": pending_count,
             })
 
         elif path == "/scrape":
@@ -154,6 +229,13 @@ class APIHandler(BaseHTTPRequestHandler):
             source_list = sources.split(",") if sources else None
             started, message = run_scrape(source_list)
             self._send_json({"started": started, "message": message})
+
+        elif path == "/api/pending-parts":
+            result = self._query_pending_parts()
+            if isinstance(result, dict) and "error" in result:
+                self._send_json(result, 500)
+            else:
+                self._send_json({"parts": result})
 
         else:
             self._send_json({"error": "Not found"}, 404)
@@ -204,6 +286,39 @@ class APIHandler(BaseHTTPRequestHandler):
                 started, message = run_scrape()
                 self._send_json({"started": started, "message": message})
 
+        elif path == "/api/scrape/full":
+            # Clear DB and rescrape everything from all sources
+            started, message = run_scrape(sources=None, full=True)
+            self._send_json({"started": started, "message": message})
+
+        elif path == "/api/parts/accept":
+            try:
+                data = json.loads(body.decode("utf-8")) if body else {}
+                ok, err = self._update_part_status(
+                    data["name"], data["part_type"], "accepted",
+                    data.get("canonical_name"),
+                )
+                if ok:
+                    self._send_json({"success": True})
+                else:
+                    self._send_json({"error": err}, 500)
+            except Exception as e:
+                self._send_json({"error": str(e)}, 400)
+
+        elif path == "/api/parts/reject":
+            try:
+                data = json.loads(body.decode("utf-8")) if body else {}
+                ok, err = self._update_part_status(
+                    data["name"], data["part_type"], "rejected",
+                    data.get("canonical_name"),
+                )
+                if ok:
+                    self._send_json({"success": True})
+                else:
+                    self._send_json({"error": err}, 500)
+            except Exception as e:
+                self._send_json({"error": str(e)}, 400)
+
         else:
             self._send_json({"error": "Not found"}, 404)
 
@@ -225,11 +340,15 @@ def main():
     print(f"  Port:      {port}")
     print()
     print("Endpoints:")
-    print("  GET  /health      - Health check")
-    print("  GET  /status      - Database and scraper status")
-    print("  GET  /scrape      - Trigger scrape (?sources=wbo,jp,de)")
-    print("  POST /scrape      - Trigger scrape")
-    print("  POST /upload/wbo  - Upload WBO pages from bookmarklet")
+    print("  GET  /health             - Health check")
+    print("  GET  /status             - Database, scraper, and pending-parts status")
+    print("  GET  /scrape             - Trigger incremental scrape (?sources=wbo,jp,de)")
+    print("  POST /scrape             - Trigger incremental scrape")
+    print("  POST /upload/wbo         - Upload WBO pages from bookmarklet (auto-runs incremental)")
+    print("  POST /api/scrape/full    - Clear DB and full rescrape from all sources")
+    print("  GET  /api/pending-parts  - List parts seen in tournaments but not in wiki catalog")
+    print("  POST /api/parts/accept   - Promote a pending part to accepted")
+    print("  POST /api/parts/reject   - Mark a pending part as rejected (typo etc.)")
     print()
 
     server = HTTPServer(("0.0.0.0", port), APIHandler)

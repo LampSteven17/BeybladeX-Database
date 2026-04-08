@@ -177,6 +177,7 @@ class WBOScraper(BaseScraper):
                     bit=src_combo.bit,
                     assist=src_combo.assist,
                     lock_chip=src_combo.lock_chip,
+                    over_blade=getattr(src_combo, 'over_blade', None),
                     stage=src_combo.stage,
                 ))
             placements.append(Placement(

@@ -95,116 +95,16 @@ def is_database_locked() -> bool:
 # =============================================================================
 # CX Blade Components - Lock Chip + Main Blade parsing
 # =============================================================================
+#
+# All valid CX lock chips, main blades, and full combo names come from the
+# parts_catalog table (populated by scripts/scrapers/fandom.py from the wiki).
+# Use _cat() inside parsing functions to get the catalog at runtime so the
+# parser auto-picks-up new wiki releases without code edits.
 
-# CX blades are composed of: Lock Chip + Main Blade (+ Assist Blade)
-# Format: "[Lock Chip] [Main Blade]" e.g., "Pegasus Blast" = Pegasus lock chip + Blast main blade
-# This dict maps full CX blade names to (lock_chip, main_blade) tuples
-CX_BLADE_COMPONENTS: dict[str, tuple[str, str]] = {
-    # CX-01 and variants using Brave main blade
-    "Dran Brave": ("Dran", "Brave"),
-    "Emperor Brave": ("Emperor", "Brave"),
-    # CX-02 and variants using Arc main blade
-    "Wizard Arc": ("Wizard", "Arc"),
-    # CX-03 and variants using Dark main blade
-    "Perseus Dark": ("Perseus", "Dark"),
-    # CX-05 and variants using Reaper main blade
-    "Hells Reaper": ("Hells", "Reaper"),
-    # CX-06 and variants using Brush main blade
-    "Fox Brush": ("Fox", "Brush"),
-    # CX-07 and variants using Blast main blade
-    "Pegasus Blast": ("Pegasus", "Blast"),
-    "Cerberus Blast": ("Cerberus", "Blast"),
-    "Hells Blast": ("Hells", "Blast"),
-    "Emperor Blast": ("Emperor", "Blast"),
-    "Wolf Blast": ("Wolf", "Blast"),
-    "Dran Blast": ("Dran", "Blast"),
-    "Valkyrie Blast": ("Valkyrie", "Blast"),
-    "Valkyrie Blast W": ("Valkyrie", "Blast"),
-    "Valkyrie Blast S": ("Valkyrie", "Blast"),
-    "Sol Blast": ("Sol", "Blast"),
-    "Perseus Blast W": ("Perseus", "Blast"),
-    "Kraken Blast": ("Kraken", "Blast"),
-    # CX-09 and variants using Eclipse main blade
-    "Sol Eclipse": ("Sol", "Eclipse"),
-    "Emperor Eclipse": ("Emperor", "Eclipse"),
-    "Hells Eclipse": ("Hells", "Eclipse"),
-    # CX-10 and variants using Hunt main blade
-    "Wolf Hunt": ("Wolf", "Hunt"),
-    "Emperor Hunt": ("Emperor", "Hunt"),
-    "Perseus Hunt": ("Perseus", "Hunt"),
-    # CX-11 and variants using Might main blade
-    "Emperor Might": ("Emperor", "Might"),
-    "Cerberus Might": ("Cerberus", "Might"),
-    "Dran Might": ("Dran", "Might"),
-    "Whale Might": ("Whale", "Might"),
-    # CX-12 and variants using Flare main blade
-    "Phoenix Flare": ("Phoenix", "Flare"),
-    "Pegasus Flame": ("Pegasus", "Flame"),
-    # Random Booster CX blades
-    "Valkyrie Volt": ("Valkyrie", "Volt"),
-    "Valkyrie Volt A": ("Valkyrie", "Volt"),
-    # NOTE: Dragoon Storm and Driger Slash are BX blades (classic remakes), NOT CX
-    # Hasbro CX name variants
-    "Courage Dran": ("Dran", "Brave"),  # Hasbro name for Dran Brave
-    # CX with custom/Hasbro lock chips
-    "Umbra Hornet Assault": ("Umbra", "Hornet"),  # Umbra lock chip, Hornet main blade, Assault assist
-    "Umbra Hornet": ("Umbra", "Hornet"),
-}
-
-
-# CX main blade names that REQUIRE a lock chip prefix
-# If we see just "Blast" without "Pegasus Blast", that's invalid/incomplete data
-# Source: https://beyblade.fandom.com/wiki/Category:Main_Blades
-CX_MAIN_BLADES = {
-    "Antler",
-    "Arc",
-    "Blast",
-    "Brave",
-    "Brush",
-    "Dark",
-    "Eclipse",
-    "Fang",
-    "Flame",
-    "Flare",
-    "Fort",
-    "Hornet",
-    "Hunt",
-    "Might",
-    "Reaper",
-    "Volt",
-    "Wriggle",
-}
-
-# Known CX lock chips - used for fuzzy matching when parsing blade names
-# Source: https://beyblade.fandom.com/wiki/Category:Lock_Chips
-CX_LOCK_CHIPS = {
-    "Bahamut",
-    "Cerberus",
-    "Dran",
-    "Emperor",
-    "Fox",
-    "Hells",
-    "Hornet",
-    "Knight",
-    "Kraken",
-    "Leon",
-    "Pegasus",
-    "Perseus",
-    "Phoenix",
-    "Ragna",
-    "Rhino",
-    "Sol",
-    "Stag",
-    "Umbra",
-    "Valkyrie",
-    "Whale",
-    "Wizard",
-    "Wolf",
-}
-
-# Lowercase versions for case-insensitive matching
-_CX_MAIN_BLADES_LOWER = {b.lower(): b for b in CX_MAIN_BLADES}
-_CX_LOCK_CHIPS_LOWER = {c.lower(): c for c in CX_LOCK_CHIPS}
+def _cat():
+    """Lazy import to avoid circular dependency at module load."""
+    from catalog import PartsCatalog
+    return PartsCatalog.get()
 
 
 def parse_cx_blade(blade_name: str) -> tuple[str | None, str]:
@@ -212,307 +112,114 @@ def parse_cx_blade(blade_name: str) -> tuple[str | None, str]:
     Parse a CX blade name into (lock_chip, main_blade).
     Returns (None, blade_name) if not a known CX blade.
 
-    Handles various formats:
-    - Exact match: "Pegasus Blast" -> ("Pegasus", "Blast")
-    - Reversed order: "Blast Pegasus" -> ("Pegasus", "Blast")
-    - Concatenated: "PegasusBlast" -> ("Pegasus", "Blast")
-    - With suffixes: "Valkyrie Blast W" -> ("Valkyrie", "Blast")
-    - Case insensitive: "pegasus blast" -> ("Pegasus", "Blast")
-
-    If blade_name is a bare CX main blade (e.g., "Blast" without lock chip),
-    this indicates incomplete data - returns (None, blade_name) but callers
-    should check if blade_name is in CX_MAIN_BLADES to detect this case.
+    All lock chips and main blades come from the wiki-derived parts catalog,
+    so any new release auto-parses without code edits. Handled formats:
+    - "Pegasus Blast"   -> ("Pegasus", "Blast")
+    - "Blast Pegasus"   -> ("Pegasus", "Blast")
+    - "PegasusBlast"    -> ("Pegasus", "Blast")
+    - "Valkyrie Blast W"-> ("Valkyrie", "Blast")  (trailing variant suffix)
+    - case insensitive
     """
-    # 1. Check exact match first (fastest path)
-    if blade_name in CX_BLADE_COMPONENTS:
-        return CX_BLADE_COMPONENTS[blade_name]
+    cat = _cat()
+    chips_lower = cat.lock_chips_lower
+    mains_lower = cat.main_blades_lower
+    metals_lower = {b.lower(): b for b in cat.metal_blades}
 
-    # 2. Normalize: strip whitespace, remove common suffixes
+    # 1. Exact match against the computed CX full-name set
+    if blade_name in cat.cx_full_names:
+        parts = blade_name.split()
+        if len(parts) == 2 and parts[0] in cat.lock_chips:
+            if parts[1] in cat.main_blades or parts[1] in cat.metal_blades:
+                return (parts[0], parts[1])
+        if blade_name in cat.metal_blades:
+            return (None, blade_name)
+
+    # 2. Strip trailing variant suffix like " W" or " S"
     normalized = blade_name.strip()
-
-    # Remove trailing single-letter suffixes (W, S, A, J, etc.) used for variants
-    # e.g., "Valkyrie Blast W" -> "Valkyrie Blast", "Sol Blast J" -> "Sol Blast"
     if len(normalized) > 2 and normalized[-2] == " " and normalized[-1] in "WSAFHTJ":
         suffix_stripped = normalized[:-2]
-        if suffix_stripped in CX_BLADE_COMPONENTS:
-            return CX_BLADE_COMPONENTS[suffix_stripped]
+        if suffix_stripped in cat.cx_full_names:
+            parts = suffix_stripped.split()
+            if len(parts) == 2 and parts[0] in cat.lock_chips:
+                return (parts[0], parts[1])
         normalized = suffix_stripped
 
-    # 3. Try case-insensitive exact match
     normalized_lower = normalized.lower()
-    for full_name, components in CX_BLADE_COMPONENTS.items():
-        if full_name.lower() == normalized_lower:
-            return components
 
-    # 4. Split by space and try to identify lock chip + main blade
+    # 3. Two-word form: "Lock Main" or "Main Lock"
     parts = normalized.split()
     if len(parts) >= 2:
-        # Try normal order: "Pegasus Blast"
         first_lower = parts[0].lower()
         second_lower = parts[1].lower()
-
-        if (
-            first_lower in _CX_LOCK_CHIPS_LOWER
-            and second_lower in _CX_MAIN_BLADES_LOWER
-        ):
+        if first_lower in chips_lower and (second_lower in mains_lower or second_lower in metals_lower):
             return (
-                _CX_LOCK_CHIPS_LOWER[first_lower],
-                _CX_MAIN_BLADES_LOWER[second_lower],
+                chips_lower[first_lower],
+                mains_lower.get(second_lower) or metals_lower[second_lower],
+            )
+        if (first_lower in mains_lower or first_lower in metals_lower) and second_lower in chips_lower:
+            return (
+                chips_lower[second_lower],
+                mains_lower.get(first_lower) or metals_lower[first_lower],
             )
 
-        # Try reversed order: "Blast Pegasus"
-        if (
-            first_lower in _CX_MAIN_BLADES_LOWER
-            and second_lower in _CX_LOCK_CHIPS_LOWER
-        ):
-            return (
-                _CX_LOCK_CHIPS_LOWER[second_lower],
-                _CX_MAIN_BLADES_LOWER[first_lower],
-            )
+    # 4. Concatenated form: "PegasusBlast"
+    name_no_space = normalized_lower.replace(" ", "")
+    for chip_lower, chip in chips_lower.items():
+        for main_lower, main in mains_lower.items():
+            if name_no_space == chip_lower + main_lower or name_no_space.startswith(chip_lower + main_lower):
+                return (chip, main)
+            if name_no_space == main_lower + chip_lower or name_no_space.startswith(main_lower + chip_lower):
+                return (chip, main)
 
-    # 5. Try to find concatenated patterns (no space): "PegasusBlast"
-    # Check if blade_name contains both a lock chip and main blade concatenated
-    name_lower = normalized_lower.replace(" ", "")  # Remove any spaces
-
-    for lock_chip_lower, lock_chip in _CX_LOCK_CHIPS_LOWER.items():
-        for main_blade_lower, main_blade in _CX_MAIN_BLADES_LOWER.items():
-            # Check "LockChipMainBlade" pattern
-            concat_pattern = lock_chip_lower + main_blade_lower
-            if name_lower == concat_pattern or name_lower.startswith(concat_pattern):
-                return (lock_chip, main_blade)
-            # Check "MainBladeLockChip" pattern (reversed)
-            concat_pattern_rev = main_blade_lower + lock_chip_lower
-            if name_lower == concat_pattern_rev or name_lower.startswith(
-                concat_pattern_rev
-            ):
-                return (lock_chip, main_blade)
-
-    # 6. No match found
     return (None, blade_name)
 
 
 def is_incomplete_cx_blade(blade_name: str, lock_chip: str | None) -> bool:
-    """
-    Check if a blade is a CX main blade missing its lock chip.
-    This indicates incomplete/invalid data that should be flagged.
-    """
-    return blade_name in CX_MAIN_BLADES and lock_chip is None
+    """A bare CX main blade (e.g., "Blast" without "Pegasus") is incomplete."""
+    return blade_name in _cat().main_blades and lock_chip is None
 
 
 def is_invalid_two_main_blades(blade_name: str) -> bool:
-    """
-    Check if a blade name is an invalid combination of two CX main blades.
-    e.g., "Might Blast" is invalid because both are CX main blades.
-
-    Returns True if the blade name contains two CX main blade names,
-    which is an invalid/impossible combination.
-    """
+    """Two CX main blade words like "Might Blast" is impossible — flag it."""
     parts = blade_name.split()
     if len(parts) != 2:
         return False
+    mains_lower = _cat().main_blades_lower
+    return parts[0].lower() in mains_lower and parts[1].lower() in mains_lower
 
-    # Check if both parts are CX main blades
-    first_lower = parts[0].lower()
-    second_lower = parts[1].lower()
 
-    first_is_main = first_lower in _CX_MAIN_BLADES_LOWER
-    second_is_main = second_lower in _CX_MAIN_BLADES_LOWER
-
-    # Invalid if BOTH parts are main blades (not lock chip + main blade)
-    return first_is_main and second_is_main
+# Default lock-chip guesses used by validate_and_fix_blade() to repair
+# broken two-main-blade entries. Not part-release-sensitive.
+_DEFAULT_LOCK_CHIP_BY_MAIN = {
+    "Blast": "Pegasus",
+    "Might": "Emperor",
+    "Brave": "Dran",
+    "Arc": "Wizard",
+    "Reaper": "Hells",
+    "Brush": "Fox",
+    "Eclipse": "Sol",
+    "Hunt": "Wolf",
+    "Flare": "Phoenix",
+    "Volt": "Valkyrie",
+}
 
 
 def validate_and_fix_blade(blade_name: str) -> str:
-    """
-    Validate a blade name and return a corrected version if needed.
+    """Repair broken blade names: typos and invalid two-main-blade combos."""
+    from db import BLADE_NORMALIZATIONS  # defined later in this module
 
-    Checks for:
-    1. Invalid two-main-blade combinations (e.g., "Might Blast")
-    2. Known typos in BLADE_NORMALIZATIONS
-
-    Returns the corrected blade name, or original if valid.
-    """
-    # Import here to avoid circular dependency
-    from db import BLADE_NORMALIZATIONS
-
-    # First check normalizations (includes invalid combo fixes)
     if blade_name in BLADE_NORMALIZATIONS:
         return BLADE_NORMALIZATIONS[blade_name]
 
-    # Check for invalid two-main-blade combinations not in normalizations
     if is_invalid_two_main_blades(blade_name):
         parts = blade_name.split()
-        first_lower = parts[0].lower()
-        # Return just the first main blade with a guess at the lock chip
-        # Default to common lock chips for each main blade
-        main_blade = _CX_MAIN_BLADES_LOWER.get(first_lower, parts[0])
-        default_lock_chips = {
-            "Blast": "Pegasus",
-            "Might": "Emperor",
-            "Brave": "Dran",
-            "Arc": "Wizard",
-            "Reaper": "Hells",
-            "Brush": "Fox",
-            "Eclipse": "Sol",
-            "Hunt": "Wolf",
-            "Flare": "Phoenix",
-            "Volt": "Valkyrie",
-        }
-        lock_chip = default_lock_chips.get(main_blade, "")
-        if lock_chip:
-            return f"{lock_chip} {main_blade}"
-        return main_blade
+        main_blade = _cat().main_blades_lower.get(parts[0].lower(), parts[0])
+        lock_chip = _DEFAULT_LOCK_CHIP_BY_MAIN.get(main_blade, "")
+        return f"{lock_chip} {main_blade}".strip()
 
     return blade_name
 
 
-# =============================================================================
-# Blade Series Classification
-# =============================================================================
-
-# Series definitions based on product codes:
-# - BX = Basic Line (standard BX-XX releases)
-# - UX = Unique Line (metal distributed to perimeter, UX-XX releases)
-# - CX = Custom Line (disassembles into Lock Chip + Main Blade + Assist Blade)
-#
-# Sources: beyblade.fandom.com, beybxdb.com, worldbeyblade.org
-BLADE_SERIES = {
-    # ==========================================================================
-    # BX Series (Basic Line) - Standard releases
-    # ==========================================================================
-    "Dran Sword": "BX",  # BX-01
-    "Hells Scythe": "BX",  # BX-02
-    "Wizard Arrow": "BX",  # BX-03
-    "Knight Shield": "BX",  # BX-04
-    "Knight Lance": "BX",  # BX-13
-    "Leon Claw": "BX",  # BX-15
-    "Shark Edge": "BX",  # BX-14 Random Booster
-    "Viper Tail": "BX",  # BX-14 Random Booster
-    "Dran Dagger": "BX",  # BX-14 Random Booster
-    "Rhino Horn": "BX",  # BX-19
-    "Phoenix Wing": "BX",  # BX-23
-    "Hells Chain": "BX",  # BX-24 Random Booster
-    "Unicorn Sting": "BX",  # BX-26
-    "Black Shell": "BX",  # BX-24 Random Booster
-    "Tyranno Beat": "BX",  # BX-24 Random Booster
-    "Weiss Tiger": "BX",  # BX-33
-    "Cobalt Dragoon": "BX",  # BX-34
-    "Cobalt Drake": "BX",  # BX-31 Random Booster
-    "Crimson Garuda": "BX",  # BX-38
-    "Talon Ptera": "BX",  # BX-35 Random Booster
-    "Roar Tyranno": "BX",  # BX-35 Random Booster
-    "Sphinx Cowl": "BX",  # BX-35 Random Booster
-    "Wyvern Gale": "BX",  # BX-35 Random Booster
-    "Shelter Drake": "BX",  # BX-39
-    "Tricera Press": "BX",  # BX-44
-    "Samurai Calibur": "BX",  # BX-45
-    "Bear Scratch": "BX",  # BX-48 Random Booster
-    "Xeno Xcalibur": "BX",  # BXG-13
-    "Chain Incendio": "BX",  # BX Random Booster
-    "Scythe Incendio": "BX",  # BX Random Booster
-    "Steel Samurai": "BX",  # BX
-    "Optimus Primal": "BX",  # BX (Collab)
-    "Bite Croc": "BX",  # BX (Hasbro exclusive)
-    "Knife Shinobi": "BX",  # BX (Hasbro exclusive)
-    "Venom": "BX",  # BX
-    "Keel Shark": "BX",  # BX (Hasbro name for Shark Edge)
-    "Whale Wave": "BX",  # BX
-    "Gill Shark": "BX",  # BX (in CX-11 deck set but blade is BX)
-    "Driger Slash": "BX",  # BX remake of classic Driger
-    "Dragoon Storm": "BX",  # BX remake of classic Dragoon
-    # Crossover/collab BX blades
-    "Bumblebee": "BX",  # Transformers collab
-    "Megatron": "BX",  # Transformers collab
-    "Shockwave": "BX",  # Transformers collab
-    "Darth Vader": "BX",  # Star Wars collab
-    "General Grievous": "BX",  # Star Wars collab
-    "Moff Gideon": "BX",  # Star Wars collab
-    "Obi-Wan Kenobi": "BX",  # Star Wars collab
-    "Red Hulk": "BX",  # Marvel collab
-    "Spider-Man": "BX",  # Marvel collab
-    "Mosasaurus": "BX",  # Jurassic World collab
-    "Quetzalcoatlus": "BX",  # Jurassic World collab
-    "Spinosaurus": "BX",  # Jurassic World collab
-    "Tyrannosaurus": "BX",  # Jurassic World collab
-    # Classic series remakes/crossovers (X-Over Project)
-    "L-Drago (Upper)": "BX",  # Metal Fight crossover
-    "L-Drago (Lower)": "BX",  # Metal Fight crossover
-    "Storm Pegasis": "BX",  # Metal Fight crossover
-    "Rock Leone": "BX",  # Metal Fight crossover
-    "Victory Valkyrie": "BX",  # Burst crossover
-    # Other BX
-    "Yell Kong": "BX",
-    "Tackle Goat": "BX",
-    # ==========================================================================
-    # UX Series (Unique Line) - More metal to perimeter, plastic interior hooks
-    # ==========================================================================
-    "Dran Buster": "UX",  # UX-01
-    "Hells Hammer": "UX",  # UX-02
-    "Wizard Rod": "UX",  # UX-03
-    # "Soar Phoenix" removed - same blade as "Phoenix Wing" (UX-04 Entry Set)
-    "Leon Crest": "UX",  # UX-06
-    "Knight Mail": "UX",  # UX-07
-    "Silver Wolf": "UX",  # UX-08
-    "Samurai Saber": "UX",  # UX-09
-    "Phoenix Feather": "UX",  # UX-10
-    "Impact Drake": "UX",  # UX-11
-    "Tusk Mammoth": "UX",  # UX-12 Random Booster
-    "Phoenix Rudder": "UX",  # UX-12 Random Booster
-    "Ghost Circle": "UX",  # UX-12 Random Booster
-    "Golem Rock": "UX",  # UX-13
-    "Scorpio Spear": "UX",  # UX-14
-    "Shinobi Shadow": "UX",  # UX-15 Random Booster
-    "Clock Mirage": "UX",  # UX-16
-    "Meteor Dragoon": "UX",  # UX-17
-    "Mummy Curse": "UX",  # UX-18 Random Booster
-    "Dranzer Spiral": "UX",  # UX-12 Random Booster
-    "Shark Scale": "UX",  # UX-15 Shark Scale Deck Set
-    "Hover Wyvern": "UX",  # UX
-    "Aero Pegasus": "UX",  # UX
-    "Wand Wizard": "UX",  # UX Starter Pack
-    # ==========================================================================
-    # CX Series (Custom Line) - Main Blade names (lock chip stored separately)
-    # After parsing: "Pegasus Blast" -> lock_chip="Pegasus", blade="Blast"
-    # ==========================================================================
-    # Main blade types (what gets stored in blade column after parsing)
-    "Brave": "CX",  # CX-01 main blade
-    "Arc": "CX",  # CX-02 main blade
-    "Dark": "CX",  # CX-03 main blade
-    "Reaper": "CX",  # CX-05 main blade
-    "Brush": "CX",  # CX-06 main blade
-    "Blast": "CX",  # CX-07 main blade
-    "Eclipse": "CX",  # CX-09 main blade
-    "Hunt": "CX",  # CX-10 main blade
-    "Might": "CX",  # CX-11 main blade
-    "Flare": "CX",  # CX-12 main blade
-    "Flame": "CX",  # CX main blade
-    "Fang": "CX",  # CX main blade
-    "Fort": "CX",  # CX main blade
-    "Antler": "CX",  # CX main blade
-    "Wriggle": "CX",  # CX main blade
-    "Volt": "CX",  # CX Random Booster main blade
-    # Metal Blades (CX metal variants of main blades)
-    "Blitz": "CX",  # CX metal blade
-    "Fortress": "CX",  # CX metal blade
-    "Armor": "CX",  # CX metal blade
-    "Rage": "CX",  # CX metal blade
-    "Hornet": "CX",  # CX main blade (Hasbro)
-    # Also keep full names for backwards compatibility with existing data
-    "Dran Brave": "CX",
-    "Wizard Arc": "CX",
-    "Perseus Dark": "CX",
-    "Hells Reaper": "CX",
-    "Fox Brush": "CX",
-    "Pegasus Blast": "CX",
-    "Sol Eclipse": "CX",
-    "Wolf Hunt": "CX",
-    "Emperor Might": "CX",
-    "Phoenix Flare": "CX",
-    "Valkyrie Volt": "CX",
-    "Emperor Brave": "CX",
-    "Cerberus Blast": "CX",
-    "Hells Blast": "CX",
-}
 
 
 def get_connection(read_only: bool = False) -> duckdb.DuckDBPyConnection:
@@ -532,22 +239,33 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
         conn = get_connection()
 
     # Create sequences for auto-increment
-    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_parts START 1")
     conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_tournaments START 1")
     conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_placements START 1")
 
-    # Parts reference table
+    # Parts catalog table - source of truth for valid parts
+    # Populated by the Fandom wiki scraper from Category:* pages.
+    # Drift detection adds rows with status='pending' for unknown parts seen in tournaments.
+    # Composite PK so the same name can exist as multiple part_types
+    # (e.g., "Wolf" the lock chip, "Wolf" the blade).
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS parts (
-            id INTEGER PRIMARY KEY DEFAULT nextval('seq_parts'),
-            name VARCHAR NOT NULL UNIQUE,
-            type VARCHAR NOT NULL,
-            spin_direction VARCHAR,
-            series VARCHAR,
-            release_date DATE,
-            notes VARCHAR
+        CREATE TABLE IF NOT EXISTS parts_catalog (
+            name VARCHAR NOT NULL,
+            part_type VARCHAR NOT NULL,
+            system VARCHAR,
+            canonical_name VARCHAR,
+            aliases VARCHAR,
+            wiki_url VARCHAR,
+            status VARCHAR DEFAULT 'accepted',
+            source VARCHAR,
+            metal BOOLEAN DEFAULT FALSE,
+            sample_combo VARCHAR,
+            occurrence_count INTEGER DEFAULT 0,
+            discovered_at TIMESTAMP DEFAULT current_timestamp,
+            accepted_at TIMESTAMP,
+            PRIMARY KEY (name, part_type)
         )
     """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_parts_catalog_type_status ON parts_catalog(part_type, status)")
 
     # Tournaments table
     conn.execute("""
@@ -1494,8 +1212,14 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
         conn.execute(f"UPDATE placements SET {col} = TRIM({col}) WHERE {col} != TRIM({col})")
 
     # Extract lock chips from CX blade names FIRST (before normalizations)
-    # This must run before BLADE_NORMALIZATIONS to preserve lock chip info
-    for cx_name, (lock_chip, main_blade) in CX_BLADE_COMPONENTS.items():
+    # This must run before BLADE_NORMALIZATIONS to preserve lock chip info.
+    # Iterate over every Lock+Main combination derived from the catalog.
+    _cx_components = {}
+    _cat_local = _cat()
+    for chip in _cat_local.lock_chips:
+        for main in _cat_local.main_blades:
+            _cx_components[f"{chip} {main}"] = (chip, main)
+    for cx_name, (lock_chip, main_blade) in _cx_components.items():
         for i in [1, 2, 3]:
             blade_col = f"blade_{i}"
             lock_col = f"lock_chip_{i}"
@@ -1597,7 +1321,7 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
     # Clean up invalid lock chips - main blades should NOT be lock chips
     for i in [1, 2, 3]:
         lock_col = f"lock_chip_{i}"
-        for blade in CX_MAIN_BLADES:
+        for blade in _cat_local.main_blades:
             count = conn.execute(
                 f"SELECT COUNT(*) FROM placements WHERE {lock_col} = ?", [blade]
             ).fetchone()[0]
@@ -1607,6 +1331,16 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
                     [blade],
                 )
                 total_fixed += count
+
+    # Drift detection: scan placements for any tokens not in the wiki catalog
+    # and mark them as 'pending' for admin review on /admin/new-parts
+    try:
+        from catalog import detect_drift
+        drift_summary = detect_drift(conn)
+        if drift_summary:
+            print(f"  Drift detected: {drift_summary}")
+    except Exception as e:
+        print(f"  Warning: drift detection failed: {e}")
 
     if should_close:
         conn.close()

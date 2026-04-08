@@ -1,0 +1,1401 @@
+{
+  "assist_aliases": {
+    "A": "Assault",
+    "Assault": "Assault",
+    "B": "Bumper",
+    "Bumper": "Bumper",
+    "C": "Charge",
+    "Charge": "Charge",
+    "D": "Dual",
+    "Dual": "Dual",
+    "E": "Erase",
+    "Erase": "Erase",
+    "F": "Free",
+    "Free": "Free",
+    "H": "Heavy",
+    "Heavy": "Heavy",
+    "J": "Jaggy",
+    "Jaggy": "Jaggy",
+    "K": "Knuckle",
+    "Knuckle": "Knuckle",
+    "M": "Massive",
+    "Massive": "Massive",
+    "R": "Round",
+    "Round": "Round",
+    "S": "Slash",
+    "Slash": "Slash",
+    "T": "Turn",
+    "Turn": "Turn",
+    "V": "Vertical",
+    "Vertical": "Vertical",
+    "W": "Wheel",
+    "Wheel": "Wheel",
+    "Z": "Zillion",
+    "Zillion": "Zillion"
+  },
+  "assists": [
+    "Assault",
+    "Bumper",
+    "Charge",
+    "Dual",
+    "Erase",
+    "Free",
+    "Heavy",
+    "Jaggy",
+    "Knuckle",
+    "Massive",
+    "Round",
+    "Slash",
+    "Turn",
+    "Vertical",
+    "Wheel",
+    "Zillion"
+  ],
+  "bit_aliases": {
+    "A": "Accel",
+    "Accel": "Accel",
+    "B": "Ball",
+    "BS": "Bound Spike",
+    "Ball": "Ball",
+    "Bound Spike": "Bound Spike",
+    "BoundSpike": "Bound Spike",
+    "C": "Cyclone",
+    "Cyclone": "Cyclone",
+    "D": "Dot",
+    "DB": "Disc Ball",
+    "DS": "Disc Spike",
+    "Disc Ball": "Disc Ball",
+    "Disc Spike": "Disc Spike",
+    "DiscBall": "Disc Ball",
+    "DiscSpike": "Disc Spike",
+    "Dot": "Dot",
+    "E": "Elevate",
+    "El": "Elevate",
+    "Elevate": "Elevate",
+    "F": "Flat",
+    "FB": "Free Ball",
+    "FF": "Free Flat",
+    "Flat": "Flat",
+    "Free Ball": "Free Ball",
+    "Free Flat": "Free Flat",
+    "FreeBall": "Free Ball",
+    "FreeFlat": "Free Flat",
+    "G": "Glide",
+    "GB": "Gear Ball",
+    "GF": "Gear Flat",
+    "GN": "Gear Needle",
+    "GP": "Gear Point",
+    "GR": "Gear Rush",
+    "Gear Ball": "Gear Ball",
+    "Gear Flat": "Gear Flat",
+    "Gear Needle": "Gear Needle",
+    "Gear Point": "Gear Point",
+    "Gear Rush": "Gear Rush",
+    "GearBall": "Gear Ball",
+    "GearFlat": "Gear Flat",
+    "GearNeedle": "Gear Needle",
+    "GearPoint": "Gear Point",
+    "GearRush": "Gear Rush",
+    "Gl": "Glide",
+    "Glide": "Glide",
+    "H": "Hexa",
+    "HN": "High Needle",
+    "HT": "High Taper",
+    "Hex": "Hexa",
+    "Hexa": "Hexa",
+    "High Needle": "High Needle",
+    "High Taper": "High Taper",
+    "HighNeedle": "High Needle",
+    "HighTaper": "High Taper",
+    "Ignition": "Ignition",
+    "J": "Jolt",
+    "Jolt": "Jolt",
+    "K": "Kick",
+    "Kick": "Kick",
+    "L": "Level",
+    "LF": "Low Flat",
+    "LO": "Low Orb",
+    "LR": "Low Rush",
+    "Level": "Level",
+    "Low Flat": "Low Flat",
+    "Low Orb": "Low Orb",
+    "Low Rush": "Low Rush",
+    "LowFlat": "Low Flat",
+    "LowOrb": "Low Orb",
+    "LowRush": "Low Rush",
+    "Lv": "Level",
+    "M": "Merge",
+    "MN": "Metal Needle",
+    "Merge": "Merge",
+    "Metal Needle": "Metal Needle",
+    "MetalNeedle": "Metal Needle",
+    "N": "Needle",
+    "Needle": "Needle",
+    "O": "Orb",
+    "Orb": "Orb",
+    "P": "Point",
+    "Point": "Point",
+    "Q": "Quake",
+    "Quake": "Quake",
+    "R": "Rush",
+    "RA": "Rubber Accel",
+    "Rrush": "Rush",
+    "Rubber Accel": "Rubber Accel",
+    "RubberAccel": "Rubber Accel",
+    "Rush": "Rush",
+    "S": "Spike",
+    "Spike": "Spike",
+    "T": "Taper",
+    "TK": "Trans Kick",
+    "TP": "Trans Point",
+    "Taper": "Taper",
+    "Trans Kick": "Trans Kick",
+    "Trans Point": "Trans Point",
+    "TransKick": "Trans Kick",
+    "TransPoint": "Trans Point",
+    "U": "Unite",
+    "UF": "Under Flat",
+    "UN": "Under Needle",
+    "Un": "Unite",
+    "Under Flat": "Under Flat",
+    "Under Needle": "Under Needle",
+    "UnderFlat": "Under Flat",
+    "UnderNeedle": "Under Needle",
+    "Unite": "Unite",
+    "V": "Vortex",
+    "Vortex": "Vortex",
+    "W": "Wedge",
+    "WB": "Wall Ball",
+    "WW": "Wall Wedge",
+    "Wall Ball": "Wall Ball",
+    "Wall Wedge": "Wall Wedge",
+    "WallBall": "Wall Ball",
+    "WallWedge": "Wall Wedge",
+    "Wedge": "Wedge",
+    "Yielding": "Yielding",
+    "Z": "Zap",
+    "Zap": "Zap"
+  },
+  "bits": [
+    "Accel",
+    "Ball",
+    "Bound Spike",
+    "Cyclone",
+    "Disc Ball",
+    "Disc Spike",
+    "Dot",
+    "Elevate",
+    "Flat",
+    "Free Ball",
+    "Free Flat",
+    "Gear Ball",
+    "Gear Flat",
+    "Gear Needle",
+    "Gear Point",
+    "Gear Rush",
+    "Glide",
+    "Hexa",
+    "High Needle",
+    "High Taper",
+    "Ignition",
+    "Jolt",
+    "Kick",
+    "Level",
+    "Low Flat",
+    "Low Orb",
+    "Low Rush",
+    "Merge",
+    "Metal Needle",
+    "Needle",
+    "Orb",
+    "Point",
+    "Quake",
+    "Rubber Accel",
+    "Rush",
+    "Spike",
+    "Taper",
+    "Trans Kick",
+    "Trans Point",
+    "Under Flat",
+    "Under Needle",
+    "Unite",
+    "Vortex",
+    "Wall Ball",
+    "Wall Wedge",
+    "Wedge",
+    "Yielding",
+    "Zap"
+  ],
+  "blades": [
+    {
+      "name": "Aero Pegasus",
+      "system": "UX"
+    },
+    {
+      "name": "Arrow Wizard",
+      "system": "BX"
+    },
+    {
+      "name": "Bear Scratch",
+      "system": "BX"
+    },
+    {
+      "name": "Beat Tyranno",
+      "system": "BX"
+    },
+    {
+      "name": "Bite Croc",
+      "system": "BX"
+    },
+    {
+      "name": "Black Shell",
+      "system": "BX"
+    },
+    {
+      "name": "Bumblebee",
+      "system": "BX"
+    },
+    {
+      "name": "Buster Dran",
+      "system": "UX"
+    },
+    {
+      "name": "Calibur Samurai",
+      "system": "BX"
+    },
+    {
+      "name": "Captain America",
+      "system": "BX"
+    },
+    {
+      "name": "Chain Incendio",
+      "system": "BX"
+    },
+    {
+      "name": "Chewbacca",
+      "system": "BX"
+    },
+    {
+      "name": "Circle Ghost",
+      "system": "UX"
+    },
+    {
+      "name": "Claw Leon",
+      "system": "BX"
+    },
+    {
+      "name": "Clock Mirage",
+      "system": "UX"
+    },
+    {
+      "name": "Cobalt Dragoon",
+      "system": "BX"
+    },
+    {
+      "name": "Cobalt Drake",
+      "system": "BX"
+    },
+    {
+      "name": "Cowl Sphinx",
+      "system": "BX"
+    },
+    {
+      "name": "Crest Leon",
+      "system": "UX"
+    },
+    {
+      "name": "Crimson Garuda",
+      "system": "BX"
+    },
+    {
+      "name": "CrocCrunch",
+      "system": "BX"
+    },
+    {
+      "name": "Curse Mummy",
+      "system": "UX"
+    },
+    {
+      "name": "Dagger Dran",
+      "system": "BX"
+    },
+    {
+      "name": "Darth Vader",
+      "system": "BX"
+    },
+    {
+      "name": "DracielShield",
+      "system": "BX"
+    },
+    {
+      "name": "Dragoon Storm",
+      "system": "BX"
+    },
+    {
+      "name": "Dran Buster",
+      "system": "UX"
+    },
+    {
+      "name": "Dran Dagger",
+      "system": "BX"
+    },
+    {
+      "name": "Dran Sword",
+      "system": "BX"
+    },
+    {
+      "name": "DranStrike",
+      "system": "BX"
+    },
+    {
+      "name": "Dranzer Spiral",
+      "system": "BX"
+    },
+    {
+      "name": "Driger Slash",
+      "system": "BX"
+    },
+    {
+      "name": "Feather Phoenix",
+      "system": "BX"
+    },
+    {
+      "name": "Gale Wyvern",
+      "system": "BX"
+    },
+    {
+      "name": "General Grievous",
+      "system": "BX"
+    },
+    {
+      "name": "Ghost Circle",
+      "system": "UX"
+    },
+    {
+      "name": "Gill Shark",
+      "system": "BX"
+    },
+    {
+      "name": "GoatTackle",
+      "system": "BX"
+    },
+    {
+      "name": "Golem Rock",
+      "system": "UX"
+    },
+    {
+      "name": "Green Goblin",
+      "system": "BX"
+    },
+    {
+      "name": "Hack Viking",
+      "system": "UX"
+    },
+    {
+      "name": "Hammer Incendio",
+      "system": "UX"
+    },
+    {
+      "name": "Hells Chain",
+      "system": "BX"
+    },
+    {
+      "name": "Hells Hammer",
+      "system": "UX"
+    },
+    {
+      "name": "Hells Scythe",
+      "system": "BX"
+    },
+    {
+      "name": "Helm Knight",
+      "system": "BX"
+    },
+    {
+      "name": "Horn Rhino",
+      "system": "BX"
+    },
+    {
+      "name": "Hover Wyvern",
+      "system": "UX"
+    },
+    {
+      "name": "Impact Drake",
+      "system": "UX"
+    },
+    {
+      "name": "Iron Man",
+      "system": "BX"
+    },
+    {
+      "name": "Keel Shark",
+      "system": "BX"
+    },
+    {
+      "name": "Knife Shinobi",
+      "system": "BX"
+    },
+    {
+      "name": "Knight Lance",
+      "system": "BX"
+    },
+    {
+      "name": "Knight Mail",
+      "system": "UX"
+    },
+    {
+      "name": "Knight Shield",
+      "system": "BX"
+    },
+    {
+      "name": "Lance Knight",
+      "system": "BX"
+    },
+    {
+      "name": "Leon Claw",
+      "system": "BX"
+    },
+    {
+      "name": "Leon Crest",
+      "system": "UX"
+    },
+    {
+      "name": "Lightning L-Drago (Rapid-Hit Type)",
+      "system": "BX"
+    },
+    {
+      "name": "Lightning L-Drago (Upper Type)",
+      "system": "BX"
+    },
+    {
+      "name": "Luke Skywalker",
+      "system": "BX"
+    },
+    {
+      "name": "Mail Knight",
+      "system": "UX"
+    },
+    {
+      "name": "MammothTusk",
+      "system": "BX"
+    },
+    {
+      "name": "Megatron",
+      "system": "BX"
+    },
+    {
+      "name": "Meteor Dragoon",
+      "system": "UX"
+    },
+    {
+      "name": "Meteoroid Dragoon",
+      "system": "UX"
+    },
+    {
+      "name": "Miles Morales",
+      "system": "BX"
+    },
+    {
+      "name": "Moff Gideon",
+      "system": "BX"
+    },
+    {
+      "name": "Mosasaurus",
+      "system": "BX"
+    },
+    {
+      "name": "Mummy Curse",
+      "system": "UX"
+    },
+    {
+      "name": "Obi-Wan Kenobi",
+      "system": "BX"
+    },
+    {
+      "name": "Obsidian Shell",
+      "system": "BX"
+    },
+    {
+      "name": "Optimus Primal",
+      "system": "BX"
+    },
+    {
+      "name": "Optimus Prime",
+      "system": "BX"
+    },
+    {
+      "name": "Orochi Cluster",
+      "system": "UX"
+    },
+    {
+      "name": "Pearl Tiger",
+      "system": "BX"
+    },
+    {
+      "name": "Phoenix Feather",
+      "system": "BX"
+    },
+    {
+      "name": "Phoenix Rudder",
+      "system": "UX"
+    },
+    {
+      "name": "Phoenix Wing",
+      "system": "BX"
+    },
+    {
+      "name": "PteraSwing",
+      "system": "BX"
+    },
+    {
+      "name": "Quetzalcoatlus",
+      "system": "BX"
+    },
+    {
+      "name": "Red Hulk",
+      "system": "BX"
+    },
+    {
+      "name": "Rhino Horn",
+      "system": "BX"
+    },
+    {
+      "name": "Ridge Triceratops",
+      "system": "BX"
+    },
+    {
+      "name": "Ring Aether",
+      "system": "BX"
+    },
+    {
+      "name": "Roar Tyranno",
+      "system": "BX"
+    },
+    {
+      "name": "Rock Golem",
+      "system": "UX"
+    },
+    {
+      "name": "Rock Leone",
+      "system": "BX"
+    },
+    {
+      "name": "Rudder Phoenix",
+      "system": "UX"
+    },
+    {
+      "name": "Saber Samurai",
+      "system": "UX"
+    },
+    {
+      "name": "Samurai Calibur",
+      "system": "BX"
+    },
+    {
+      "name": "Samurai Saber",
+      "system": "UX"
+    },
+    {
+      "name": "SamuraiSteel",
+      "system": "BX"
+    },
+    {
+      "name": "Savage Bear",
+      "system": "BX"
+    },
+    {
+      "name": "Scale Shark",
+      "system": "UX"
+    },
+    {
+      "name": "Scarlet Garuda",
+      "system": "BX"
+    },
+    {
+      "name": "Scorpio Spear",
+      "system": "UX"
+    },
+    {
+      "name": "Scythe Incendio",
+      "system": "BX"
+    },
+    {
+      "name": "Shadow Shinobi",
+      "system": "UX"
+    },
+    {
+      "name": "Shark Edge",
+      "system": "BX"
+    },
+    {
+      "name": "Shark Scale",
+      "system": "UX"
+    },
+    {
+      "name": "SharkGill",
+      "system": "BX"
+    },
+    {
+      "name": "Shelter Drake",
+      "system": "BX"
+    },
+    {
+      "name": "Shinobi Shadow",
+      "system": "UX"
+    },
+    {
+      "name": "ShinobiKnife",
+      "system": "BX"
+    },
+    {
+      "name": "Shockwave",
+      "system": "BX"
+    },
+    {
+      "name": "Silver Wolf",
+      "system": "UX"
+    },
+    {
+      "name": "Soar Phoenix",
+      "system": "BX"
+    },
+    {
+      "name": "Spear Scorpio",
+      "system": "UX"
+    },
+    {
+      "name": "Sphinx Cowl",
+      "system": "BX"
+    },
+    {
+      "name": "Spider-Man",
+      "system": "BX"
+    },
+    {
+      "name": "Spinosaurus",
+      "system": "BX"
+    },
+    {
+      "name": "Starscream",
+      "system": "BX"
+    },
+    {
+      "name": "Steel Samurai",
+      "system": "BX"
+    },
+    {
+      "name": "Sterling Wolf",
+      "system": "UX"
+    },
+    {
+      "name": "Sting Unicorn",
+      "system": "BX"
+    },
+    {
+      "name": "StormPegasis",
+      "system": "BX"
+    },
+    {
+      "name": "Stormtrooper",
+      "system": "BX"
+    },
+    {
+      "name": "Strike Dran",
+      "system": "BX"
+    },
+    {
+      "name": "Stun Medusa",
+      "system": "UX"
+    },
+    {
+      "name": "Sword Dran",
+      "system": "BX"
+    },
+    {
+      "name": "T. Rex",
+      "system": "BX"
+    },
+    {
+      "name": "Tackle Goat",
+      "system": "BX"
+    },
+    {
+      "name": "Tail Viper",
+      "system": "BX"
+    },
+    {
+      "name": "Talon Ptera",
+      "system": "BX"
+    },
+    {
+      "name": "Thanos",
+      "system": "BX"
+    },
+    {
+      "name": "The Mandalorian",
+      "system": "BX"
+    },
+    {
+      "name": "Tide Whale",
+      "system": "BX"
+    },
+    {
+      "name": "Tricera Press",
+      "system": "BX"
+    },
+    {
+      "name": "TriceraSpiky",
+      "system": "BX"
+    },
+    {
+      "name": "Trypio",
+      "system": "BX"
+    },
+    {
+      "name": "Tusk Mammoth",
+      "system": "BX"
+    },
+    {
+      "name": "Tyranno Beat",
+      "system": "BX"
+    },
+    {
+      "name": "TyrannoRoar",
+      "system": "BX"
+    },
+    {
+      "name": "Unicorn Sting",
+      "system": "BX"
+    },
+    {
+      "name": "Venom",
+      "system": "BX"
+    },
+    {
+      "name": "VictoryValkyrie",
+      "system": "BX"
+    },
+    {
+      "name": "Viper Tail",
+      "system": "BX"
+    },
+    {
+      "name": "Wand Wizard",
+      "system": "UX"
+    },
+    {
+      "name": "Weiss Tiger",
+      "system": "BX"
+    },
+    {
+      "name": "Whale Wave",
+      "system": "BX"
+    },
+    {
+      "name": "Wizard Arrow",
+      "system": "BX"
+    },
+    {
+      "name": "Wizard Rod",
+      "system": "UX"
+    },
+    {
+      "name": "Wyvern Gale",
+      "system": "BX"
+    },
+    {
+      "name": "WyvernHover",
+      "system": "UX"
+    },
+    {
+      "name": "Xeno Xcalibur",
+      "system": "BX"
+    },
+    {
+      "name": "Yell Kong",
+      "system": "BX"
+    }
+  ],
+  "cx_full_names": [
+    "Bahamut Antler",
+    "Bahamut Arc",
+    "Bahamut Blast",
+    "Bahamut Blitz",
+    "Bahamut Brave",
+    "Bahamut Brush",
+    "Bahamut Dark",
+    "Bahamut Eclipse",
+    "Bahamut Fang",
+    "Bahamut Flame",
+    "Bahamut Flare",
+    "Bahamut Fort",
+    "Bahamut Fortress",
+    "Bahamut Hunt",
+    "Bahamut Might",
+    "Bahamut Rage",
+    "Bahamut Reaper",
+    "Bahamut Volt",
+    "Bahamut Wriggle",
+    "Blitz",
+    "Cerberus Antler",
+    "Cerberus Arc",
+    "Cerberus Blast",
+    "Cerberus Blitz",
+    "Cerberus Brave",
+    "Cerberus Brush",
+    "Cerberus Dark",
+    "Cerberus Eclipse",
+    "Cerberus Fang",
+    "Cerberus Flame",
+    "Cerberus Flare",
+    "Cerberus Fort",
+    "Cerberus Fortress",
+    "Cerberus Hunt",
+    "Cerberus Might",
+    "Cerberus Rage",
+    "Cerberus Reaper",
+    "Cerberus Volt",
+    "Cerberus Wriggle",
+    "Dran Antler",
+    "Dran Arc",
+    "Dran Blast",
+    "Dran Blitz",
+    "Dran Brave",
+    "Dran Brush",
+    "Dran Dark",
+    "Dran Eclipse",
+    "Dran Fang",
+    "Dran Flame",
+    "Dran Flare",
+    "Dran Fort",
+    "Dran Fortress",
+    "Dran Hunt",
+    "Dran Might",
+    "Dran Rage",
+    "Dran Reaper",
+    "Dran Volt",
+    "Dran Wriggle",
+    "Emperor Antler",
+    "Emperor Arc",
+    "Emperor Blast",
+    "Emperor Blitz",
+    "Emperor Brave",
+    "Emperor Brush",
+    "Emperor Dark",
+    "Emperor Eclipse",
+    "Emperor Fang",
+    "Emperor Flame",
+    "Emperor Flare",
+    "Emperor Fort",
+    "Emperor Fortress",
+    "Emperor Hunt",
+    "Emperor Might",
+    "Emperor Rage",
+    "Emperor Reaper",
+    "Emperor Volt",
+    "Emperor Wriggle",
+    "Eva Antler",
+    "Eva Arc",
+    "Eva Blast",
+    "Eva Blitz",
+    "Eva Brave",
+    "Eva Brush",
+    "Eva Dark",
+    "Eva Eclipse",
+    "Eva Fang",
+    "Eva Flame",
+    "Eva Flare",
+    "Eva Fort",
+    "Eva Fortress",
+    "Eva Hunt",
+    "Eva Might",
+    "Eva Rage",
+    "Eva Reaper",
+    "Eva Volt",
+    "Eva Wriggle",
+    "Fortress",
+    "Fox Antler",
+    "Fox Arc",
+    "Fox Blast",
+    "Fox Blitz",
+    "Fox Brave",
+    "Fox Brush",
+    "Fox Dark",
+    "Fox Eclipse",
+    "Fox Fang",
+    "Fox Flame",
+    "Fox Flare",
+    "Fox Fort",
+    "Fox Fortress",
+    "Fox Hunt",
+    "Fox Might",
+    "Fox Rage",
+    "Fox Reaper",
+    "Fox Volt",
+    "Fox Wriggle",
+    "Hells Antler",
+    "Hells Arc",
+    "Hells Blast",
+    "Hells Blitz",
+    "Hells Brave",
+    "Hells Brush",
+    "Hells Dark",
+    "Hells Eclipse",
+    "Hells Fang",
+    "Hells Flame",
+    "Hells Flare",
+    "Hells Fort",
+    "Hells Fortress",
+    "Hells Hunt",
+    "Hells Might",
+    "Hells Rage",
+    "Hells Reaper",
+    "Hells Volt",
+    "Hells Wriggle",
+    "Hornet Antler",
+    "Hornet Arc",
+    "Hornet Blast",
+    "Hornet Blitz",
+    "Hornet Brave",
+    "Hornet Brush",
+    "Hornet Dark",
+    "Hornet Eclipse",
+    "Hornet Fang",
+    "Hornet Flame",
+    "Hornet Flare",
+    "Hornet Fort",
+    "Hornet Fortress",
+    "Hornet Hunt",
+    "Hornet Might",
+    "Hornet Rage",
+    "Hornet Reaper",
+    "Hornet Volt",
+    "Hornet Wriggle",
+    "Knight Antler",
+    "Knight Arc",
+    "Knight Blast",
+    "Knight Blitz",
+    "Knight Brave",
+    "Knight Brush",
+    "Knight Dark",
+    "Knight Eclipse",
+    "Knight Fang",
+    "Knight Flame",
+    "Knight Flare",
+    "Knight Fort",
+    "Knight Fortress",
+    "Knight Hunt",
+    "Knight Might",
+    "Knight Rage",
+    "Knight Reaper",
+    "Knight Volt",
+    "Knight Wriggle",
+    "Kraken Antler",
+    "Kraken Arc",
+    "Kraken Blast",
+    "Kraken Blitz",
+    "Kraken Brave",
+    "Kraken Brush",
+    "Kraken Dark",
+    "Kraken Eclipse",
+    "Kraken Fang",
+    "Kraken Flame",
+    "Kraken Flare",
+    "Kraken Fort",
+    "Kraken Fortress",
+    "Kraken Hunt",
+    "Kraken Might",
+    "Kraken Rage",
+    "Kraken Reaper",
+    "Kraken Volt",
+    "Kraken Wriggle",
+    "Leon Antler",
+    "Leon Arc",
+    "Leon Blast",
+    "Leon Blitz",
+    "Leon Brave",
+    "Leon Brush",
+    "Leon Dark",
+    "Leon Eclipse",
+    "Leon Fang",
+    "Leon Flame",
+    "Leon Flare",
+    "Leon Fort",
+    "Leon Fortress",
+    "Leon Hunt",
+    "Leon Might",
+    "Leon Rage",
+    "Leon Reaper",
+    "Leon Volt",
+    "Leon Wriggle",
+    "Pegasus Antler",
+    "Pegasus Arc",
+    "Pegasus Blast",
+    "Pegasus Blitz",
+    "Pegasus Brave",
+    "Pegasus Brush",
+    "Pegasus Dark",
+    "Pegasus Eclipse",
+    "Pegasus Fang",
+    "Pegasus Flame",
+    "Pegasus Flare",
+    "Pegasus Fort",
+    "Pegasus Fortress",
+    "Pegasus Hunt",
+    "Pegasus Might",
+    "Pegasus Rage",
+    "Pegasus Reaper",
+    "Pegasus Volt",
+    "Pegasus Wriggle",
+    "Perseus Antler",
+    "Perseus Arc",
+    "Perseus Blast",
+    "Perseus Blitz",
+    "Perseus Brave",
+    "Perseus Brush",
+    "Perseus Dark",
+    "Perseus Eclipse",
+    "Perseus Fang",
+    "Perseus Flame",
+    "Perseus Flare",
+    "Perseus Fort",
+    "Perseus Fortress",
+    "Perseus Hunt",
+    "Perseus Might",
+    "Perseus Rage",
+    "Perseus Reaper",
+    "Perseus Volt",
+    "Perseus Wriggle",
+    "Phoenix Antler",
+    "Phoenix Arc",
+    "Phoenix Blast",
+    "Phoenix Blitz",
+    "Phoenix Brave",
+    "Phoenix Brush",
+    "Phoenix Dark",
+    "Phoenix Eclipse",
+    "Phoenix Fang",
+    "Phoenix Flame",
+    "Phoenix Flare",
+    "Phoenix Fort",
+    "Phoenix Fortress",
+    "Phoenix Hunt",
+    "Phoenix Might",
+    "Phoenix Rage",
+    "Phoenix Reaper",
+    "Phoenix Volt",
+    "Phoenix Wriggle",
+    "Rage",
+    "Ragna Antler",
+    "Ragna Arc",
+    "Ragna Blast",
+    "Ragna Blitz",
+    "Ragna Brave",
+    "Ragna Brush",
+    "Ragna Dark",
+    "Ragna Eclipse",
+    "Ragna Fang",
+    "Ragna Flame",
+    "Ragna Flare",
+    "Ragna Fort",
+    "Ragna Fortress",
+    "Ragna Hunt",
+    "Ragna Might",
+    "Ragna Rage",
+    "Ragna Reaper",
+    "Ragna Volt",
+    "Ragna Wriggle",
+    "Rhino Antler",
+    "Rhino Arc",
+    "Rhino Blast",
+    "Rhino Blitz",
+    "Rhino Brave",
+    "Rhino Brush",
+    "Rhino Dark",
+    "Rhino Eclipse",
+    "Rhino Fang",
+    "Rhino Flame",
+    "Rhino Flare",
+    "Rhino Fort",
+    "Rhino Fortress",
+    "Rhino Hunt",
+    "Rhino Might",
+    "Rhino Rage",
+    "Rhino Reaper",
+    "Rhino Volt",
+    "Rhino Wriggle",
+    "Sol Antler",
+    "Sol Arc",
+    "Sol Blast",
+    "Sol Blitz",
+    "Sol Brave",
+    "Sol Brush",
+    "Sol Dark",
+    "Sol Eclipse",
+    "Sol Fang",
+    "Sol Flame",
+    "Sol Flare",
+    "Sol Fort",
+    "Sol Fortress",
+    "Sol Hunt",
+    "Sol Might",
+    "Sol Rage",
+    "Sol Reaper",
+    "Sol Volt",
+    "Sol Wriggle",
+    "Stag Antler",
+    "Stag Arc",
+    "Stag Blast",
+    "Stag Blitz",
+    "Stag Brave",
+    "Stag Brush",
+    "Stag Dark",
+    "Stag Eclipse",
+    "Stag Fang",
+    "Stag Flame",
+    "Stag Flare",
+    "Stag Fort",
+    "Stag Fortress",
+    "Stag Hunt",
+    "Stag Might",
+    "Stag Rage",
+    "Stag Reaper",
+    "Stag Volt",
+    "Stag Wriggle",
+    "Valkyrie Antler",
+    "Valkyrie Arc",
+    "Valkyrie Blast",
+    "Valkyrie Blitz",
+    "Valkyrie Brave",
+    "Valkyrie Brush",
+    "Valkyrie Dark",
+    "Valkyrie Eclipse",
+    "Valkyrie Fang",
+    "Valkyrie Flame",
+    "Valkyrie Flare",
+    "Valkyrie Fort",
+    "Valkyrie Fortress",
+    "Valkyrie Hunt",
+    "Valkyrie Might",
+    "Valkyrie Rage",
+    "Valkyrie Reaper",
+    "Valkyrie Volt",
+    "Valkyrie Wriggle",
+    "Whale Antler",
+    "Whale Arc",
+    "Whale Blast",
+    "Whale Blitz",
+    "Whale Brave",
+    "Whale Brush",
+    "Whale Dark",
+    "Whale Eclipse",
+    "Whale Fang",
+    "Whale Flame",
+    "Whale Flare",
+    "Whale Fort",
+    "Whale Fortress",
+    "Whale Hunt",
+    "Whale Might",
+    "Whale Rage",
+    "Whale Reaper",
+    "Whale Volt",
+    "Whale Wriggle",
+    "Wizard Antler",
+    "Wizard Arc",
+    "Wizard Blast",
+    "Wizard Blitz",
+    "Wizard Brave",
+    "Wizard Brush",
+    "Wizard Dark",
+    "Wizard Eclipse",
+    "Wizard Fang",
+    "Wizard Flame",
+    "Wizard Flare",
+    "Wizard Fort",
+    "Wizard Fortress",
+    "Wizard Hunt",
+    "Wizard Might",
+    "Wizard Rage",
+    "Wizard Reaper",
+    "Wizard Volt",
+    "Wizard Wriggle",
+    "Wolf Antler",
+    "Wolf Arc",
+    "Wolf Blast",
+    "Wolf Blitz",
+    "Wolf Brave",
+    "Wolf Brush",
+    "Wolf Dark",
+    "Wolf Eclipse",
+    "Wolf Fang",
+    "Wolf Flame",
+    "Wolf Flare",
+    "Wolf Fort",
+    "Wolf Fortress",
+    "Wolf Hunt",
+    "Wolf Might",
+    "Wolf Rage",
+    "Wolf Reaper",
+    "Wolf Volt",
+    "Wolf Wriggle"
+  ],
+  "lock_chips": [
+    {
+      "metal": false,
+      "name": "Bahamut"
+    },
+    {
+      "metal": false,
+      "name": "Cerberus"
+    },
+    {
+      "metal": false,
+      "name": "Dran"
+    },
+    {
+      "metal": true,
+      "name": "Emperor"
+    },
+    {
+      "metal": false,
+      "name": "Eva"
+    },
+    {
+      "metal": false,
+      "name": "Fox"
+    },
+    {
+      "metal": false,
+      "name": "Hells"
+    },
+    {
+      "metal": false,
+      "name": "Hornet"
+    },
+    {
+      "metal": false,
+      "name": "Knight"
+    },
+    {
+      "metal": false,
+      "name": "Kraken"
+    },
+    {
+      "metal": false,
+      "name": "Leon"
+    },
+    {
+      "metal": false,
+      "name": "Pegasus"
+    },
+    {
+      "metal": false,
+      "name": "Perseus"
+    },
+    {
+      "metal": false,
+      "name": "Phoenix"
+    },
+    {
+      "metal": false,
+      "name": "Ragna"
+    },
+    {
+      "metal": false,
+      "name": "Rhino"
+    },
+    {
+      "metal": false,
+      "name": "Sol"
+    },
+    {
+      "metal": false,
+      "name": "Stag"
+    },
+    {
+      "metal": true,
+      "name": "Valkyrie"
+    },
+    {
+      "metal": false,
+      "name": "Whale"
+    },
+    {
+      "metal": false,
+      "name": "Wizard"
+    },
+    {
+      "metal": false,
+      "name": "Wolf"
+    }
+  ],
+  "main_blades": [
+    "Antler",
+    "Arc",
+    "Blast",
+    "Brave",
+    "Brush",
+    "Dark",
+    "Eclipse",
+    "Fang",
+    "Flame",
+    "Flare",
+    "Fort",
+    "Hunt",
+    "Might",
+    "Reaper",
+    "Volt",
+    "Wriggle"
+  ],
+  "metal_blades": [
+    "Blitz",
+    "Fortress",
+    "Rage"
+  ],
+  "metal_lock_chips": [
+    "Emperor",
+    "Valkyrie"
+  ],
+  "over_blades": [
+    "Break",
+    "Flow",
+    "Guard"
+  ],
+  "ratchets": [
+    "0-60",
+    "0-70",
+    "0-80",
+    "1-50",
+    "1-60",
+    "1-70",
+    "1-80",
+    "2-60",
+    "2-70",
+    "2-80",
+    "3-60",
+    "3-70",
+    "3-80",
+    "3-85",
+    "4-50",
+    "4-55",
+    "4-60",
+    "4-70",
+    "4-80",
+    "5-60",
+    "5-70",
+    "5-80",
+    "6-60",
+    "6-70",
+    "6-80",
+    "7-55",
+    "7-60",
+    "7-70",
+    "7-80",
+    "8-70",
+    "9-60",
+    "9-65",
+    "9-70",
+    "9-80",
+    "M-85"
+  ]
+}

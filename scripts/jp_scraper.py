@@ -64,6 +64,7 @@ class Combo:
     bit: str
     assist: Optional[str] = None
     lock_chip: Optional[str] = None
+    over_blade: Optional[str] = None  # CX-only: Break, Flow, Guard
 
 
 @dataclass
@@ -89,54 +90,16 @@ class Tournament:
 
 
 # =============================================================================
-# Bit Abbreviation Expansion
+# Bit Abbreviation Expansion (catalog-driven)
 # =============================================================================
 
-BIT_ABBREVIATIONS = {
-    "B": "Ball",
-    "F": "Flat",
-    "N": "Needle",
-    "P": "Point",
-    "T": "Taper",
-    "S": "Spike",
-    "O": "Orb",
-    "D": "Dot",
-    "A": "Accel",
-    "R": "Rush",
-    "H": "Hexa",
-    "C": "Cyclone",
-    "U": "Unite",
-    "L": "Level",
-    "E": "Elevate",
-    "G": "Glide",
-    "Q": "Quake",
-    "K": "Kick",
-    "V": "Vanguard",
-    "HN": "High Needle",
-    "LF": "Low Flat",
-    "LR": "Low Rush",
-    "LN": "Low Needle",
-    "GF": "GearFlat",
-    "GB": "GearBall",
-    "GN": "GearNeedle",
-    "GP": "GearPoint",
-    "MN": "Metal Needle",
-    "HT": "High Taper",
-    "HA": "High Accel",
-    "DB": "Disc Ball",
-    "HS": "High Sword",
-    "SN": "Spiral Needle",
-}
-
-
 def expand_bit(bit: str) -> str:
-    """Expand bit abbreviations to full names."""
+    """Expand bit abbreviations to full names using the parts catalog."""
     bit = bit.strip()
-    # First check Japanese translations
     if is_japanese(bit):
         return translate_bit(bit)
-    # Then check English abbreviations
-    return BIT_ABBREVIATIONS.get(bit, bit)
+    from catalog import PartsCatalog
+    return PartsCatalog.get().bit_aliases.get(bit, bit)
 
 
 # =============================================================================
@@ -967,19 +930,19 @@ def insert_jp_tournament(conn, tournament: Tournament) -> Optional[int]:
                 combos[0].bit if len(combos) > 0 else None,
                 combos[0].assist if len(combos) > 0 else None,
                 combos[0].lock_chip if len(combos) > 0 else None,
-                None,  # over_blade_1
+                combos[0].over_blade if len(combos) > 0 else None,
                 combos[1].blade if len(combos) > 1 else None,
                 combos[1].ratchet if len(combos) > 1 else None,
                 combos[1].bit if len(combos) > 1 else None,
                 combos[1].assist if len(combos) > 1 else None,
                 combos[1].lock_chip if len(combos) > 1 else None,
-                None,  # over_blade_2
+                combos[1].over_blade if len(combos) > 1 else None,
                 combos[2].blade if len(combos) > 2 else None,
                 combos[2].ratchet if len(combos) > 2 else None,
                 combos[2].bit if len(combos) > 2 else None,
                 combos[2].assist if len(combos) > 2 else None,
                 combos[2].lock_chip if len(combos) > 2 else None,
-                None,  # over_blade_3
+                combos[2].over_blade if len(combos) > 2 else None,
             ])
         except Exception as e:
             print(f"Error inserting placement for {placement.player_name}: {e}")
