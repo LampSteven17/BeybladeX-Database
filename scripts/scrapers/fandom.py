@@ -601,6 +601,11 @@ class FandomScraper(BaseScraper):
             total = sum(catalog_counts.values())
             print(f"  Catalog: {total} parts across {len(catalog_counts)} types")
 
+        # Reload the in-memory PartsCatalog singleton so any subsequent
+        # parsing uses the freshly-discovered wiki entries.
+        from catalog import PartsCatalog
+        PartsCatalog._instance = PartsCatalog.load(conn)
+
         # Phase 3 (executed at the end): export JSON for the frontend.
         # We do it inside scrape() so a single fandom run keeps the file fresh.
         try:

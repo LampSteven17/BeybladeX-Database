@@ -290,6 +290,12 @@ Examples:
         conn = get_connection()
         init_schema(conn)
 
+        # Bootstrap the PartsCatalog singleton from this writable conn so
+        # parsers can use _cat() without trying to open a second connection
+        # (DuckDB only allows one writable conn per file).
+        from catalog import PartsCatalog
+        PartsCatalog._instance = PartsCatalog.load(conn)
+
         # Clear only mode
         if args.clear:
             clear_database(conn, sources)

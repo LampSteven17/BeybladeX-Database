@@ -68,10 +68,16 @@ class PartsCatalog:
 
     @classmethod
     def get(cls) -> "PartsCatalog":
-        """Return the singleton, loading from the database on first call."""
+        """Return the singleton, loading from the database on first call.
+
+        Uses a write connection (not read-only) so it doesn't conflict with
+        a writable connection that may already be open in the same process
+        — DuckDB raises if you mix read-only and write modes against the
+        same file.
+        """
         if cls._instance is None:
             from db import get_connection  # local import to avoid cycles
-            conn = get_connection(read_only=True)
+            conn = get_connection()
             try:
                 cls._instance = cls.load(conn)
             finally:

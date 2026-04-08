@@ -1169,6 +1169,12 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
     if conn is None:
         conn = get_connection()
 
+    # Bootstrap the PartsCatalog singleton from the *current* writable conn
+    # so subsequent _cat() calls don't try to open a second connection
+    # (DuckDB only permits one writable connection per file).
+    from catalog import PartsCatalog
+    PartsCatalog._instance = PartsCatalog.load(conn)
+
     total_fixed = 0
 
     # Pre-cleaning: strip non-breaking spaces (\xa0) and stage annotations from all text columns
