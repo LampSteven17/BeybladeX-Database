@@ -42,7 +42,7 @@ Total wall time: ~10-30 seconds depending on your network.
 ## Bookmarklet (one-liner — paste into the bookmark URL field)
 
 ```javascript
-javascript:(async()=>{const S="https://beybladex-database.thelightlab.net/api/upload/wiki-catalog",B="https://beyblade.fandom.com/wiki/Category:Lock_Chips",U=["https://beyblade.fandom.com/wiki/Category:Lock_Chips","https://beyblade.fandom.com/wiki/Category:Main_Blades","https://beyblade.fandom.com/wiki/Category:Over_Blades","https://beyblade.fandom.com/wiki/Category:Assist_Blades","https://beyblade.fandom.com/wiki/Category:Metal_Blades","https://beyblade.fandom.com/wiki/Category:Bits","https://beyblade.fandom.com/wiki/Category:Ratchets","https://beyblade.fandom.com/wiki/List_of_Basic_Line_parts","https://beyblade.fandom.com/wiki/List_of_Unique_Line_parts"];if(!location.hostname.includes("beyblade.fandom.com")){window.open(B);return}const d=document.createElement("div");d.style.cssText="position:fixed;top:10px;right:10px;background:#222;color:#0f0;padding:15px;border-radius:8px;font-family:monospace;font-size:14px;z-index:999999;min-width:280px;white-space:pre-line;";document.body.appendChild(d);const log=m=>{d.textContent=m;console.log(m)};log("Starting wiki catalog refresh...");try{const pages={};for(let i=0;i<U.length;i++){const u=U[i];log("Fetching "+(i+1)+"/"+U.length+"\n"+u.split("/wiki/")[1]);const r=await fetch(u);if(!r.ok){throw new Error("Fetch "+u+" → "+r.status)}pages[u]=await r.text();await new Promise(r=>setTimeout(r,200))}log("Uploading bundle to BeybladeX server...");const resp=await fetch(S,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pages})});const j=await resp.json();if(!resp.ok){throw new Error(j.error||resp.statusText)}log("Done!\n"+j.message);alert("Wiki catalog refreshed!\n\n"+j.message+"\n\nCounts: "+JSON.stringify(j.catalog_counts,null,2))}catch(e){log("Error: "+e.message);alert("Failed: "+e.message)}})();
+javascript:(async()=>{const S="https://beybladex-database.thelightlab.net/api/upload/wiki-catalog",B="https://beyblade.fandom.com/wiki/Category:Lock_Chips",U=["https://beyblade.fandom.com/wiki/Category:Lock_Chips","https://beyblade.fandom.com/wiki/Category:Main_Blades","https://beyblade.fandom.com/wiki/Category:Over_Blades","https://beyblade.fandom.com/wiki/Category:Assist_Blades","https://beyblade.fandom.com/wiki/Category:Metal_Blades","https://beyblade.fandom.com/wiki/Category:Bits","https://beyblade.fandom.com/wiki/Category:Ratchets","https://beyblade.fandom.com/wiki/List_of_Basic_Line_parts","https://beyblade.fandom.com/wiki/List_of_Unique_Line_parts"];if(!location.hostname.includes("beyblade.fandom.com")){window.open(B);return}const d=document.createElement("div");d.style.cssText="position:fixed;top:10px;right:10px;background:#222;color:#0f0;padding:15px;border-radius:8px;font-family:monospace;font-size:14px;z-index:999999;min-width:280px;white-space:pre-line;";document.body.appendChild(d);const log=m=>{d.textContent=m;console.log(m)};let timer=null;const startTimer=base=>{const t0=Date.now();timer=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);log(base+" ("+s+"s)")},500)};const stopTimer=()=>{if(timer){clearInterval(timer);timer=null}};log("Starting wiki catalog refresh...");try{const pages={};for(let i=0;i<U.length;i++){const u=U[i];log("Fetching "+(i+1)+"/"+U.length+"\n"+u.split("/wiki/")[1]);const r=await fetch(u);if(!r.ok){throw new Error("Fetch "+u+" → "+r.status)}pages[u]=await r.text();await new Promise(r=>setTimeout(r,200))}startTimer("Server is parsing + running drift detection\n+ RAGFlow resolver. Takes ~30-60s, hold tight");const resp=await fetch(S,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pages})});stopTimer();const j=await resp.json();if(!resp.ok){throw new Error(j.error||resp.statusText)}log("Done!\n"+j.message);alert("Wiki catalog refreshed!\n\n"+j.message+"\n\nCounts: "+JSON.stringify(j.catalog_counts,null,2))}catch(e){stopTimer();log("Error: "+e.message);alert("Failed: "+e.message)}})();
 ```
 
 ## Readable source (for editing — re-minify before pasting into a bookmark)
@@ -78,6 +78,18 @@ javascript:(async () => {
   document.body.appendChild(overlay);
   const log = (msg) => { overlay.textContent = msg; console.log(msg); };
 
+  // Tick a timer in the overlay while we're blocked on a long server call,
+  // so a 30-60s wait looks like progress instead of a hang.
+  let timer = null;
+  const startTimer = (base) => {
+    const t0 = Date.now();
+    timer = setInterval(() => {
+      const secs = Math.floor((Date.now() - t0) / 1000);
+      log(`${base} (${secs}s)`);
+    }, 500);
+  };
+  const stopTimer = () => { if (timer) { clearInterval(timer); timer = null; } };
+
   log("Starting wiki catalog refresh...");
   try {
     const pages = {};
@@ -92,12 +104,19 @@ javascript:(async () => {
       await new Promise((res) => setTimeout(res, 200));  // be polite
     }
 
-    log("Uploading bundle to BeybladeX server...");
+    // Server-side phase is synchronous and takes ~30-60s on the slow VM
+    // (HTML parse, normalize_data, drift detection, RAGFlow resolver).
+    // Show a counter so the user can see we haven't actually hung.
+    startTimer(
+      "Server is parsing + running drift detection\n" +
+      "+ RAGFlow resolver. Takes ~30-60s, hold tight"
+    );
     const resp = await fetch(SERVER, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pages }),
     });
+    stopTimer();
     const j = await resp.json();
     if (!resp.ok) throw new Error(j.error || resp.statusText);
 
@@ -108,6 +127,7 @@ javascript:(async () => {
       "Counts: " + JSON.stringify(j.catalog_counts, null, 2)
     );
   } catch (e) {
+    stopTimer();
     log("Error: " + e.message);
     alert("Failed: " + e.message);
   }
