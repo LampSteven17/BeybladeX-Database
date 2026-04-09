@@ -305,8 +305,20 @@ class APIHandler(BaseHTTPRequestHandler):
                 sys.path.insert(0, str(SCRIPTS_DIR))
                 sys.path.insert(0, str(SCRIPTS_DIR / "scrapers"))
                 from db import get_connection, init_schema, normalize_data
-                from fandom import populate_parts_catalog
+                from fandom import populate_parts_catalog, CATEGORY_PAGES
                 from catalog import PartsCatalog
+
+                # Debug: log which bundle URLs match the expected CATEGORY_PAGES
+                page_urls = set(pages.keys())
+                expected = {url for url, _ in CATEGORY_PAGES.values()}
+                hits = page_urls & expected
+                misses = expected - page_urls
+                print(f"[{datetime.now().isoformat()}] /upload/wiki-catalog: "
+                      f"{len(pages)} pages received, {len(hits)}/{len(expected)} match Category URLs")
+                if misses:
+                    print(f"  MISSES (expected but not in bundle): {sorted(misses)[:3]}")
+                    extras = page_urls - expected
+                    print(f"  EXTRAS in bundle: {sorted(extras)[:3]}")
 
                 conn = get_connection()
                 try:
