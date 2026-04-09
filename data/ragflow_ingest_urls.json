@@ -1,0 +1,1760 @@
+[
+  {
+    "name": "Bahamut",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Bahamut"
+  },
+  {
+    "name": "Cerberus",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Cerberus"
+  },
+  {
+    "name": "Dran",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Dran"
+  },
+  {
+    "name": "Emperor",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Emperor"
+  },
+  {
+    "name": "Eva",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Eva"
+  },
+  {
+    "name": "Fox",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Fox"
+  },
+  {
+    "name": "Hells",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Hells"
+  },
+  {
+    "name": "Hornet",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Hornet"
+  },
+  {
+    "name": "Knight",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Knight"
+  },
+  {
+    "name": "Kraken",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Kraken"
+  },
+  {
+    "name": "Leon",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Leon"
+  },
+  {
+    "name": "Pegasus",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Pegasus"
+  },
+  {
+    "name": "Perseus",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Perseus"
+  },
+  {
+    "name": "Phoenix",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Phoenix"
+  },
+  {
+    "name": "Ragna",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Ragna"
+  },
+  {
+    "name": "Rhino",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Rhino"
+  },
+  {
+    "name": "Sol",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Sol"
+  },
+  {
+    "name": "Stag",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Stag"
+  },
+  {
+    "name": "Valkyrie",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Valkyrie"
+  },
+  {
+    "name": "Whale",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Whale"
+  },
+  {
+    "name": "Wizard",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Wizard"
+  },
+  {
+    "name": "Wolf",
+    "part_type": "lock_chip",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Lock_Chip_-_Wolf"
+  },
+  {
+    "name": "Antler",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Antler"
+  },
+  {
+    "name": "Arc",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Arc"
+  },
+  {
+    "name": "Blast",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Blast"
+  },
+  {
+    "name": "Brave",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Brave"
+  },
+  {
+    "name": "Brush",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Brush"
+  },
+  {
+    "name": "Dark",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Dark"
+  },
+  {
+    "name": "Eclipse",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Eclipse"
+  },
+  {
+    "name": "Fang",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Fang"
+  },
+  {
+    "name": "Flame",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Flame"
+  },
+  {
+    "name": "Flare",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Flare"
+  },
+  {
+    "name": "Fort",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Fort"
+  },
+  {
+    "name": "Hunt",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Hunt"
+  },
+  {
+    "name": "Might",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Might"
+  },
+  {
+    "name": "Reaper",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Reaper"
+  },
+  {
+    "name": "Volt",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Volt"
+  },
+  {
+    "name": "Wriggle",
+    "part_type": "main_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Main_Blade_-_Wriggle"
+  },
+  {
+    "name": "Break",
+    "part_type": "over_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Over_Blade_-_Break"
+  },
+  {
+    "name": "Flow",
+    "part_type": "over_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Over_Blade_-_Flow"
+  },
+  {
+    "name": "Guard",
+    "part_type": "over_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Over_Blade_-_Guard"
+  },
+  {
+    "name": "Assault",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Assault"
+  },
+  {
+    "name": "Bumper",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Bumper"
+  },
+  {
+    "name": "Charge",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Charge"
+  },
+  {
+    "name": "Dual",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Dual"
+  },
+  {
+    "name": "Erase",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Erase"
+  },
+  {
+    "name": "Free",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Free"
+  },
+  {
+    "name": "Heavy",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Heavy"
+  },
+  {
+    "name": "Jaggy",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Jaggy"
+  },
+  {
+    "name": "Knuckle",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Knuckle"
+  },
+  {
+    "name": "Massive",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Massive"
+  },
+  {
+    "name": "Round",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Round"
+  },
+  {
+    "name": "Slash",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Slash"
+  },
+  {
+    "name": "Turn",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Turn"
+  },
+  {
+    "name": "Vertical",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Vertical"
+  },
+  {
+    "name": "Wheel",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Wheel"
+  },
+  {
+    "name": "Zillion",
+    "part_type": "assist",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Assist_Blade_-_Zillion"
+  },
+  {
+    "name": "Blitz",
+    "part_type": "metal_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Metal_Blade_-_Blitz"
+  },
+  {
+    "name": "Fortress",
+    "part_type": "metal_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Metal_Blade_-_Fortress"
+  },
+  {
+    "name": "Rage",
+    "part_type": "metal_blade",
+    "system": "CX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Metal_Blade_-_Rage"
+  },
+  {
+    "name": "Accel",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Accel"
+  },
+  {
+    "name": "Ball",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Ball"
+  },
+  {
+    "name": "Bound Spike",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Bound_Spike"
+  },
+  {
+    "name": "Cyclone",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Cyclone"
+  },
+  {
+    "name": "Disc Ball",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Disk_Ball"
+  },
+  {
+    "name": "Disc Spike",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Disk_Spike"
+  },
+  {
+    "name": "Dot",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Dot"
+  },
+  {
+    "name": "Elevate",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Elevate"
+  },
+  {
+    "name": "Flat",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Flat"
+  },
+  {
+    "name": "Free Ball",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Free_Ball"
+  },
+  {
+    "name": "Free Flat",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Free_Flat"
+  },
+  {
+    "name": "Gear Ball",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Gear_Ball"
+  },
+  {
+    "name": "Gear Flat",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Gear_Flat"
+  },
+  {
+    "name": "Gear Needle",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Gear_Needle"
+  },
+  {
+    "name": "Gear Point",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Gear_Point"
+  },
+  {
+    "name": "Gear Rush",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Gear_Rush"
+  },
+  {
+    "name": "Glide",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Glide"
+  },
+  {
+    "name": "Hexa",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Hexa"
+  },
+  {
+    "name": "High Needle",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_High_Needle"
+  },
+  {
+    "name": "High Taper",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_High_Taper"
+  },
+  {
+    "name": "Ignition",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Ignition"
+  },
+  {
+    "name": "Jolt",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Jolt"
+  },
+  {
+    "name": "Kick",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Kick"
+  },
+  {
+    "name": "Level",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Level"
+  },
+  {
+    "name": "Low Flat",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Low_Flat"
+  },
+  {
+    "name": "Low Orb",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Low_Orb"
+  },
+  {
+    "name": "Low Rush",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Low_Rush"
+  },
+  {
+    "name": "Merge",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Merge"
+  },
+  {
+    "name": "Metal Needle",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Metal_Needle"
+  },
+  {
+    "name": "Needle",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Needle"
+  },
+  {
+    "name": "Orb",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Orb"
+  },
+  {
+    "name": "Point",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Point"
+  },
+  {
+    "name": "Quake",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Quake"
+  },
+  {
+    "name": "Rubber Accel",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Rubber_Accel"
+  },
+  {
+    "name": "Rush",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Rush"
+  },
+  {
+    "name": "Spike",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Spike"
+  },
+  {
+    "name": "Taper",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Taper"
+  },
+  {
+    "name": "Trans Kick",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Trans_Kick"
+  },
+  {
+    "name": "Trans Point",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Trans_Point"
+  },
+  {
+    "name": "Under Flat",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Under_Flat"
+  },
+  {
+    "name": "Under Needle",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Under_Needle"
+  },
+  {
+    "name": "Unite",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Unite"
+  },
+  {
+    "name": "Vortex",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Vortex"
+  },
+  {
+    "name": "Wall Ball",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Wall_Ball"
+  },
+  {
+    "name": "Wall Wedge",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Wall_Wedge"
+  },
+  {
+    "name": "Wedge",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Wedge"
+  },
+  {
+    "name": "Yielding",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Yielding"
+  },
+  {
+    "name": "Zap",
+    "part_type": "bit",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Bit_-_Zap"
+  },
+  {
+    "name": "0-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_0-60"
+  },
+  {
+    "name": "0-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_0-70"
+  },
+  {
+    "name": "0-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_0-80"
+  },
+  {
+    "name": "1-50",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_1-50"
+  },
+  {
+    "name": "1-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_1-60"
+  },
+  {
+    "name": "1-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_1-70"
+  },
+  {
+    "name": "1-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_1-80"
+  },
+  {
+    "name": "2-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_2-60"
+  },
+  {
+    "name": "2-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_2-70"
+  },
+  {
+    "name": "2-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_2-80"
+  },
+  {
+    "name": "3-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_3-60"
+  },
+  {
+    "name": "3-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_3-70"
+  },
+  {
+    "name": "3-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_3-80"
+  },
+  {
+    "name": "3-85",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_3-85"
+  },
+  {
+    "name": "4-50",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_4-50"
+  },
+  {
+    "name": "4-55",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_4-55"
+  },
+  {
+    "name": "4-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_4-60"
+  },
+  {
+    "name": "4-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_4-70"
+  },
+  {
+    "name": "4-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_4-80"
+  },
+  {
+    "name": "5-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_5-60"
+  },
+  {
+    "name": "5-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_5-70"
+  },
+  {
+    "name": "5-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_5-80"
+  },
+  {
+    "name": "6-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_6-60"
+  },
+  {
+    "name": "6-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_6-70"
+  },
+  {
+    "name": "6-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_6-80"
+  },
+  {
+    "name": "7-55",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_7-55"
+  },
+  {
+    "name": "7-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_7-60"
+  },
+  {
+    "name": "7-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_7-70"
+  },
+  {
+    "name": "7-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_7-80"
+  },
+  {
+    "name": "8-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_8-70"
+  },
+  {
+    "name": "9-60",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_9-60"
+  },
+  {
+    "name": "9-65",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_9-65"
+  },
+  {
+    "name": "9-70",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_9-70"
+  },
+  {
+    "name": "9-80",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_9-80"
+  },
+  {
+    "name": "M-85",
+    "part_type": "ratchet",
+    "system": null,
+    "wiki_url": "https://beyblade.fandom.com/wiki/Ratchet_-_M-85"
+  },
+  {
+    "name": "Black Shell",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_BlackShell"
+  },
+  {
+    "name": "Obsidian Shell",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Obsidian_Shell"
+  },
+  {
+    "name": "Cobalt Dragoon",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_CobaltDragoon"
+  },
+  {
+    "name": "Cobalt Dragoon",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Cobalt_Dragoon"
+  },
+  {
+    "name": "Cobalt Drake",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_CobaltDrake"
+  },
+  {
+    "name": "Crimson Garuda",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_CrimsonGaruda"
+  },
+  {
+    "name": "Scarlet Garuda",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Scarlet_Garuda"
+  },
+  {
+    "name": "Dran Dagger",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DranDagger"
+  },
+  {
+    "name": "Dagger Dran",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Dagger_Dran"
+  },
+  {
+    "name": "Dran Sword",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DranSword"
+  },
+  {
+    "name": "Sword Dran",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Sword_Dran"
+  },
+  {
+    "name": "Hells Chain",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_HellsChain"
+  },
+  {
+    "name": "Chain Incendio",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Chain_Incendio"
+  },
+  {
+    "name": "Hells Scythe",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_HellsScythe"
+  },
+  {
+    "name": "Scythe Incendio",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Scythe_Incendio"
+  },
+  {
+    "name": "Knight Lance",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_KnightLance"
+  },
+  {
+    "name": "Lance Knight",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Lance_Knight"
+  },
+  {
+    "name": "Knight Shield",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_KnightShield"
+  },
+  {
+    "name": "Helm Knight",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Helm_Knight"
+  },
+  {
+    "name": "Leon Claw",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_LeonClaw"
+  },
+  {
+    "name": "Claw Leon",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Claw_Leon"
+  },
+  {
+    "name": "Phoenix Feather",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_PhoenixFeather"
+  },
+  {
+    "name": "Feather Phoenix",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Feather_Phoenix"
+  },
+  {
+    "name": "Phoenix Wing",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_PhoenixWing"
+  },
+  {
+    "name": "Soar Phoenix",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Soar_Phoenix"
+  },
+  {
+    "name": "Rhino Horn",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_RhinoHorn"
+  },
+  {
+    "name": "Horn Rhino",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Horn_Rhino"
+  },
+  {
+    "name": "Samurai Calibur",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SamuraiCalibur"
+  },
+  {
+    "name": "Calibur Samurai",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Calibur_Samurai"
+  },
+  {
+    "name": "Shark Edge",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SharkEdge"
+  },
+  {
+    "name": "Keel Shark",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Keel_Shark"
+  },
+  {
+    "name": "Shelter Drake",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_ShelterDrake"
+  },
+  {
+    "name": "Shelter Drake",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Shelter_Drake"
+  },
+  {
+    "name": "Sphinx Cowl",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SphinxCowl"
+  },
+  {
+    "name": "Cowl Sphinx",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Cowl_Sphinx"
+  },
+  {
+    "name": "Tricera Press",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_TriceraPress"
+  },
+  {
+    "name": "Tyranno Beat",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_TyrannoBeat"
+  },
+  {
+    "name": "Beat Tyranno",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Beat_Tyranno"
+  },
+  {
+    "name": "Unicorn Sting",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_UnicornSting"
+  },
+  {
+    "name": "Sting Unicorn",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Sting_Unicorn"
+  },
+  {
+    "name": "Viper Tail",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_ViperTail"
+  },
+  {
+    "name": "Tail Viper",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Tail_Viper"
+  },
+  {
+    "name": "Weiss Tiger",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_WeissTiger"
+  },
+  {
+    "name": "Pearl Tiger",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Pearl_Tiger"
+  },
+  {
+    "name": "Whale Wave",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_WhaleWave"
+  },
+  {
+    "name": "Tide Whale",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Tide_Whale"
+  },
+  {
+    "name": "Wizard Arrow",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_WizardArrow"
+  },
+  {
+    "name": "Arrow Wizard",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Arrow_Wizard"
+  },
+  {
+    "name": "Wyvern Gale",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_WyvernGale"
+  },
+  {
+    "name": "Gale Wyvern",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Gale_Wyvern"
+  },
+  {
+    "name": "CrocCrunch",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_CrocCrunch"
+  },
+  {
+    "name": "Bite Croc",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Bite_Croc"
+  },
+  {
+    "name": "SharkGill",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SharkGill"
+  },
+  {
+    "name": "Gill Shark",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Gill_Shark"
+  },
+  {
+    "name": "ShinobiKnife",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_ShinobiKnife"
+  },
+  {
+    "name": "Knife Shinobi",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Knife_Shinobi"
+  },
+  {
+    "name": "TriceraSpiky",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_TriceraSpiky"
+  },
+  {
+    "name": "Ridge Triceratops",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Ridge_Triceratops"
+  },
+  {
+    "name": "TyrannoRoar",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_TyrannoRoar"
+  },
+  {
+    "name": "Roar Tyranno",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Roar_Tyranno"
+  },
+  {
+    "name": "Bear Scratch",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_BearScratch"
+  },
+  {
+    "name": "Savage Bear",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Savage_Bear"
+  },
+  {
+    "name": "SamuraiSteel",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SamuraiSteel"
+  },
+  {
+    "name": "Steel Samurai",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Steel_Samurai"
+  },
+  {
+    "name": "GoatTackle",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_GoatTackle"
+  },
+  {
+    "name": "Tackle Goat",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Tackle_Goat"
+  },
+  {
+    "name": "PteraSwing",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_PteraSwing"
+  },
+  {
+    "name": "Talon Ptera",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Talon_Ptera"
+  },
+  {
+    "name": "MammothTusk",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_MammothTusk"
+  },
+  {
+    "name": "Tusk Mammoth",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Tusk_Mammoth"
+  },
+  {
+    "name": "Yell Kong",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Yell_Kong"
+  },
+  {
+    "name": "DranStrike",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DranStrike"
+  },
+  {
+    "name": "Strike Dran",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Strike_Dran"
+  },
+  {
+    "name": "Ring Aether",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Ring_Aether"
+  },
+  {
+    "name": "Dragoon Storm",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DragoonStorm"
+  },
+  {
+    "name": "Dranzer Spiral",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DranzerSpiral"
+  },
+  {
+    "name": "Driger Slash",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DrigerSlash"
+  },
+  {
+    "name": "DracielShield",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DracielShield"
+  },
+  {
+    "name": "Lightning L-Drago (Rapid-Hit Type)",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Lightning_L-Drago_(Rapid-Hit_Type)"
+  },
+  {
+    "name": "Lightning L-Drago (Upper Type)",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Lightning_L-Drago_(Upper_Type)"
+  },
+  {
+    "name": "Rock Leone",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Rock_Leone"
+  },
+  {
+    "name": "StormPegasis",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_StormPegasis"
+  },
+  {
+    "name": "Trypio",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Trypio"
+  },
+  {
+    "name": "VictoryValkyrie",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_VictoryValkyrie"
+  },
+  {
+    "name": "Xeno Xcalibur",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_XenoXcalibur"
+  },
+  {
+    "name": "Mosasaurus",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Mosasaurus"
+  },
+  {
+    "name": "Quetzalcoatlus",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Quetzalcoatlus"
+  },
+  {
+    "name": "Spinosaurus",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Spinosaurus"
+  },
+  {
+    "name": "T. Rex",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_T._Rex"
+  },
+  {
+    "name": "Captain America",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Captain_America"
+  },
+  {
+    "name": "Green Goblin",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Green_Goblin"
+  },
+  {
+    "name": "Iron Man",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Iron_Man"
+  },
+  {
+    "name": "Miles Morales",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Miles_Morales"
+  },
+  {
+    "name": "Red Hulk",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Red_Hulk"
+  },
+  {
+    "name": "Spider-Man",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Spider-Man"
+  },
+  {
+    "name": "Thanos",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Thanos"
+  },
+  {
+    "name": "Venom",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Venom"
+  },
+  {
+    "name": "Chewbacca",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Chewbacca"
+  },
+  {
+    "name": "Darth Vader",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Darth_Vader"
+  },
+  {
+    "name": "General Grievous",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_General_Grievous"
+  },
+  {
+    "name": "Luke Skywalker",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Luke_Skywalker"
+  },
+  {
+    "name": "Moff Gideon",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Moff_Gideon"
+  },
+  {
+    "name": "Obi-Wan Kenobi",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Obi-Wan_Kenobi"
+  },
+  {
+    "name": "Stormtrooper",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Stormtrooper"
+  },
+  {
+    "name": "The Mandalorian",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_The_Mandalorian"
+  },
+  {
+    "name": "Bumblebee",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Bumblebee"
+  },
+  {
+    "name": "Megatron",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Megatron"
+  },
+  {
+    "name": "Optimus Primal",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Optimus_Primal"
+  },
+  {
+    "name": "Optimus Prime",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Optimus_Prime"
+  },
+  {
+    "name": "Shockwave",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Shockwave"
+  },
+  {
+    "name": "Starscream",
+    "part_type": "blade",
+    "system": "BX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Starscream"
+  },
+  {
+    "name": "Aero Pegasus",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_AeroPegasus"
+  },
+  {
+    "name": "Clock Mirage",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_ClockMirage"
+  },
+  {
+    "name": "Dran Buster",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_DranBuster"
+  },
+  {
+    "name": "Buster Dran",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Buster_Dran"
+  },
+  {
+    "name": "Ghost Circle",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_GhostCircle"
+  },
+  {
+    "name": "Circle Ghost",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Circle_Ghost"
+  },
+  {
+    "name": "Golem Rock",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_GolemRock"
+  },
+  {
+    "name": "Rock Golem",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Rock_Golem"
+  },
+  {
+    "name": "Hells Hammer",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_HellsHammer"
+  },
+  {
+    "name": "Hammer Incendio",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Hammer_Incendio"
+  },
+  {
+    "name": "Impact Drake",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_ImpactDrake"
+  },
+  {
+    "name": "Impact Drake",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Impact_Drake"
+  },
+  {
+    "name": "Knight Mail",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_KnightMail"
+  },
+  {
+    "name": "Mail Knight",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Mail_Knight"
+  },
+  {
+    "name": "Leon Crest",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_LeonCrest"
+  },
+  {
+    "name": "Crest Leon",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Crest_Leon"
+  },
+  {
+    "name": "Meteor Dragoon",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_MeteorDragoon"
+  },
+  {
+    "name": "Meteoroid Dragoon",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Meteoroid_Dragoon"
+  },
+  {
+    "name": "Mummy Curse",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_MummyCurse"
+  },
+  {
+    "name": "Curse Mummy",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Curse_Mummy"
+  },
+  {
+    "name": "Orochi Cluster",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_OrochiCluster"
+  },
+  {
+    "name": "Phoenix Rudder",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_PhoenixRudder"
+  },
+  {
+    "name": "Rudder Phoenix",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Rudder_Phoenix"
+  },
+  {
+    "name": "Samurai Saber",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SamuraiSaber"
+  },
+  {
+    "name": "Saber Samurai",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Saber_Samurai"
+  },
+  {
+    "name": "Scorpio Spear",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_ScorpioSpear"
+  },
+  {
+    "name": "Spear Scorpio",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Spear_Scorpio"
+  },
+  {
+    "name": "Shark Scale",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SharkScale"
+  },
+  {
+    "name": "Scale Shark",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Scale_Shark"
+  },
+  {
+    "name": "Shinobi Shadow",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_ShinobiShadow"
+  },
+  {
+    "name": "Shadow Shinobi",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Shadow_Shinobi"
+  },
+  {
+    "name": "Silver Wolf",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_SilverWolf"
+  },
+  {
+    "name": "Sterling Wolf",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Sterling_Wolf"
+  },
+  {
+    "name": "Wizard Rod",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_WizardRod"
+  },
+  {
+    "name": "Wand Wizard",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Wand_Wizard"
+  },
+  {
+    "name": "Hack Viking",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Hack_Viking"
+  },
+  {
+    "name": "WyvernHover",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_WyvernHover"
+  },
+  {
+    "name": "Hover Wyvern",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Hover_Wyvern"
+  },
+  {
+    "name": "Stun Medusa",
+    "part_type": "blade",
+    "system": "UX",
+    "wiki_url": "https://beyblade.fandom.com/wiki/Blade_-_Stun_Medusa"
+  }
+]
