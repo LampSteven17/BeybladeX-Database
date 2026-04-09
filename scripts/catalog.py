@@ -450,6 +450,65 @@ def resolve_pending_with_ragflow(
     return written
 
 
+def auto_resolve_cx_combos(conn) -> int:
+    """Auto-resolve pending blade rows whose name parses cleanly as a CX
+    combo via parse_cx_blade(). Rewrites the placements (split into
+    blade + lock_chip columns) and removes the pending row.
+
+    Why this is needed: when a new lock chip or main blade gets added to
+    the catalog (e.g. via the dual-identity fix for Reaper/Wriggle), every
+    placement that was previously stuck in the blade column with the full
+    'Reaper Arc' string can now be split into ('Arc', 'Reaper'). Without
+    this step, those rows sit forever in the pending list as 'unknown
+    blade' even though parse_cx_blade now handles them perfectly.
+
+    Returns the number of rows resolved.
+    """
+    from db import parse_cx_blade
+
+    BLADE_COLS = ["blade_1", "blade_2", "blade_3"]
+    LOCK_COLS = ["lock_chip_1", "lock_chip_2", "lock_chip_3"]
+
+    pending_blades = conn.execute("""
+        SELECT name FROM parts_catalog
+        WHERE status = 'pending' AND part_type = 'blade'
+    """).fetchall()
+
+    resolved = 0
+    for (name,) in pending_blades:
+        lock_chip, main_blade = parse_cx_blade(name)
+        if lock_chip is None or main_blade == name:
+            # Doesn't parse as a CX combo (or it's a standalone blade)
+            continue
+
+        # Rewrite every placement that has this dirty form
+        rewritten_any = False
+        for blade_col, lock_col in zip(BLADE_COLS, LOCK_COLS):
+            n = conn.execute(
+                f"SELECT COUNT(*) FROM placements WHERE {blade_col} = ?",
+                [name],
+            ).fetchone()[0]
+            if n:
+                conn.execute(f"""
+                    UPDATE placements
+                    SET {blade_col} = ?,
+                        {lock_col} = COALESCE({lock_col}, ?)
+                    WHERE {blade_col} = ?
+                """, [main_blade, lock_chip, name])
+                rewritten_any = True
+
+        if rewritten_any:
+            # The dirty form is gone from placements; mark catalog as resolved
+            conn.execute("""
+                DELETE FROM parts_catalog
+                WHERE name = ? AND part_type = 'blade' AND status = 'pending'
+            """, [name])
+            resolved += 1
+
+    conn.commit()
+    return resolved
+
+
 def apply_canonical_rewrites(conn) -> dict:
     """Walk every parts_catalog row that has a canonical_name and rewrite
     the matching placement columns to use the canonical form.
