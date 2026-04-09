@@ -262,10 +262,27 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             occurrence_count INTEGER DEFAULT 0,
             discovered_at TIMESTAMP DEFAULT current_timestamp,
             accepted_at TIMESTAMP,
+            suggested_canonical VARCHAR,
+            suggestion_reason VARCHAR,
+            suggestion_confidence DOUBLE,
+            suggested_at TIMESTAMP,
             PRIMARY KEY (name, part_type)
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_parts_catalog_type_status ON parts_catalog(part_type, status)")
+
+    # Idempotent migration: add suggestion columns to pre-existing tables
+    # (from an earlier deploy without these columns).
+    for col, typ in [
+        ("suggested_canonical", "VARCHAR"),
+        ("suggestion_reason", "VARCHAR"),
+        ("suggestion_confidence", "DOUBLE"),
+        ("suggested_at", "TIMESTAMP"),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE parts_catalog ADD COLUMN {col} {typ}")
+        except Exception:
+            pass  # column already exists
 
     # Tournaments table
     conn.execute("""
