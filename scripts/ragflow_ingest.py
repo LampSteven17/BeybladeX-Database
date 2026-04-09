@@ -329,6 +329,15 @@ def main():
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("--rediscover", action="store_true",
                     help="Ignore the cached URL list at data/ragflow_ingest_urls.json and re-scrape the wiki")
+    ap.add_argument("--poll", action="store_true",
+                    help="After upload, poll /api/v1/datasets/{id}/documents every 60s "
+                         "until every doc reaches run=DONE (or --poll-timeout-min elapses). "
+                         "Use this for unattended cron runs that need to fail loudly if "
+                         "embedding stalls.")
+    ap.add_argument("--poll-interval-sec", type=int, default=60,
+                    help="Seconds between poll calls when --poll is set (default 60)")
+    ap.add_argument("--poll-timeout-min", type=int, default=360,
+                    help="Maximum minutes to poll for embedding completion (default 360 = 6 hours)")
     args = ap.parse_args()
 
     client = RAGFlowClient()
@@ -426,6 +435,46 @@ def main():
 
     print()
     print(f"Done: {parsed_so_far} uploaded, {skipped} skipped, {failed} failed")
+
+    # Phase 4: poll for embedding completion (cron-friendly)
+    if args.poll:
+        print()
+        print(f"Phase 4: polling for embedding completion (every {args.poll_interval_sec}s, "
+              f"up to {args.poll_timeout_min} min)...")
+        deadline = time.monotonic() + args.poll_timeout_min * 60
+        last_done = -1
+        while True:
+            try:
+                docs = client.list_documents()
+            except Exception as e:
+                print(f"  list_documents failed: {e} — retrying next interval")
+                docs = []
+
+            total = len(docs)
+            done = sum(1 for d in docs if d.get("run") == "DONE")
+            running = sum(1 for d in docs if d.get("run") == "RUNNING")
+            failed_docs = [d for d in docs if d.get("run") in ("FAIL", "FAILED")]
+
+            if done != last_done or args.verbose:
+                print(f"  {done}/{total} DONE, {running} RUNNING, {len(failed_docs)} FAILED")
+                last_done = done
+
+            if total > 0 and done == total:
+                print(f"All {total} documents embedded successfully.")
+                return
+
+            if failed_docs:
+                # Surface failures but keep polling — RAGFlow may retry on its own
+                for d in failed_docs[:5]:
+                    print(f"    FAILED: {d.get('name')} (id={d.get('id')})")
+
+            if time.monotonic() >= deadline:
+                print(f"WARNING: poll timeout after {args.poll_timeout_min} min — "
+                      f"{total - done} docs still not DONE. Embedding will continue "
+                      f"on the RAGFlow side; rerun this script later to verify.")
+                sys.exit(2)  # nonzero so CI workflows show the timeout as a soft failure
+
+            time.sleep(args.poll_interval_sec)
 
 
 if __name__ == "__main__":

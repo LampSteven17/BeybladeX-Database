@@ -32,6 +32,10 @@ jobs:
 
       - name: Refresh parts catalog from Fandom wiki
         run: uv run python scripts/refresh_all.py --sources fandom -v
+        # Note: refresh_all.py:fandom calls populate_parts_catalog which always
+        # re-scrapes Category pages directly. The cached URL list at
+        # data/ragflow_ingest_urls.json is only used by ragflow_ingest.py and
+        # is refreshed by the separate refresh-ragflow.yml workflow.
 
       - name: Show catalog summary
         run: |

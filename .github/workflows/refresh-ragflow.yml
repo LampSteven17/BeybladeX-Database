@@ -1,0 +1,78 @@
+name: Refresh RAGFlow Wiki Dataset (Monthly)
+
+# Re-ingests every Beyblade X wiki page into the RAGFlow `beyblade-wiki`
+# dataset so the smart drift resolver and the catalog fallback always
+# have current page content. Wiki pages drift slowly, so monthly is plenty.
+#
+# IMPORTANT: this workflow only works if RAGFlow is reachable from GitHub
+# Actions runners. Set the following repo secrets for it to activate:
+#   RAGFLOW_BASE_URL    — e.g. https://ragflow.your-domain.tld
+#   RAGFLOW_API_KEY     — Bearer token from RAGFlow UI
+#   RAGFLOW_DATASET_ID  — the beyblade-wiki dataset id
+#
+# The job aborts cleanly with a "secret not configured" message if any of
+# these are missing, so it's safe to commit/enable before RAGFlow is exposed.
+#
+# Manual trigger: Actions → "Refresh RAGFlow Wiki Dataset (Monthly)" → Run workflow
+on:
+  schedule:
+    - cron: '0 7 1 * *'   # 1st of every month at 07:00 UTC
+  workflow_dispatch:
+
+jobs:
+  reingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 420  # 7 hours — covers the slow CEPH-backed VM with margin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check RAGFlow secrets are configured
+        env:
+          RAGFLOW_BASE_URL: ${{ secrets.RAGFLOW_BASE_URL }}
+          RAGFLOW_API_KEY: ${{ secrets.RAGFLOW_API_KEY }}
+          RAGFLOW_DATASET_ID: ${{ secrets.RAGFLOW_DATASET_ID }}
+        run: |
+          if [ -z "$RAGFLOW_BASE_URL" ] || [ -z "$RAGFLOW_API_KEY" ] || [ -z "$RAGFLOW_DATASET_ID" ]; then
+            echo "::warning::RAGFlow secrets not configured — skipping re-ingest."
+            echo "Set RAGFLOW_BASE_URL, RAGFLOW_API_KEY, RAGFLOW_DATASET_ID in repo Settings → Secrets to enable."
+            exit 0
+          fi
+          echo "RAGFlow secrets present, proceeding."
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Re-ingest wiki into RAGFlow (rediscover + poll for completion)
+        env:
+          RAGFLOW_BASE_URL: ${{ secrets.RAGFLOW_BASE_URL }}
+          RAGFLOW_API_KEY: ${{ secrets.RAGFLOW_API_KEY }}
+          RAGFLOW_DATASET_ID: ${{ secrets.RAGFLOW_DATASET_ID }}
+        run: |
+          uv run python scripts/ragflow_ingest.py \
+            --rediscover \
+            --poll \
+            --poll-interval-sec 60 \
+            --poll-timeout-min 360 \
+            -v
+
+      - name: Commit refreshed URL cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ragflow_ingest_urls.json || true
+          if git diff --staged --quiet; then
+            echo "No changes to URL cache."
+          else
+            git commit -m "Refresh ragflow_ingest URL cache (monthly cron)"
+            git push
+          fi
