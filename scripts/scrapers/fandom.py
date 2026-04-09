@@ -405,12 +405,12 @@ def _normalize_wiki_name(raw: str) -> str:
     return name
 
 
-def _discover_from_category(url: str, part_type: str, default_system: Optional[str]) -> list[dict]:
-    """Discover all parts from a Fandom Category page.
+def _parse_category_soup(soup, part_type: str, default_system: Optional[str]) -> list[dict]:
+    """Pure parser — extracts category members from an already-parsed soup.
 
-    Returns list of dicts: {name, part_type, system, wiki_url}
+    Split out from _discover_from_category so the same logic works against
+    HTML provided by the bookmarklet upload (no fetch involved).
     """
-    soup = _fetch_page(url)
     if not soup:
         return []
 
@@ -438,6 +438,11 @@ def _discover_from_category(url: str, part_type: str, default_system: Optional[s
             "wiki_url": f"{WIKI_BASE}{href}",
         })
     return parts
+
+
+def _discover_from_category(url: str, part_type: str, default_system: Optional[str]) -> list[dict]:
+    """Discover all parts from a Fandom Category page (network fetch path)."""
+    return _parse_category_soup(_fetch_page(url), part_type, default_system)
 
 
 def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
@@ -513,23 +518,44 @@ def _ragflow_fallback_for(part_type: str, ragflow_docs: Optional[list[dict]]) ->
     return parts
 
 
-def populate_parts_catalog(conn, verbose: bool = False) -> dict:
-    """Discover every Beyblade X part from the Fandom wiki and upsert
-    into the parts_catalog table. This is the source-of-truth refresh that
-    the parser depends on.
+def populate_parts_catalog(
+    conn,
+    verbose: bool = False,
+    pages: Optional[dict[str, str]] = None,
+) -> dict:
+    """Discover every Beyblade X part and upsert into the parts_catalog table.
 
-    Three discovery sources, tried in order per part type:
-      1. Category:* pages on the wiki — authoritative for lock_chip,
-         main_blade, over_blade, assist, metal_blade, bit, ratchet
-      2. RAGFlow dataset document listing — fallback when (1) returns 0
-         (Cloudflare blocks the box's IP). Uses cached chunks already
-         ingested by scripts/ragflow_ingest.py from a non-blocked machine.
-      3. List_of_*_parts pages on the wiki — used for BX/UX standalone
-         blades (which the wiki doesn't categorize together)
+    Discovery sources, tried in order per part type:
+      1. Pre-supplied HTML bundle (`pages`) — used by the bookmarklet upload
+         path. The user's browser fetches the wiki pages (no Cloudflare
+         issue from a residential IP) and POSTs them to the API server,
+         which calls this function with `pages={url: html_content}`.
+      2. Category:* pages on the wiki — direct fetch, authoritative source.
+         Used by local refresh_all.py runs.
+      3. RAGFlow dataset document listing — fallback for (2) when the box's
+         IP is Cloudflare-blocked. Uses chunks already ingested via
+         scripts/ragflow_ingest.py.
+      4. List_of_*_parts pages on the wiki — used for BX/UX standalone
+         blades (which the wiki doesn't categorize together).
 
     Returns {part_type: count} of accepted parts written.
     """
     counts: dict[str, int] = {}
+
+    # Helper: parse a soup directly from `pages` if the URL is in the bundle
+    def _from_bundle_category(url: str, part_type: str, system: Optional[str]):
+        if not pages or url not in pages:
+            return None
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(pages[url], "lxml")
+        return _parse_category_soup(soup, part_type, system)
+
+    def _from_bundle_list(url: str, system: str):
+        if not pages or url not in pages:
+            return None
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(pages[url], "lxml")
+        return _parse_list_soup(soup, system)
 
     # Lazily fetch RAGFlow document listing only if we actually need it
     ragflow_docs: Optional[list[dict]] = None
@@ -558,35 +584,49 @@ def populate_parts_catalog(conn, verbose: bool = False) -> dict:
 
     # 1. Category pages
     for part_type, (cat_url, system) in CATEGORY_PAGES.items():
-        if verbose:
-            print(f"  Fetching {cat_url}")
-        parts = _discover_from_category(cat_url, part_type, system)
+        # Pass 0: in-memory bundle from bookmarklet upload
+        parts = _from_bundle_category(cat_url, part_type, system)
+        source = "bundle" if parts is not None else None
 
-        # Stage 4 fallback: if Cloudflare blocked us, recover from RAGFlow
-        if not parts:
-            docs = _ragflow_docs_lazy()
-            if docs:
-                parts = _ragflow_fallback_for(part_type, docs)
-                if parts and verbose:
-                    print(f"    [RAGFlow fallback] recovered {len(parts)} {part_type}")
+        if parts is None:
+            if verbose:
+                print(f"  Fetching {cat_url}")
+            parts = _discover_from_category(cat_url, part_type, system)
+            source = "fetch"
+
+            # Stage 4 fallback: if Cloudflare blocked us, recover from RAGFlow
+            if not parts:
+                docs = _ragflow_docs_lazy()
+                if docs:
+                    parts = _ragflow_fallback_for(part_type, docs)
+                    if parts and verbose:
+                        print(f"    [RAGFlow fallback] recovered {len(parts)} {part_type}")
+                    source = "ragflow"
 
         if verbose:
-            print(f"    Found {len(parts)} {part_type}")
+            print(f"    Found {len(parts)} {part_type} (via {source})")
         counts[part_type] = len(parts)
 
         for p in parts:
             is_metal = (part_type == "lock_chip" and p["name"] in METAL_LOCK_CHIPS)
             _upsert_catalog_part(conn, p["name"], part_type, p["system"], p["wiki_url"], is_metal)
 
-        time.sleep(RATE_LIMIT)
+        if source == "fetch":
+            time.sleep(RATE_LIMIT)
 
     # 2. BX/UX standalone blades from list pages
     blade_count = 0
     for system in ("BX", "UX"):
         list_url = DISCOVERY_PAGES[system]
-        if verbose:
-            print(f"  Fetching {list_url}")
-        parts = _discover_parts_from_list_page(list_url, system)
+
+        # Pass 0: in-memory bundle from bookmarklet upload
+        parts = _from_bundle_list(list_url, system)
+        bundle_hit = parts is not None
+
+        if parts is None:
+            if verbose:
+                print(f"  Fetching {list_url}")
+            parts = _discover_parts_from_list_page(list_url, system)
 
         # Stage 4 fallback: list page blocked → recover blade list from RAGFlow.
         # We can't tell BX from UX in the RAGFlow listing alone, so we only
@@ -617,7 +657,8 @@ def populate_parts_catalog(conn, verbose: bool = False) -> dict:
             url = p.get("url") or p.get("wiki_url")
             _upsert_catalog_part(conn, p["name"], "blade", p.get("system") or system, url, False)
             blade_count += 1
-        time.sleep(RATE_LIMIT)
+        if not bundle_hit:
+            time.sleep(RATE_LIMIT)
     counts["blade"] = blade_count
     if verbose:
         print(f"    Found {blade_count} BX/UX blades from list pages")
@@ -627,29 +668,32 @@ def populate_parts_catalog(conn, verbose: bool = False) -> dict:
 
 
 def _discover_parts_from_list_page(url: str, system: str) -> list[dict]:
-    """Discover parts from a list page, extracting URLs and part types.
+    """Discover parts from a list page (network fetch path)."""
+    return _parse_list_soup(_fetch_page(url), system)
 
-    Returns list of dicts with keys: url, part_type, name, system
+
+def _parse_list_soup(soup, system: str) -> list[dict]:
+    """Pure parser — extracts part links from an already-parsed list page soup.
+
+    Split out from _discover_parts_from_list_page so the same logic works
+    against HTML provided by the bookmarklet upload.
     """
-    soup = _fetch_page(url)
     if not soup:
         return []
 
     parts = []
     seen_urls = set()
 
-    # Find all links that match our URL type patterns
     content = soup.find("div", class_="mw-parser-output")
     if not content:
         content = soup
 
     for link in content.find_all("a", href=True):
         href = link["href"]
-        # Only process /wiki/ links that match our type patterns
         if not href.startswith("/wiki/"):
             continue
 
-        path = href[6:]  # Remove /wiki/ prefix
+        path = href[6:]
         matched = False
         for prefix in URL_TYPE_MAP:
             if path.startswith(prefix):

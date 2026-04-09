@@ -287,6 +287,58 @@ class APIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_json({"error": str(e)}, 500)
 
+        elif path == "/upload/wiki-catalog" or path == "/api/upload/wiki-catalog":
+            # The wiki bookmarklet (running in the user's browser, where wiki
+            # fetches aren't Cloudflare-blocked) POSTs a bundle of fetched
+            # HTML pages here. We parse them in-process via the same
+            # populate_parts_catalog logic the local refresh uses, then run
+            # normalize_data so the smart drift resolver picks up any new
+            # typos. Synchronous because the work is bounded (~9 small
+            # parses + a normalize pass).
+            try:
+                data = json.loads(body.decode("utf-8"))
+                pages = data.get("pages") if isinstance(data, dict) else None
+                if not isinstance(pages, dict) or not pages:
+                    self._send_json({"error": "expected JSON body {pages: {url: html, ...}}"}, 400)
+                    return
+
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                sys.path.insert(0, str(SCRIPTS_DIR / "scrapers"))
+                from db import get_connection, init_schema, normalize_data
+                from fandom import populate_parts_catalog
+                from catalog import PartsCatalog
+
+                conn = get_connection()
+                try:
+                    init_schema(conn)
+                    PartsCatalog._instance = PartsCatalog.load(conn)
+                    counts = populate_parts_catalog(conn, verbose=False, pages=pages)
+                    fixed = normalize_data(conn)
+                finally:
+                    conn.close()
+
+                copy_db_to_dist()
+
+                total_parts = sum(counts.values())
+                print(f"[{datetime.now().isoformat()}] Wiki catalog upload: "
+                      f"{len(pages)} pages, {total_parts} parts catalogued, "
+                      f"normalize fixed {fixed}")
+
+                self._send_json({
+                    "success": True,
+                    "pages_received": len(pages),
+                    "catalog_counts": counts,
+                    "normalize_fixed": fixed,
+                    "message": f"Catalog refreshed: {total_parts} parts across "
+                               f"{len(counts)} types, {fixed} records normalized",
+                })
+            except json.JSONDecodeError:
+                self._send_json({"error": "invalid JSON body"}, 400)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self._send_json({"error": str(e)}, 500)
+
         elif path == "/scrape":
             try:
                 data = json.loads(body.decode("utf-8")) if body else {}
@@ -356,6 +408,7 @@ def main():
     print("  GET  /scrape             - Trigger incremental scrape (?sources=wbo,jp,de)")
     print("  POST /scrape             - Trigger incremental scrape")
     print("  POST /upload/wbo         - Upload WBO pages from bookmarklet (auto-runs incremental)")
+    print("  POST /upload/wiki-catalog - Upload Fandom wiki HTML bundle from bookmarklet (refreshes catalog)")
     print("  POST /api/scrape/full    - Clear DB and full rescrape from all sources")
     print("  GET  /api/pending-parts  - List parts seen in tournaments but not in wiki catalog")
     print("  POST /api/parts/accept   - Promote a pending part to accepted")
