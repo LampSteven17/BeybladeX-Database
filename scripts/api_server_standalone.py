@@ -241,7 +241,9 @@ class APIHandler(BaseHTTPRequestHandler):
             started, message = run_scrape(source_list)
             self._send_json({"started": started, "message": message})
 
-        elif path == "/api/pending-parts":
+        elif path == "/api/pending-parts" or path == "/pending-parts":
+            # Traefik strips the /api/ prefix when routing to this server,
+            # so we register both forms for every public API route.
             result = self._query_pending_parts()
             if isinstance(result, dict) and "error" in result:
                 self._send_json(result, 500)
@@ -356,12 +358,12 @@ class APIHandler(BaseHTTPRequestHandler):
                 started, message = run_scrape()
                 self._send_json({"started": started, "message": message})
 
-        elif path == "/api/scrape/full":
+        elif path == "/api/scrape/full" or path == "/scrape/full":
             # Clear DB and rescrape everything from all sources
             started, message = run_scrape(sources=None, full=True)
             self._send_json({"started": started, "message": message})
 
-        elif path == "/api/parts/accept":
+        elif path == "/api/parts/accept" or path == "/parts/accept":
             try:
                 data = json.loads(body.decode("utf-8")) if body else {}
                 ok, err = self._update_part_status(
@@ -375,7 +377,7 @@ class APIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_json({"error": str(e)}, 400)
 
-        elif path == "/api/parts/reject":
+        elif path == "/api/parts/reject" or path == "/parts/reject":
             try:
                 data = json.loads(body.decode("utf-8")) if body else {}
                 ok, err = self._update_part_status(
