@@ -447,21 +447,38 @@ def _discover_from_category(url: str, part_type: str, default_system: Optional[s
 
 def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
                          wiki_url: Optional[str], is_metal: bool = False) -> None:
+    """Idempotent upsert for a wiki-discovered part.
+
+    IMPORTANT: human decisions in the catalog (status='rejected') win over
+    the wiki. If a row already exists with status='rejected', this leaves
+    the status alone — only refreshes wiki_url and metal flag. Otherwise
+    a user's "Reject" or "Map to..." action would silently revert every
+    time they re-ran the wiki bookmarklet.
+    """
     existing = conn.execute(
-        "SELECT name, status FROM parts_catalog WHERE name = ? AND part_type = ?",
+        "SELECT status FROM parts_catalog WHERE name = ? AND part_type = ?",
         [name, part_type],
     ).fetchone()
     if existing:
-        conn.execute("""
-            UPDATE parts_catalog SET
-                wiki_url = COALESCE(?, wiki_url),
-                system = COALESCE(system, ?),
-                status = 'accepted',
-                source = 'wiki',
-                metal = ?,
-                accepted_at = COALESCE(accepted_at, current_timestamp)
-            WHERE name = ? AND part_type = ?
-        """, [wiki_url, system, is_metal, name, part_type])
+        if existing[0] == "rejected":
+            # Preserve the human verdict; just refresh metadata.
+            conn.execute("""
+                UPDATE parts_catalog SET
+                    wiki_url = COALESCE(?, wiki_url),
+                    metal = ?
+                WHERE name = ? AND part_type = ?
+            """, [wiki_url, is_metal, name, part_type])
+        else:
+            conn.execute("""
+                UPDATE parts_catalog SET
+                    wiki_url = COALESCE(?, wiki_url),
+                    system = COALESCE(system, ?),
+                    status = 'accepted',
+                    source = 'wiki',
+                    metal = ?,
+                    accepted_at = COALESCE(accepted_at, current_timestamp)
+                WHERE name = ? AND part_type = ?
+            """, [wiki_url, system, is_metal, name, part_type])
     else:
         conn.execute("""
             INSERT INTO parts_catalog

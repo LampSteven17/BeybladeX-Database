@@ -372,6 +372,40 @@ class APIHandler(BaseHTTPRequestHandler):
             started, message = run_scrape(sources=None, full=True)
             self._send_json({"started": started, "message": message})
 
+        elif path == "/api/parts/apply-changes" or path == "/parts/apply-changes":
+            # Walk every parts_catalog row with a canonical_name and rewrite
+            # the corresponding placements (CX-aware blade splitting), then
+            # re-run drift detection (so the now-resolved entries drop out
+            # of the pending list), then copy the DB to dist so the user-
+            # facing site picks up the cleaned data. Synchronous; takes a
+            # few seconds because of the placement updates and the dist copy.
+            try:
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                from db import get_connection, normalize_data
+                from catalog import apply_canonical_rewrites, PartsCatalog
+                conn = get_connection()
+                try:
+                    PartsCatalog._instance = PartsCatalog.load(conn)
+                    rewrite_summary = apply_canonical_rewrites(conn)
+                    fixed = normalize_data(conn)
+                finally:
+                    conn.close()
+                copy_db_to_dist()
+                total = sum(rewrite_summary.values())
+                print(f"[{datetime.now().isoformat()}] /api/parts/apply-changes: "
+                      f"rewrote {total} placement cells, normalize fixed {fixed}")
+                self._send_json({
+                    "success": True,
+                    "rewritten": rewrite_summary,
+                    "normalize_fixed": fixed,
+                    "message": f"Applied {total} placement rewrites; "
+                               f"{fixed} records normalized; site updated.",
+                })
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self._send_json({"error": str(e)}, 500)
+
         elif path == "/api/parts/accept" or path == "/parts/accept":
             try:
                 data = json.loads(body.decode("utf-8")) if body else {}

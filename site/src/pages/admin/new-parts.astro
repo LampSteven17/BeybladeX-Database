@@ -21,7 +21,10 @@ import Layout from '../../layouts/Layout.astro';
     {/* Action bar */}
     <div class="card card-padding mb-6 flex flex-wrap items-center gap-4">
       <button id="refresh-btn" class="btn btn-secondary">Refresh list</button>
-      <button id="full-scrape-btn" class="btn btn-primary">
+      <button id="apply-btn" class="btn btn-primary" title="Walk every accepted/rejected mapping and rewrite the placements table to use the canonical names. CX-aware: 'Empero Flare → Emperor Flare' becomes blade='Flare', lock_chip='Emperor'. Then re-runs normalize_data and copies the DB to dist so the public site picks up the cleaned data. Takes ~10-30s.">
+        Apply changes to site
+      </button>
+      <button id="full-scrape-btn" class="btn btn-secondary">
         Run full rescrape (clear DB)
       </button>
       <span class="text-fg-muted text-sm font-mono ml-auto">
@@ -244,6 +247,35 @@ import Layout from '../../layouts/Layout.astro';
   }
 
   document.getElementById('refresh-btn')!.addEventListener('click', loadPending);
+
+  document.getElementById('apply-btn')!.addEventListener('click', async () => {
+    const btn = document.getElementById('apply-btn') as HTMLButtonElement;
+    if (!confirm('Apply all accepted/rejected mappings to the placements table and refresh the public site? This rewrites tournament data to use canonical part names. Takes ~10-30s.')) return;
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    const t0 = Date.now();
+    const interval = setInterval(() => {
+      btn.textContent = `Applying… (${Math.floor((Date.now() - t0) / 1000)}s)`;
+    }, 500);
+    try {
+      const res = await fetch(`${API_BASE}/api/parts/apply-changes`, { method: 'POST' });
+      const data = await res.json();
+      clearInterval(interval);
+      btn.disabled = false;
+      btn.textContent = originalText;
+      if (res.ok) {
+        showStatus(data.message || 'Applied changes.');
+        loadPending();
+      } else {
+        showStatus(`Failed: ${data.error || res.statusText}`, true);
+      }
+    } catch (e) {
+      clearInterval(interval);
+      btn.disabled = false;
+      btn.textContent = originalText;
+      showStatus(`Network error: ${e}`, true);
+    }
+  });
 
   document.getElementById('full-scrape-btn')!.addEventListener('click', async () => {
     if (!confirm('This will CLEAR the database and rescrape every source from scratch. Continue?')) return;

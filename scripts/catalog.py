@@ -450,9 +450,100 @@ def resolve_pending_with_ragflow(
     return written
 
 
+def apply_canonical_rewrites(conn) -> dict:
+    """Walk every parts_catalog row that has a canonical_name and rewrite
+    the matching placement columns to use the canonical form.
+
+    Called from /api/parts/apply-changes after the admin finishes triaging
+    on /admin/new-parts. Idempotent — running it twice does nothing the
+    second time because the dirty strings are no longer in the placements.
+
+    CX-aware: when a blade canonical_name parses as "[LockChip] [MainBlade]"
+    via parse_cx_blade(), the rewrite splits it into the blade + lock_chip
+    columns instead of dumping the whole string into blade. So
+    "Empero Flare → Emperor Flare" becomes blade='Flare', lock_chip='Emperor'
+    — merging into the existing aggregations for that combo.
+
+    Returns a dict {part_type: count_of_placement_rows_rewritten}.
+    """
+    from db import parse_cx_blade
+
+    summary: dict[str, int] = {}
+
+    # Map (part_type, column_index) -> column name in placements
+    BLADE_COLS = ["blade_1", "blade_2", "blade_3"]
+    BIT_COLS = ["bit_1", "bit_2", "bit_3"]
+    RATCHET_COLS = ["ratchet_1", "ratchet_2", "ratchet_3"]
+    ASSIST_COLS = ["assist_1", "assist_2", "assist_3"]
+    OVER_COLS = ["over_blade_1", "over_blade_2", "over_blade_3"]
+    LOCK_COLS = ["lock_chip_1", "lock_chip_2", "lock_chip_3"]
+
+    # Pull every row that has a canonical_name set (accepted-with-mapping
+    # OR rejected-with-mapping — both are user-confirmed remappings).
+    rows = conn.execute("""
+        SELECT name, part_type, canonical_name
+        FROM parts_catalog
+        WHERE canonical_name IS NOT NULL AND canonical_name != name
+    """).fetchall()
+
+    def _count_and_update(col: str, dirty: str, set_clause: str, params: list) -> int:
+        # DuckDB cursor.rowcount is unreliable for UPDATEs (returns -1).
+        # Count first, then UPDATE — both queries against the same column,
+        # cheap on indexed lookups.
+        n = conn.execute(f"SELECT COUNT(*) FROM placements WHERE {col} = ?", [dirty]).fetchone()[0]
+        if n:
+            conn.execute(f"UPDATE placements SET {set_clause} WHERE {col} = ?", params + [dirty])
+        return n
+
+    for dirty_name, part_type, canonical in rows:
+        rewritten_for_this = 0
+
+        if part_type == "blade":
+            # CX-aware: re-parse the canonical to see if it splits into
+            # lock_chip + main_blade.
+            lock_chip, main_blade = parse_cx_blade(canonical)
+            for blade_col, lock_col in zip(BLADE_COLS, LOCK_COLS):
+                if lock_chip is not None:
+                    rewritten_for_this += _count_and_update(
+                        blade_col, dirty_name,
+                        f"{blade_col} = ?, {lock_col} = COALESCE({lock_col}, ?)",
+                        [main_blade, lock_chip],
+                    )
+                else:
+                    rewritten_for_this += _count_and_update(
+                        blade_col, dirty_name, f"{blade_col} = ?", [canonical]
+                    )
+
+        elif part_type == "bit":
+            for col in BIT_COLS:
+                rewritten_for_this += _count_and_update(col, dirty_name, f"{col} = ?", [canonical])
+        elif part_type == "ratchet":
+            for col in RATCHET_COLS:
+                rewritten_for_this += _count_and_update(col, dirty_name, f"{col} = ?", [canonical])
+        elif part_type == "assist":
+            for col in ASSIST_COLS:
+                rewritten_for_this += _count_and_update(col, dirty_name, f"{col} = ?", [canonical])
+        elif part_type == "over_blade":
+            for col in OVER_COLS:
+                rewritten_for_this += _count_and_update(col, dirty_name, f"{col} = ?", [canonical])
+        elif part_type == "lock_chip":
+            for col in LOCK_COLS:
+                rewritten_for_this += _count_and_update(col, dirty_name, f"{col} = ?", [canonical])
+
+        if rewritten_for_this:
+            summary[part_type] = summary.get(part_type, 0) + rewritten_for_this
+
+    conn.commit()
+    return summary
+
+
 def detect_drift(conn) -> dict:
     """Scan the placements table and record any tokens that aren't in the
     accepted parts catalog as 'pending' entries for admin review.
+
+    Skips tokens that already exist with status='rejected' so the admin's
+    rejection decisions persist across drift runs (otherwise every refresh
+    would re-flag the same typos).
 
     Should be called after a scrape (e.g., from normalize_data() or
     refresh_all). Idempotent.
@@ -503,7 +594,9 @@ def detect_drift(conn) -> dict:
                 "SELECT name, status FROM parts_catalog WHERE name = ? AND part_type = ?",
                 [name, part_type],
             ).fetchone()
-            if existing and existing[1] == "accepted":
+            # Skip rows the admin has already triaged (accepted or rejected).
+            # Otherwise the same typo would re-flag itself on every refresh.
+            if existing and existing[1] in ("accepted", "rejected"):
                 continue
             if existing:
                 conn.execute("""
@@ -538,7 +631,8 @@ def detect_drift(conn) -> dict:
                 "SELECT name, status FROM parts_catalog WHERE name = ? AND part_type = 'blade'",
                 [name],
             ).fetchone()
-            if existing and existing[1] == "accepted":
+            # Skip already-triaged rows so admin decisions persist
+            if existing and existing[1] in ("accepted", "rejected"):
                 continue
             if existing:
                 conn.execute("""
