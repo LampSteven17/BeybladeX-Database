@@ -135,13 +135,14 @@ class APIHandler(BaseHTTPRequestHandler):
     def _query_pending_parts(self):
         """Read pending parts from the catalog as a list of dicts.
 
-        Includes the LLM/lexical suggestion fields populated by
-        scripts/catalog.py:resolve_pending_with_ragflow so the admin UI
-        can show one-click "Accept as suggested" buttons.
+        Reads from the SOURCE DB (not the dist copy) so accept/reject
+        actions show up immediately without needing to copy the 21 MB
+        file each time. The user-facing site doesn't read parts_catalog,
+        so a stale dist DB is fine for it.
         """
         try:
             import duckdb
-            conn = duckdb.connect(str(DIST_DB), read_only=True)
+            conn = duckdb.connect(str(SOURCE_DB), read_only=True)
             try:
                 rows = conn.execute("""
                     SELECT name, part_type, occurrence_count, sample_combo,
@@ -170,7 +171,16 @@ class APIHandler(BaseHTTPRequestHandler):
             return {"error": str(e)}
 
     def _update_part_status(self, name, part_type, status, canonical_name=None):
-        """Mark a pending part as accepted or rejected."""
+        """Mark a pending part as accepted or rejected.
+
+        Fast path: only touches the parts_catalog row. Does NOT copy
+        the DB to dist (~21 MB → ~1.5s on the CEPH disk) and does NOT
+        rewrite placements. The admin page reads pending parts from the
+        source DB so the UI updates instantly.
+
+        The placement rewrite + dist copy happens later when the user
+        clicks "Apply changes to site" (POST /api/parts/apply-changes).
+        """
         try:
             sys.path.insert(0, str(SCRIPTS_DIR))
             from db import get_connection  # noqa
@@ -190,7 +200,6 @@ class APIHandler(BaseHTTPRequestHandler):
                         WHERE name = ? AND part_type = ?
                     """, [canonical_name, name, part_type])
                 conn.commit()
-                copy_db_to_dist()
                 return True, None
             finally:
                 conn.close()

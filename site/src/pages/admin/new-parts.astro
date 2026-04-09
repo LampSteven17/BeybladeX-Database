@@ -191,7 +191,30 @@ import Layout from '../../layouts/Layout.astro';
     });
   }
 
-  async function postPartAction(action: 'accept' | 'reject', payload: object) {
+  // Decrement the pending count badge as we process rows. Cached so we
+  // don't have to re-read it from the DOM each time.
+  let pendingCountEl: HTMLElement | null = null;
+  function decrementPendingBadge() {
+    pendingCountEl ||= document.getElementById('pending-count');
+    if (!pendingCountEl) return;
+    const cur = parseInt(pendingCountEl.textContent || '0', 10);
+    if (!Number.isNaN(cur) && cur > 0) {
+      pendingCountEl.textContent = String(cur - 1);
+    }
+  }
+
+  async function postPartAction(action: 'accept' | 'reject', payload: { name: string; part_type: string; canonical_name?: string }) {
+    // Optimistic UI: hide the row immediately so the click feels instant.
+    // The server-side write is fast (no DB-to-dist copy anymore), but the
+    // network round trip + render of the full table used to be ~1-2s on
+    // the CEPH-backed VM. Hiding the row hides that latency entirely.
+    const row = Array.from(document.querySelectorAll<HTMLTableRowElement>('tr[data-name]'))
+      .find(r => r.dataset.name === payload.name && r.dataset.type === payload.part_type);
+    if (row) {
+      row.style.opacity = '0.4';
+      row.style.pointerEvents = 'none';
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/parts/${action}`, {
         method: 'POST',
@@ -200,12 +223,22 @@ import Layout from '../../layouts/Layout.astro';
       });
       const data = await res.json();
       if (res.ok) {
-        showStatus(`Part ${action}ed.`);
-        loadPending();
+        // Remove the row from the DOM (no full refetch). Decrement badge.
+        if (row) row.remove();
+        decrementPendingBadge();
       } else {
+        // Roll back optimistic state and show the error.
+        if (row) {
+          row.style.opacity = '';
+          row.style.pointerEvents = '';
+        }
         showStatus(`Failed: ${data.error || res.statusText}`, true);
       }
     } catch (e) {
+      if (row) {
+        row.style.opacity = '';
+        row.style.pointerEvents = '';
+      }
       showStatus(`Network error: ${e}`, true);
     }
   }
