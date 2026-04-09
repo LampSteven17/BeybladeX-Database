@@ -308,17 +308,12 @@ class APIHandler(BaseHTTPRequestHandler):
                 from fandom import populate_parts_catalog, CATEGORY_PAGES
                 from catalog import PartsCatalog
 
-                # Debug: log which bundle URLs match the expected CATEGORY_PAGES
-                page_urls = set(pages.keys())
+                # Sanity check: how many of the expected Category URLs are in
+                # the bundle? Logged so misconfigured bookmarklets are obvious.
                 expected = {url for url, _ in CATEGORY_PAGES.values()}
-                hits = page_urls & expected
-                misses = expected - page_urls
+                hits = set(pages.keys()) & expected
                 print(f"[{datetime.now().isoformat()}] /upload/wiki-catalog: "
                       f"{len(pages)} pages received, {len(hits)}/{len(expected)} match Category URLs")
-                if misses:
-                    print(f"  MISSES (expected but not in bundle): {sorted(misses)[:3]}")
-                    extras = page_urls - expected
-                    print(f"  EXTRAS in bundle: {sorted(extras)[:3]}")
 
                 conn = get_connection()
                 try:
