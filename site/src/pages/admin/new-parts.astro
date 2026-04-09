@@ -21,6 +21,16 @@ import Layout from '../../layouts/Layout.astro';
     {/* Action bar */}
     <div class="card card-padding mb-6 flex flex-wrap items-center gap-4">
       <button id="refresh-btn" class="btn btn-secondary">Refresh list</button>
+      <div class="flex items-center gap-2 border-l border-r border-fg-muted/20 px-4">
+        <label for="auto-accept-threshold" class="text-fg-muted text-sm font-mono">Auto-accept ≥</label>
+        <input id="auto-accept-threshold" type="number" min="50" max="100" step="5" value="80"
+               class="w-16 bg-bg-surface border border-fg-muted/30 rounded px-2 py-1 text-fg font-mono text-sm" />
+        <span class="text-fg-muted text-sm font-mono">%</span>
+        <button id="auto-accept-btn" class="btn btn-xs btn-primary"
+                title="Bulk-accept every pending suggestion at or above this confidence. Doesn't apply changes to placements yet — click 'Apply changes to site' afterward.">
+          Auto-accept
+        </button>
+      </div>
       <button id="apply-btn" class="btn btn-primary" title="Walk every accepted/rejected mapping and rewrite the placements table to use the canonical names. CX-aware: 'Empero Flare → Emperor Flare' becomes blade='Flare', lock_chip='Emperor'. Then re-runs normalize_data and copies the DB to dist so the public site picks up the cleaned data. Takes ~10-30s.">
         Apply changes to site
       </button>
@@ -247,6 +257,44 @@ import Layout from '../../layouts/Layout.astro';
   }
 
   document.getElementById('refresh-btn')!.addEventListener('click', loadPending);
+
+  document.getElementById('auto-accept-btn')!.addEventListener('click', async () => {
+    const input = document.getElementById('auto-accept-threshold') as HTMLInputElement;
+    const pct = parseInt(input.value, 10);
+    if (Number.isNaN(pct) || pct < 50 || pct > 100) {
+      showStatus('Threshold must be between 50 and 100', true);
+      return;
+    }
+    const threshold = pct / 100;
+
+    // Count what we'd accept so the confirm prompt is informative
+    const rows = Array.from(document.querySelectorAll<HTMLTableRowElement>('tr[data-name]'));
+    const matching = rows.filter(r => {
+      const conf = parseFloat(r.querySelector('.font-mono[title]')?.getAttribute('data-conf') || '0');
+      return conf >= threshold;
+    });
+
+    if (!confirm(`Auto-accept all suggestions at ≥${pct}% confidence? (No placement changes yet — you'll still need 'Apply changes to site' afterward.)`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/parts/auto-accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threshold }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showStatus(data.message || `Auto-accepted ${data.accepted}.`);
+        loadPending();
+      } else {
+        showStatus(`Failed: ${data.error || res.statusText}`, true);
+      }
+    } catch (e) {
+      showStatus(`Network error: ${e}`, true);
+    }
+  });
 
   document.getElementById('apply-btn')!.addEventListener('click', async () => {
     const btn = document.getElementById('apply-btn') as HTMLButtonElement;

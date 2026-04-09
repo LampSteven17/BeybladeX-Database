@@ -372,6 +372,52 @@ class APIHandler(BaseHTTPRequestHandler):
             started, message = run_scrape(sources=None, full=True)
             self._send_json({"started": started, "message": message})
 
+        elif path == "/api/parts/auto-accept" or path == "/parts/auto-accept":
+            # Bulk-accept every pending row with a suggestion at or above
+            # the requested confidence threshold. Same per-row effect as
+            # the admin "Accept as suggested" button — marks the dirty
+            # name as rejected with canonical_name=suggested_canonical.
+            # The actual placement rewrite still waits for /apply-changes.
+            try:
+                data = json.loads(body.decode("utf-8")) if body else {}
+                threshold = float(data.get("threshold", 0.8))
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                from db import get_connection
+                conn = get_connection()
+                try:
+                    rows = conn.execute("""
+                        SELECT name, part_type, suggested_canonical, suggestion_confidence
+                        FROM parts_catalog
+                        WHERE status = 'pending'
+                          AND suggested_canonical IS NOT NULL
+                          AND suggestion_confidence IS NOT NULL
+                          AND suggestion_confidence >= ?
+                    """, [threshold]).fetchall()
+                    accepted = 0
+                    for name, part_type, canonical, _conf in rows:
+                        conn.execute("""
+                            UPDATE parts_catalog
+                            SET status = 'rejected', canonical_name = ?
+                            WHERE name = ? AND part_type = ?
+                        """, [canonical, name, part_type])
+                        accepted += 1
+                    conn.commit()
+                finally:
+                    conn.close()
+                print(f"[{datetime.now().isoformat()}] /api/parts/auto-accept "
+                      f"threshold={threshold}: accepted {accepted}")
+                self._send_json({
+                    "success": True,
+                    "accepted": accepted,
+                    "threshold": threshold,
+                    "message": f"Auto-accepted {accepted} suggestions at "
+                               f"≥{int(threshold * 100)}% confidence",
+                })
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self._send_json({"error": str(e)}, 500)
+
         elif path == "/api/parts/apply-changes" or path == "/parts/apply-changes":
             # Walk every parts_catalog row with a canonical_name and rewrite
             # the corresponding placements (CX-aware blade splitting), then
