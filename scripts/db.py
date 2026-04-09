@@ -1365,6 +1365,17 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
     except Exception as e:
         print(f"  Warning: drift detection failed: {e}")
 
+    # Smart drift resolver: ask RAGFlow to suggest canonical names for the
+    # pending parts so the admin page can show one-click accept buttons.
+    # No-op if RAGFlow isn't configured.
+    try:
+        from catalog import resolve_pending_with_ragflow
+        suggested = resolve_pending_with_ragflow(conn)
+        if suggested:
+            print(f"  RAGFlow suggested canonical names for {suggested} pending parts")
+    except Exception as e:
+        print(f"  Warning: RAGFlow drift resolver failed: {e}")
+
     if should_close:
         conn.close()
 

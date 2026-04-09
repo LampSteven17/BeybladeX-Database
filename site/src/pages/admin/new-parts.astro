@@ -38,12 +38,13 @@ import Layout from '../../layouts/Layout.astro';
               <th>Type</th>
               <th>Name</th>
               <th class="text-right">Occurrences</th>
+              <th>Suggestion</th>
               <th>Sample combo</th>
-              <th class="w-72">Actions</th>
+              <th class="w-96">Actions</th>
             </tr>
           </thead>
           <tbody id="pending-body">
-            <tr><td colspan="5" class="text-center text-fg-muted py-8">Loading…</td></tr>
+            <tr><td colspan="6" class="text-center text-fg-muted py-8">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -69,6 +70,9 @@ import Layout from '../../layouts/Layout.astro';
     part_type: string;
     occurrence_count: number;
     sample_combo: string | null;
+    suggested_canonical: string | null;
+    suggestion_reason: string | null;
+    suggestion_confidence: number | null;
   };
 
   function showStatus(msg: string, error = false) {
@@ -91,23 +95,48 @@ import Layout from '../../layouts/Layout.astro';
       document.getElementById('pending-count')!.textContent = String(parts.length);
 
       if (parts.length === 0) {
-        body.innerHTML = '<tr><td colspan="5" class="text-center text-fg-muted py-8">No pending parts — catalog is clean.</td></tr>';
+        body.innerHTML = '<tr><td colspan="6" class="text-center text-fg-muted py-8">No pending parts — catalog is clean.</td></tr>';
         return;
       }
 
-      body.innerHTML = parts.map(p => `
-        <tr data-name="${escapeHtml(p.name)}" data-type="${escapeHtml(p.part_type)}">
-          <td><span class="badge">${escapeHtml(p.part_type)}</span></td>
-          <td class="font-mono">${escapeHtml(p.name)}</td>
-          <td class="text-right font-mono">${p.occurrence_count}</td>
-          <td class="text-fg-muted text-sm">${p.sample_combo ? escapeHtml(p.sample_combo) : ''}</td>
-          <td>
-            <button class="btn btn-xs btn-primary accept-btn">Accept</button>
-            <button class="btn btn-xs btn-secondary reject-btn">Reject</button>
-            <button class="btn btn-xs btn-secondary alias-btn">Map to…</button>
-          </td>
-        </tr>
-      `).join('');
+      body.innerHTML = parts.map(p => {
+        const suggested = p.suggested_canonical;
+        const conf = p.suggestion_confidence ?? 0;
+        const sameAsName = suggested && suggested.toLowerCase() === p.name.toLowerCase();
+
+        // Suggestion cell: empty, or "→ Canonical (0.94)" with confidence color
+        let suggestionCell = '';
+        if (suggested) {
+          const confPct = Math.round(conf * 100);
+          const confColor = conf >= 0.9 ? 'text-green-400'
+                          : conf >= 0.8 ? 'text-accent'
+                          : 'text-fg-muted';
+          const reasonAttr = p.suggestion_reason ? ` title="${escapeHtml(p.suggestion_reason)}"` : '';
+          suggestionCell = `<span class="font-mono"${reasonAttr}>→ ${escapeHtml(suggested)} <span class="${confColor}">(${confPct}%)</span></span>`;
+        }
+
+        // Action cell: include "Accept as suggested" only when there is a suggestion
+        // that's different from the raw name (otherwise plain Accept does the same thing)
+        const acceptSuggestedBtn = (suggested && !sameAsName)
+          ? `<button class="btn btn-xs btn-primary accept-suggested-btn" data-canonical="${escapeHtml(suggested)}">Accept as suggested</button>`
+          : '';
+
+        return `
+          <tr data-name="${escapeHtml(p.name)}" data-type="${escapeHtml(p.part_type)}">
+            <td><span class="badge">${escapeHtml(p.part_type)}</span></td>
+            <td class="font-mono">${escapeHtml(p.name)}</td>
+            <td class="text-right font-mono">${p.occurrence_count}</td>
+            <td>${suggestionCell}</td>
+            <td class="text-fg-muted text-sm">${p.sample_combo ? escapeHtml(p.sample_combo) : ''}</td>
+            <td>
+              ${acceptSuggestedBtn}
+              <button class="btn btn-xs btn-secondary accept-btn">Accept as-is</button>
+              <button class="btn btn-xs btn-secondary reject-btn">Reject</button>
+              <button class="btn btn-xs btn-secondary alias-btn">Map to…</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
 
       attachActionHandlers();
     } catch (e) {
@@ -122,6 +151,17 @@ import Layout from '../../layouts/Layout.astro';
   }
 
   function attachActionHandlers() {
+    document.querySelectorAll<HTMLButtonElement>('.accept-suggested-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('tr')!;
+        const name = row.dataset.name!;
+        const part_type = row.dataset.type!;
+        const canonical = btn.dataset.canonical!;
+        // Reject the dirty name and remap it to the canonical (so future
+        // imports of the same dirty string get auto-corrected)
+        await postPartAction('reject', { name, part_type, canonical_name: canonical });
+      });
+    });
     document.querySelectorAll<HTMLButtonElement>('.accept-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const row = btn.closest('tr')!;

@@ -133,16 +133,24 @@ class APIHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _query_pending_parts(self):
-        """Read pending parts from the catalog as a list of dicts."""
+        """Read pending parts from the catalog as a list of dicts.
+
+        Includes the LLM/lexical suggestion fields populated by
+        scripts/catalog.py:resolve_pending_with_ragflow so the admin UI
+        can show one-click "Accept as suggested" buttons.
+        """
         try:
             import duckdb
             conn = duckdb.connect(str(DIST_DB), read_only=True)
             try:
                 rows = conn.execute("""
-                    SELECT name, part_type, occurrence_count, sample_combo
+                    SELECT name, part_type, occurrence_count, sample_combo,
+                           suggested_canonical, suggestion_reason, suggestion_confidence
                     FROM parts_catalog
                     WHERE status = 'pending'
-                    ORDER BY occurrence_count DESC
+                    ORDER BY (suggestion_confidence IS NULL),
+                             suggestion_confidence DESC,
+                             occurrence_count DESC
                 """).fetchall()
                 return [
                     {
@@ -150,6 +158,9 @@ class APIHandler(BaseHTTPRequestHandler):
                         "part_type": r[1],
                         "occurrence_count": r[2] or 0,
                         "sample_combo": r[3],
+                        "suggested_canonical": r[4],
+                        "suggestion_reason": r[5],
+                        "suggestion_confidence": r[6],
                     }
                     for r in rows
                 ]

@@ -230,6 +230,226 @@ def record_drift(conn, name: str, part_type: str, sample_combo: Optional[str] = 
         """, [name, part_type, sample_combo])
 
 
+# ----------------------------------------------------------------------
+# RAGFlow-powered smart drift resolver
+# ----------------------------------------------------------------------
+
+# Maps the wiki filename prefix to our internal part_type vocabulary.
+# Mirrors scripts/scrapers/fandom.py:URL_TYPE_MAP but applied to filenames
+# (Lock_Chip_-_Eva.md, Bit_-_Flat.md, ...).
+_FILENAME_TYPE_PREFIX_MAP = {
+    "Lock_Chip_-_": "lock_chip",
+    "Main_Blade_-_": "main_blade",
+    "Over_Blade_-_": "over_blade",
+    "Assist_Blade_-_": "assist",
+    "Metal_Blade_-_": "metal_blade",
+    "Bit_-_": "bit",
+    "Ratchet_-_": "ratchet",
+    "Blade_-_": "blade",
+    "Ratchet_Integrated_Bit_-_": "bit",
+}
+
+
+def _parse_wiki_filename(name: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+    """Parse a RAGFlow-uploaded filename like 'Lock_Chip_-_Eva.md' into
+    (part_type, canonical_name).
+
+    Returns (None, None) if the filename doesn't match the convention.
+    """
+    if not name:
+        return None, None
+    base = name.rsplit(".", 1)[0]  # strip .md
+    for prefix, ptype in _FILENAME_TYPE_PREFIX_MAP.items():
+        if base.startswith(prefix):
+            canonical = base[len(prefix):].replace("_", " ")
+            # Wiki spelling fix used elsewhere in the codebase
+            canonical = canonical.replace("Disk ", "Disc ")
+            return ptype, canonical
+    return None, None
+
+
+def _lexical_match(name: str, candidates: set[str], cutoff: float = 0.75) -> tuple[Optional[str], float]:
+    """Find the best fuzzy string match for `name` in `candidates`.
+
+    Uses difflib.SequenceMatcher (stdlib, no extra deps). Returns
+    (best_match, ratio) or (None, 0.0) if nothing scores above cutoff.
+
+    This handles the 95% case for drift cleanup: typos ('Rrush'→'Rush'),
+    case ('Free ball'→'Free Ball'), missing spaces ('Lowrush'→'Low Rush'),
+    one-letter swaps ('Elavate'→'Elevate'), etc. RAGFlow's vector
+    retrieval isn't built for these short-string transformations and
+    consistently fails on them.
+    """
+    import difflib
+
+    if not name or not candidates:
+        return None, 0.0
+
+    name_lower = name.lower().strip()
+    # Try a normalized comparison: lowercase + collapsed spaces
+    candidate_map = {c.lower(): c for c in candidates}
+    candidate_map_nospace = {c.lower().replace(" ", ""): c for c in candidates}
+
+    # 1. Exact case-insensitive match
+    if name_lower in candidate_map:
+        return candidate_map[name_lower], 1.0
+    # 2. Exact case-insensitive no-space match (handles "Lowrush" → "Low Rush")
+    if name_lower.replace(" ", "") in candidate_map_nospace:
+        return candidate_map_nospace[name_lower.replace(" ", "")], 0.99
+
+    # 3. Best Levenshtein-style fuzzy match
+    best_ratio = 0.0
+    best_match: Optional[str] = None
+    for cand in candidates:
+        ratio = difflib.SequenceMatcher(None, name_lower, cand.lower()).ratio()
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_match = cand
+    if best_match and best_ratio >= cutoff:
+        return best_match, best_ratio
+    return None, 0.0
+
+
+def _candidates_for_type(cat: "PartsCatalog", part_type: str) -> set[str]:
+    """Pick the right catalog set to fuzzy-match against for a given part_type."""
+    return {
+        "lock_chip": cat.lock_chips,
+        "main_blade": cat.main_blades,
+        "metal_blade": cat.metal_blades,
+        "blade": cat.blades | cat.cx_full_names,
+        "assist": cat.assists,
+        "over_blade": cat.over_blades,
+        "bit": cat.bits,
+        "ratchet": cat.ratchets,
+    }.get(part_type, set())
+
+
+def resolve_pending_with_ragflow(
+    conn,
+    lexical_cutoff: float = 0.75,
+    ragflow_similarity_threshold: float = 0.55,
+    only_unsuggested: bool = True,
+) -> int:
+    """Suggest canonical names for pending catalog rows using a two-pass
+    approach: lexical fuzzy match first, RAGFlow retrieval as fallback.
+
+    Why two-pass: nomic-embed-text (the embedding model behind our RAGFlow)
+    doesn't produce useful neighbors for short typo strings like 'Rrush' or
+    'Lowrush' — the embeddings just aren't differentiated at that scale.
+    Lexical (difflib SequenceMatcher) handles those perfectly. RAGFlow then
+    catches the long-form semantic cases lexical missed.
+
+    For each pending row:
+      1. Lexical fuzzy match against the catalog set for that part_type.
+         If ratio >= lexical_cutoff, write a suggestion and continue.
+      2. Otherwise, query RAGFlow with the part name. Walk results, find
+         the highest-scoring chunk whose filename type matches the pending
+         part_type, and if its combined similarity is >= ragflow_similarity_threshold,
+         write the parsed canonical name as the suggestion.
+
+    Idempotent. Returns the total number of suggestions written.
+    """
+    from ragflow import RAGFlowClient  # local import keeps catalog usable without ragflow.py
+
+    cat = PartsCatalog.load(conn)
+
+    where = "status = 'pending'"
+    if only_unsuggested:
+        where += " AND suggested_canonical IS NULL"
+    rows = conn.execute(f"SELECT name, part_type FROM parts_catalog WHERE {where}").fetchall()
+    if not rows:
+        return 0
+
+    client = RAGFlowClient()
+    ragflow_available = client.is_configured()
+
+    written = 0
+    lex_count = 0
+    rag_count = 0
+
+    for name, part_type in rows:
+        candidates = _candidates_for_type(cat, part_type)
+
+        # Ratchets are structured strings (e.g. "3-60") — fuzzy matching is
+        # dangerous because "3-30"/"3-80"/"3-85" all score the same. Require
+        # an effectively exact match for this type.
+        cutoff = 0.99 if part_type == "ratchet" else lexical_cutoff
+
+        # Pass 1: lexical fuzzy match
+        match, ratio = _lexical_match(name, candidates, cutoff=cutoff)
+        if match is not None:
+            conn.execute("""
+                UPDATE parts_catalog SET
+                    suggested_canonical = ?,
+                    suggestion_reason = ?,
+                    suggestion_confidence = ?,
+                    suggested_at = current_timestamp
+                WHERE name = ? AND part_type = ?
+            """, [
+                match,
+                f"Lexical fuzzy match (ratio={ratio:.3f})",
+                ratio,
+                name,
+                part_type,
+            ])
+            written += 1
+            lex_count += 1
+            continue
+
+        # Pass 2: RAGFlow retrieval (only if configured + lexical missed)
+        if not ragflow_available:
+            continue
+        try:
+            chunks = client.retrieve(
+                question=name,
+                top_k=10,
+                similarity_threshold=0.05,
+                vector_similarity_weight=0.9,
+            )
+        except Exception as e:
+            print(f"  RAGFlow query failed for {name!r}: {e}")
+            continue
+        if not chunks:
+            continue
+
+        # Highest-scoring chunk whose filename type matches the pending part_type
+        best_match = None
+        for chunk in chunks:
+            chunk_type, canonical = _parse_wiki_filename(chunk.document_keyword)
+            if chunk_type == part_type and canonical:
+                best_match = (chunk, canonical)
+                break
+
+        if best_match is None:
+            continue
+        chunk, canonical = best_match
+        if chunk.similarity < ragflow_similarity_threshold:
+            continue
+
+        conn.execute("""
+            UPDATE parts_catalog SET
+                suggested_canonical = ?,
+                suggestion_reason = ?,
+                suggestion_confidence = ?,
+                suggested_at = current_timestamp
+            WHERE name = ? AND part_type = ?
+        """, [
+            canonical,
+            f"RAGFlow nearest wiki page (similarity={chunk.similarity:.3f})",
+            chunk.similarity,
+            name,
+            part_type,
+        ])
+        written += 1
+        rag_count += 1
+
+    conn.commit()
+
+    if written:
+        print(f"  Resolved {written} pending parts ({lex_count} lexical, {rag_count} RAGFlow)")
+    return written
+
+
 def detect_drift(conn) -> dict:
     """Scan the placements table and record any tokens that aren't in the
     accepted parts catalog as 'pending' entries for admin review.

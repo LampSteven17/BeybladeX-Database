@@ -465,26 +465,111 @@ def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
         """, [name, part_type, system, wiki_url, is_metal])
 
 
+# Filename prefix → part_type, used by the RAGFlow fallback when the
+# wiki Category fetches are Cloudflare-blocked. Mirrors the same convention
+# used by scripts/ragflow_ingest.py and scripts/catalog.py:_parse_wiki_filename.
+_RAGFLOW_FILENAME_PREFIX = {
+    "lock_chip":   "Lock_Chip_-_",
+    "main_blade":  "Main_Blade_-_",
+    "over_blade":  "Over_Blade_-_",
+    "assist":      "Assist_Blade_-_",
+    "metal_blade": "Metal_Blade_-_",
+    "bit":         "Bit_-_",
+    "ratchet":     "Ratchet_-_",
+    "blade":       "Blade_-_",
+}
+
+
+def _ragflow_fallback_for(part_type: str, ragflow_docs: Optional[list[dict]]) -> list[dict]:
+    """Recover parts of a given type from a cached RAGFlow document listing
+    when the wiki Category page fetch returns nothing (e.g., Cloudflare
+    block on the prod box's IP).
+
+    The dataset already contains every wiki page with a structured filename
+    like 'Lock_Chip_-_Eva.md'. We just filter and parse — no semantic
+    retrieval needed (which would be unreliable for short list queries).
+    """
+    if not ragflow_docs:
+        return []
+    prefix = _RAGFLOW_FILENAME_PREFIX.get(part_type)
+    if not prefix:
+        return []
+    parts: list[dict] = []
+    for doc in ragflow_docs:
+        name = doc.get("name") or ""
+        if not name.startswith(prefix) or not name.endswith(".md"):
+            continue
+        base = name[len(prefix):-3]
+        canonical = base.replace("_", " ").replace("Disk ", "Disc ").strip()
+        if not canonical:
+            continue
+        parts.append({
+            "name": canonical,
+            "part_type": part_type,
+            "system": "CX" if part_type in {"lock_chip", "main_blade", "over_blade",
+                                            "assist", "metal_blade"} else None,
+            "wiki_url": None,  # we don't have it via this path
+        })
+    return parts
+
+
 def populate_parts_catalog(conn, verbose: bool = False) -> dict:
     """Discover every Beyblade X part from the Fandom wiki and upsert
     into the parts_catalog table. This is the source-of-truth refresh that
     the parser depends on.
 
-    Two discovery sources:
-      1. Category:* pages — authoritative for lock_chip, main_blade,
-         over_blade, assist, metal_blade, bit, ratchet
-      2. List_of_*_parts pages — used for BX/UX standalone blades
-         (which the wiki doesn't categorize together)
+    Three discovery sources, tried in order per part type:
+      1. Category:* pages on the wiki — authoritative for lock_chip,
+         main_blade, over_blade, assist, metal_blade, bit, ratchet
+      2. RAGFlow dataset document listing — fallback when (1) returns 0
+         (Cloudflare blocks the box's IP). Uses cached chunks already
+         ingested by scripts/ragflow_ingest.py from a non-blocked machine.
+      3. List_of_*_parts pages on the wiki — used for BX/UX standalone
+         blades (which the wiki doesn't categorize together)
 
     Returns {part_type: count} of accepted parts written.
     """
     counts: dict[str, int] = {}
+
+    # Lazily fetch RAGFlow document listing only if we actually need it
+    ragflow_docs: Optional[list[dict]] = None
+
+    def _ragflow_docs_lazy() -> Optional[list[dict]]:
+        nonlocal ragflow_docs
+        if ragflow_docs is not None:
+            return ragflow_docs
+        try:
+            from ragflow import RAGFlowClient  # local import to avoid hard dep
+        except Exception:
+            return None
+        client = RAGFlowClient()
+        if not client.is_configured():
+            return None
+        try:
+            docs = client.list_documents()
+            ragflow_docs = docs
+            if verbose:
+                print(f"    [RAGFlow fallback] cached {len(docs)} docs from dataset")
+            return docs
+        except Exception as e:
+            if verbose:
+                print(f"    [RAGFlow fallback] list_documents failed: {e}")
+            return None
 
     # 1. Category pages
     for part_type, (cat_url, system) in CATEGORY_PAGES.items():
         if verbose:
             print(f"  Fetching {cat_url}")
         parts = _discover_from_category(cat_url, part_type, system)
+
+        # Stage 4 fallback: if Cloudflare blocked us, recover from RAGFlow
+        if not parts:
+            docs = _ragflow_docs_lazy()
+            if docs:
+                parts = _ragflow_fallback_for(part_type, docs)
+                if parts and verbose:
+                    print(f"    [RAGFlow fallback] recovered {len(parts)} {part_type}")
+
         if verbose:
             print(f"    Found {len(parts)} {part_type}")
         counts[part_type] = len(parts)
@@ -502,15 +587,35 @@ def populate_parts_catalog(conn, verbose: bool = False) -> dict:
         if verbose:
             print(f"  Fetching {list_url}")
         parts = _discover_parts_from_list_page(list_url, system)
-        if not parts and system == "BX":
-            if verbose:
-                print(f"    BX list page blocked, using fallback ({len(BX_FALLBACK_PARTS)})")
-            parts = list(BX_FALLBACK_PARTS)
+
+        # Stage 4 fallback: list page blocked → recover blade list from RAGFlow.
+        # We can't tell BX from UX in the RAGFlow listing alone, so we only
+        # use this fallback if BOTH list pages failed AND the hardcoded
+        # BX_FALLBACK_PARTS isn't enough.
+        if not parts:
+            docs = _ragflow_docs_lazy()
+            if docs:
+                rag_blades = _ragflow_fallback_for("blade", docs)
+                # All RAGFlow-recovered blades get the system we're currently
+                # iterating; not perfect, but the parser only cares that they
+                # exist in the catalog at all.
+                if rag_blades:
+                    for rb in rag_blades:
+                        rb["system"] = system
+                    parts = rag_blades
+                    if verbose:
+                        print(f"    [RAGFlow fallback] recovered {len(parts)} blades for {system}")
+            if not parts and system == "BX":
+                if verbose:
+                    print(f"    BX list page blocked, using fallback ({len(BX_FALLBACK_PARTS)})")
+                parts = list(BX_FALLBACK_PARTS)
+
         for p in parts:
             # Only standalone blades (not lock chips, not main blades, not bits, etc.)
-            if p["part_type"] != "blade":
+            if p.get("part_type") not in (None, "blade"):
                 continue
-            _upsert_catalog_part(conn, p["name"], "blade", system, p["url"], False)
+            url = p.get("url") or p.get("wiki_url")
+            _upsert_catalog_part(conn, p["name"], "blade", p.get("system") or system, url, False)
             blade_count += 1
         time.sleep(RATE_LIMIT)
     counts["blade"] = blade_count
