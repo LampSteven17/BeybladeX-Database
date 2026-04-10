@@ -106,3 +106,42 @@ ASSIST_LETTER_ABBREVIATIONS = {
 # (e.g., Hasbro localizations or hidden vendor variants). Empty by default;
 # fill in only when we know the wiki is missing one.
 EXTRA_LOCK_CHIPS: dict[str, str] = {}
+
+# Collab / crossover / Jurassic World skin blades that are competitively
+# identical (or near-identical retools) of standard BX blades. These get
+# folded into the canonical base blade so rankings and combo aggregations
+# don't fragment across cosmetic variants.
+#
+# Source: each wiki page describes the skin as "identical to those of [Base]"
+# or "retool of [Base], plastic components identical". A few (Red Hulk,
+# Captain America) have retooled metal discs but identical plastic — close
+# enough for tournament meta analysis.
+#
+# Updated manually when new collabs are announced. The fandom scraper's
+# _upsert_catalog_part preserves status='rejected' rows, so these persist
+# across wiki bookmarklet refreshes.
+SKIN_ALIASES: dict[str, str] = {
+    # Transformers collabs
+    "Bumblebee": "Knight Shield",
+    "Megatron": "Hells Scythe",
+    "Shockwave": "Viper Tail",
+    "Optimus Primal": "Shark Edge",
+    # Star Wars collabs
+    "Darth Vader": "Knight Lance",
+    "General Grievous": "Rhino Horn",
+    "Moff Gideon": "Hells Scythe",
+    "Obi-Wan Kenobi": "Knight Lance",
+    "Chewbacca": "Shelter Drake",
+    # Marvel collabs
+    "Venom": "Dran Sword",
+    "Red Hulk": "Tyranno Beat",       # retool, plastics identical
+    "Spider-Man": "Viper Tail",
+    "Iron Man": "Knight Shield",
+    "Captain America": "Dran Sword",   # retool, plastics identical
+    # Jurassic World collabs
+    "Mosasaurus": "Sphinx Cowl",
+    "Quetzalcoatlus": "Viper Tail",
+    "Spinosaurus": "Roar Tyranno",
+    "Tyrannosaurus": "Roar Tyranno",
+    "T-Rex": "Tyranno Beat",          # wiki: T._Rex_1-80GB
+}
