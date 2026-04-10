@@ -266,9 +266,31 @@ def init_battles_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             points INTEGER,
             session_id VARCHAR,
             notes VARCHAR,
-            created_at TIMESTAMP DEFAULT current_timestamp
+            created_at TIMESTAMP DEFAULT current_timestamp,
+            -- Structured combo components (mirrors placements table)
+            blade VARCHAR,
+            lock_chip VARCHAR,
+            over_blade VARCHAR,
+            assist VARCHAR,
+            ratchet VARCHAR,
+            bit VARCHAR,
+            -- Structured opponent components
+            opp_blade VARCHAR,
+            opp_lock_chip VARCHAR,
+            opp_over_blade VARCHAR,
+            opp_assist VARCHAR,
+            opp_ratchet VARCHAR,
+            opp_bit VARCHAR
         )
     """)
+
+    # Idempotent migration for existing tables
+    for col in ['blade', 'lock_chip', 'over_blade', 'assist', 'ratchet', 'bit',
+                'opp_blade', 'opp_lock_chip', 'opp_over_blade', 'opp_assist', 'opp_ratchet', 'opp_bit']:
+        try:
+            conn.execute(f"ALTER TABLE battles ADD COLUMN {col} VARCHAR")
+        except Exception:
+            pass
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS stamina_trials (
@@ -299,7 +321,9 @@ def backup_battles_to_json() -> str:
         battles = conn.execute("""
             SELECT id, combo_id, opponent_id, stadium, finish_type,
                    result, points, session_id, notes,
-                   created_at::VARCHAR as created_at
+                   created_at::VARCHAR as created_at,
+                   blade, lock_chip, over_blade, assist, ratchet, bit,
+                   opp_blade, opp_lock_chip, opp_over_blade, opp_assist, opp_ratchet, opp_bit
             FROM battles ORDER BY id
         """).fetchall()
 
@@ -319,6 +343,10 @@ def backup_battles_to_json() -> str:
                 "stadium": r[3], "finish_type": r[4], "result": r[5],
                 "points": r[6], "session_id": r[7], "notes": r[8],
                 "created_at": r[9],
+                "blade": r[10], "lock_chip": r[11], "over_blade": r[12],
+                "assist": r[13], "ratchet": r[14], "bit": r[15],
+                "opp_blade": r[16], "opp_lock_chip": r[17], "opp_over_blade": r[18],
+                "opp_assist": r[19], "opp_ratchet": r[20], "opp_bit": r[21],
             }
             for r in battles
         ],
@@ -358,11 +386,17 @@ def restore_battles_from_json(path: str = None) -> tuple[int, int]:
     for b in data.get("battles", []):
         conn.execute("""
             INSERT INTO battles (combo_id, opponent_id, stadium, finish_type,
-                                 result, points, session_id, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                 result, points, session_id, notes,
+                                 blade, lock_chip, over_blade, assist, ratchet, bit,
+                                 opp_blade, opp_lock_chip, opp_over_blade, opp_assist, opp_ratchet, opp_bit)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, [b["combo_id"], b["opponent_id"], b.get("stadium"),
               b["finish_type"], b["result"], b.get("points"),
-              b.get("session_id"), b.get("notes")])
+              b.get("session_id"), b.get("notes"),
+              b.get("blade"), b.get("lock_chip"), b.get("over_blade"),
+              b.get("assist"), b.get("ratchet"), b.get("bit"),
+              b.get("opp_blade"), b.get("opp_lock_chip"), b.get("opp_over_blade"),
+              b.get("opp_assist"), b.get("opp_ratchet"), b.get("opp_bit")])
 
     for s in data.get("stamina_trials", []):
         conn.execute("""

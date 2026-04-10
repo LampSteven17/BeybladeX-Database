@@ -748,6 +748,10 @@ class APIHandler(BaseHTTPRequestHandler):
             session_id = data.get("session_id")
             notes = data.get("notes")
 
+            # Structured combo components (mirrors placements table)
+            combo = data.get("combo", {})
+            opp = data.get("opponent", {})
+
             sys.path.insert(0, str(SCRIPTS_DIR))
             from db import get_battles_connection, init_battles_schema
             conn = get_battles_connection()
@@ -755,11 +759,17 @@ class APIHandler(BaseHTTPRequestHandler):
             try:
                 row = conn.execute("""
                     INSERT INTO battles (combo_id, opponent_id, stadium, finish_type,
-                                        result, points, session_id, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                        result, points, session_id, notes,
+                                        blade, lock_chip, over_blade, assist, ratchet, bit,
+                                        opp_blade, opp_lock_chip, opp_over_blade, opp_assist, opp_ratchet, opp_bit)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     RETURNING id, created_at::VARCHAR
                 """, [combo_id, opponent_id, stadium, finish_type,
-                      result, points, session_id, notes]).fetchone()
+                      result, points, session_id, notes,
+                      combo.get("blade"), combo.get("lockChip"), combo.get("overBlade"),
+                      combo.get("assist"), combo.get("ratchet"), combo.get("bit"),
+                      opp.get("blade"), opp.get("lockChip"), opp.get("overBlade"),
+                      opp.get("assist"), opp.get("ratchet"), opp.get("bit")]).fetchone()
                 conn.commit()
                 self._send_json({
                     "success": True,
