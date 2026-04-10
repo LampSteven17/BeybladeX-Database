@@ -44,6 +44,20 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
 
+    {/* Start scoring gate */}
+    <div id="start-scoring-bar" class="mb-4 hidden">
+      <button id="start-scoring-btn" class="w-full py-3 rounded-lg font-mono font-bold text-sm bg-accent/20 border-2 border-accent text-accent">
+        START SCORING
+      </button>
+    </div>
+
+    {/* Change matchup (visible only when scoring is active) */}
+    <div id="change-matchup-bar" class="mb-3 hidden text-center">
+      <button id="change-matchup-btn" class="text-xs font-mono text-fg-muted border border-fg-muted/30 rounded px-3 py-1">
+        Change matchup
+      </button>
+    </div>
+
     {/* Matchup score */}
     <div id="matchup-score" class="text-center font-mono mb-4 hidden">
       <span id="my-score" class="text-3xl font-bold text-positive">0</span>
@@ -297,6 +311,7 @@ import Layout from '../layouts/Layout.astro';
   let lastBattleId: number | null = null;
   const sessionId = `session-${Date.now()}`;
   let catalog: any = null;
+  let scoringActive = false;
 
   function comboToId(c: Combo): string {
     const blade = c.lockChip
@@ -401,50 +416,54 @@ import Layout from '../layouts/Layout.astro';
       container.innerHTML = '';
 
       if (step === 'blade') {
-        addHeader('Pick Blade', true);
+        addHeader('Pick Series', false);
+        addGrid([
+          { label: 'BX', value: 'bx', cls: 'bx' },
+          { label: 'UX', value: 'ux', cls: 'ux' },
+          { label: 'CX', value: 'cx', cls: 'cx' },
+        ], (val) => {
+          state.series = val;
+          if (val === 'cx') showStep('cx-type');
+          else showStep('blade-list');
+        });
 
-        // Group blades by series, sorted by usage within each group
-        const bxBlades: string[] = [];
-        const uxBlades: string[] = [];
-        for (const b of (catalog.blades || [])) {
-          const name = b.name || b;
-          const sys = b.system || 'BX';
-          if (sys === 'UX') uxBlades.push(name);
-          else bxBlades.push(name);
-        }
-
-        const sortByUsage = (a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0);
-        bxBlades.sort(sortByUsage);
-        uxBlades.sort(sortByUsage);
-
-        const cxMains = (catalog.main_blades || []).slice().sort(sortByUsage);
-        const cxMetals = (catalog.metal_blades || []).slice().sort(sortByUsage);
-
-        // UX section (usually the meta)
-        addSectionLabel('UX Series', 'ux');
-        addGrid(uxBlades.map(b => ({ label: b, value: b, cls: 'ux' })), (val) => {
+      } else if (step === 'blade-list') {
+        const series = state.series.toUpperCase();
+        const blades = (catalog.blades || [])
+          .filter((b: any) => (b.system || 'BX') === series)
+          .map((b: any) => b.name || b)
+          .sort((a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0));
+        const cls = state.series;
+        addHeader(`${series} Blades`, true);
+        addGrid(blades.map((b: string) => ({ label: b, value: b, cls })), (val) => {
           state.blade = val; state.type = 'bx'; showStep('ratchet');
         });
 
-        // BX section
-        addSectionLabel('BX Series', 'bx');
-        addGrid(bxBlades.map(b => ({ label: b, value: b, cls: 'bx' })), (val) => {
-          state.blade = val; state.type = 'bx'; showStep('ratchet');
+      } else if (step === 'cx-type') {
+        addHeader('CX Blade Type', true);
+        addGrid([
+          { label: 'Main Blade', value: 'main', cls: 'cx' },
+          { label: 'Metal Blade', value: 'metal', cls: 'cx' },
+        ], (val) => {
+          if (val === 'main') showStep('cx-main-list');
+          else showStep('cx-metal-list');
         });
 
-        // CX Main Blades (needs lock chip next)
-        addSectionLabel('CX Main Blades', 'cx');
-        addGrid(cxMains.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
+      } else if (step === 'cx-main-list') {
+        const mains = (catalog.main_blades || []).slice()
+          .sort((a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0));
+        addHeader('CX Main Blade', true);
+        addGrid(mains.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
           state.blade = val; state.type = 'cx-main'; showStep('cx-lock');
         });
 
-        // CX Metal Blades (needs lock chip next)
-        if (cxMetals.length) {
-          addSectionLabel('CX Metal Blades', 'cx');
-          addGrid(cxMetals.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
-            state.blade = val; state.type = 'cx-metal'; showStep('cx-lock');
-          });
-        }
+      } else if (step === 'cx-metal-list') {
+        const metals = (catalog.metal_blades || []).slice()
+          .sort((a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0));
+        addHeader('CX Metal Blade', true);
+        addGrid(metals.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
+          state.blade = val; state.type = 'cx-metal'; showStep('cx-lock');
+        });
 
       } else if (step === 'cx-lock') {
         const chips = (catalog.lock_chips || []).map((c: any) => c.name || c)
@@ -561,12 +580,41 @@ import Layout from '../layouts/Layout.astro';
 
     const grid = document.getElementById('result-grid')!;
     const score = document.getElementById('matchup-score')!;
-    if (myCombo && oppCombo) {
+    const startBar = document.getElementById('start-scoring-bar')!;
+    const changeBar = document.getElementById('change-matchup-bar')!;
+    const myCard = document.querySelector('#my-combo-display')!.closest('.card') as HTMLElement;
+    const oppCard = document.querySelector('#opp-combo-display')!.closest('.card') as HTMLElement;
+
+    if (scoringActive) {
+      // Scoring mode: hide combo pickers, show score grid
       grid.classList.remove('hidden');
       score.classList.remove('hidden');
-    } else {
+      startBar.classList.add('hidden');
+      changeBar.classList.remove('hidden');
+      myCard.style.opacity = '0.6';
+      myCard.style.pointerEvents = 'none';
+      oppCard.style.opacity = '0.6';
+      oppCard.style.pointerEvents = 'none';
+    } else if (myCombo && oppCombo) {
+      // Both picked but not scoring yet: show Start Scoring
       grid.classList.add('hidden');
       score.classList.add('hidden');
+      startBar.classList.remove('hidden');
+      changeBar.classList.add('hidden');
+      myCard.style.opacity = '';
+      myCard.style.pointerEvents = '';
+      oppCard.style.opacity = '';
+      oppCard.style.pointerEvents = '';
+    } else {
+      // Still picking combos
+      grid.classList.add('hidden');
+      score.classList.add('hidden');
+      startBar.classList.add('hidden');
+      changeBar.classList.add('hidden');
+      myCard.style.opacity = '';
+      myCard.style.pointerEvents = '';
+      oppCard.style.opacity = '';
+      oppCard.style.pointerEvents = '';
     }
 
     document.getElementById('my-score')!.textContent = String(myPoints);
@@ -658,6 +706,20 @@ import Layout from '../layouts/Layout.astro';
       btn.addEventListener('click', () => {
         logBattle(btn.dataset.finish!, btn.dataset.result!);
       });
+    });
+
+    document.getElementById('start-scoring-btn')!.addEventListener('click', () => {
+      if (myCombo && oppCombo) {
+        scoringActive = true;
+        myPoints = 0;
+        oppPoints = 0;
+        updateDisplay();
+      }
+    });
+
+    document.getElementById('change-matchup-btn')!.addEventListener('click', () => {
+      scoringActive = false;
+      updateDisplay();
     });
 
     document.getElementById('undo-btn')!.addEventListener('click', undoLast);
