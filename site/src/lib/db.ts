@@ -770,7 +770,7 @@ export async function getDatabaseSummary(region?: Region): Promise<DatabaseSumma
 /**
  * Get ranked blades with weighted scores.
  */
-export async function getRankedBlades(limit = 20, minUses = 3, region?: Region): Promise<BladeStats[]> {
+export async function getRankedBlades(limit = 20, minUses = 1, region?: Region): Promise<BladeStats[]> {
   const regionFilter = getRegionWhereClause(region);
   const rows = await query<{
     blade: string;
@@ -895,7 +895,7 @@ export async function getRankedBlades(limit = 20, minUses = 3, region?: Region):
  * Get ranked combos with weighted scores.
  * For CX blades, lock chip is prepended to blade name (e.g., "Pegasus Blast").
  */
-export async function getRankedCombos(limit = 20, minUses = 2, region?: Region): Promise<ComboStats[]> {
+export async function getRankedCombos(limit = 20, minUses = 1, region?: Region): Promise<ComboStats[]> {
   const regionFilter = getRegionWhereClause(region);
   const rows = await query<{
     blade: string;
@@ -1033,14 +1033,14 @@ export async function getRankedCombos(limit = 20, minUses = 2, region?: Region):
 /**
  * Get ranked ratchets.
  */
-export async function getRankedRatchets(limit = 15, minUses = 3, region?: Region): Promise<PartStats[]> {
+export async function getRankedRatchets(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
   return getRankedParts('ratchet', limit, minUses, region);
 }
 
 /**
  * Get ranked bits.
  */
-export async function getRankedBits(limit = 15, minUses = 3, region?: Region): Promise<PartStats[]> {
+export async function getRankedBits(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
   return getRankedParts('bit', limit, minUses, region);
 }
 
@@ -1978,7 +1978,7 @@ export async function getMetaSnapshot(days = 30, region?: Region): Promise<{
 /**
  * Get ranked assists with weighted scores.
  */
-export async function getRankedAssists(limit = 15, minUses = 2, region?: Region): Promise<PartStats[]> {
+export async function getRankedAssists(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
   const regionFilter = getRegionWhereClause(region);
   const rows = await query<{
     assist: string;
@@ -2068,7 +2068,7 @@ export async function getRankedAssists(limit = 15, minUses = 2, region?: Region)
 /**
  * Get ranked lock chips with weighted scores.
  */
-export async function getRankedLockChips(limit = 15, minUses = 2, region?: Region): Promise<PartStats[]> {
+export async function getRankedLockChips(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
   const regionFilter = getRegionWhereClause(region);
   const rows = await query<{
     lock_chip: string;
@@ -2251,7 +2251,7 @@ export async function getRankedOverBlades(limit = 15, minUses = 1, region?: Regi
 export async function getRankedBladesBySeries(
   series: 'BX' | 'CX' | 'UX' | 'all',
   limit = 50,
-  minUses = 2,
+  minUses = 1,
   region?: Region
 ): Promise<BladeStats[]> {
   // Get all blades first
@@ -2280,7 +2280,7 @@ export function getBladeSeries(bladeName: string): 'BX' | 'CX' | 'UX' | undefine
 /**
  * Get top blades for each series (BX, CX, UX).
  */
-export async function getTopBladesBySeries(limitPerSeries = 5, minUses = 2, region?: Region): Promise<{
+export async function getTopBladesBySeries(limitPerSeries = 5, minUses = 1, region?: Region): Promise<{
   BX: BladeStats[];
   CX: BladeStats[];
   UX: BladeStats[];
@@ -2535,10 +2535,10 @@ export async function rateDeck(
 ): Promise<DeckRating> {
   // Gather meta context data
   const [topCombosRaw, rankedBlades, rankedRatchets, rankedBits] = await Promise.all([
-    getRankedCombos(20, 2, region),
-    getRankedBlades(30, 2, region),
-    getRankedRatchets(15, 2, region),
-    getRankedBits(15, 2, region),
+    getRankedCombos(20, 1, region),
+    getRankedBlades(30, 1, region),
+    getRankedRatchets(15, 1, region),
+    getRankedBits(15, 1, region),
   ]);
   
   // Map to consistent property names for internal use
