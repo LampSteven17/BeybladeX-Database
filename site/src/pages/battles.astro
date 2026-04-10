@@ -333,7 +333,7 @@ import Layout from '../layouts/Layout.astro';
   const FINISH_POINTS: Record<string, number> = { spin: 1, over: 2, xtreme: 3, burst: 2 };
 
   // State
-  type Combo = { blade: string; ratchet: string; bit: string; lockChip?: string | null; overBlade?: string | null };
+  type Combo = { blade: string; ratchet: string; bit: string; lockChip?: string | null; overBlade?: string | null; assist?: string | null };
   let myCombo: Combo | null = null;
   let oppCombo: Combo | null = null;
   let myPoints = 0;
@@ -351,12 +351,13 @@ import Layout from '../layouts/Layout.astro';
       ? `${c.lockChip.toLowerCase().replace(/ /g, '-')}-${c.blade.toLowerCase().replace(/ /g, '-')}`
       : c.blade.toLowerCase().replace(/ /g, '-');
     const ob = c.overBlade ? `-${c.overBlade.toLowerCase()}` : '';
-    return `${blade}${ob}_${c.ratchet}_${c.bit.toLowerCase().replace(/ /g, '-')}`;
+    const ast = c.assist ? `-${c.assist.toLowerCase().replace(/ /g, '-')}` : '';
+    return `${blade}${ob}${ast}_${c.ratchet}_${c.bit.toLowerCase().replace(/ /g, '-')}`;
   }
 
   function comboToDisplay(c: Combo): string {
     const blade = c.lockChip ? `${c.lockChip} ${c.blade}` : c.blade;
-    const parts = [blade, c.overBlade, c.ratchet, c.bit].filter(Boolean);
+    const parts = [blade, c.overBlade, c.assist, c.ratchet, c.bit].filter(Boolean);
     return parts.join(' ');
   }
 
@@ -600,9 +601,17 @@ import Layout from '../layouts/Layout.astro';
 
       } else if (step === 'cx-over') {
         const overBlades = (catalog.over_blades || []).sort();
-        addHeader('Over Blade (optional)', true);
+        addHeader('Over Blade', true);
         addGrid(overBlades.map((o: string) => ({ label: o, value: o, cls: 'cx' })), (val) => {
           state.overBlade = val;
+          showStep('cx-assist');
+        });
+
+      } else if (step === 'cx-assist') {
+        const assists = (catalog.assists || []).sort();
+        addHeader('Assist Blade', true);
+        addPopularThenAll(assists.map((a: string) => ({ label: a, value: a, cls: 'cx' })), (val) => {
+          state.assist = val;
           showStep('ratchet');
         });
 
@@ -655,7 +664,7 @@ import Layout from '../layouts/Layout.astro';
 
       function finish(val: string) {
         state.bit = val;
-        const combo: Combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip || null, overBlade: state.overBlade || null };
+        const combo: Combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip || null, overBlade: state.overBlade || null, assist: state.assist || null };
         container.classList.add('hidden');
         container.innerHTML = '';
         state = {};
