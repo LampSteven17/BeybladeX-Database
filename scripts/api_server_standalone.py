@@ -319,8 +319,9 @@ class APIHandler(BaseHTTPRequestHandler):
     def _handle_battles_get(self, query):
         try:
             sys.path.insert(0, str(SCRIPTS_DIR))
-            from db import get_connection
-            conn = get_connection()
+            from db import get_battles_connection, init_battles_schema
+            conn = get_battles_connection()
+            init_battles_schema(conn)
             try:
                 combo = query.get("combo", [None])[0]
                 opponent = query.get("opponent", [None])[0]
@@ -363,8 +364,9 @@ class APIHandler(BaseHTTPRequestHandler):
     def _handle_battles_stats(self, query):
         try:
             sys.path.insert(0, str(SCRIPTS_DIR))
-            from db import get_connection
-            conn = get_connection()
+            from db import get_battles_connection, init_battles_schema
+            conn = get_battles_connection()
+            init_battles_schema(conn)
             try:
                 combo = query.get("combo", [None])[0]
                 where = "1=1"
@@ -402,8 +404,9 @@ class APIHandler(BaseHTTPRequestHandler):
     def _handle_stamina_get(self, query):
         try:
             sys.path.insert(0, str(SCRIPTS_DIR))
-            from db import get_connection
-            conn = get_connection()
+            from db import get_battles_connection, init_battles_schema
+            conn = get_battles_connection()
+            init_battles_schema(conn)
             try:
                 combo = query.get("combo", [None])[0]
                 where = "1=1"
@@ -651,8 +654,34 @@ class APIHandler(BaseHTTPRequestHandler):
         elif path == "/api/battles" or path == "/battles":
             self._handle_battles_post(body)
 
+        elif path == "/api/battles/commit" or path == "/battles/commit":
+            try:
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                from db import backup_battles_to_json
+                backup_path = backup_battles_to_json()
+                print(f"[{datetime.now().isoformat()}] Battles backed up to {backup_path}")
+                self._send_json({"success": True, "path": backup_path, "message": "Battle data backed up to JSON"})
+            except Exception as e:
+                self._send_json({"error": str(e)}, 500)
+
+        elif path == "/api/battles/clear" or path == "/battles/clear":
+            try:
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                from db import get_battles_connection, init_battles_schema
+                conn = get_battles_connection()
+                init_battles_schema(conn)
+                b = conn.execute("SELECT COUNT(*) FROM battles").fetchone()[0]
+                s = conn.execute("SELECT COUNT(*) FROM stamina_trials").fetchone()[0]
+                conn.execute("DELETE FROM battles")
+                conn.execute("DELETE FROM stamina_trials")
+                conn.commit()
+                conn.close()
+                print(f"[{datetime.now().isoformat()}] Cleared {b} battles + {s} stamina trials")
+                self._send_json({"success": True, "cleared_battles": b, "cleared_stamina": s})
+            except Exception as e:
+                self._send_json({"error": str(e)}, 500)
+
         elif path == "/api/battles/delete" or path == "/battles/delete":
-            # DELETE method isn't always easy from JS; accept POST with {id: N}
             self._handle_battles_delete(body)
 
         elif path == "/api/stamina" or path == "/stamina":
@@ -690,8 +719,9 @@ class APIHandler(BaseHTTPRequestHandler):
             notes = data.get("notes")
 
             sys.path.insert(0, str(SCRIPTS_DIR))
-            from db import get_connection
-            conn = get_connection()
+            from db import get_battles_connection, init_battles_schema
+            conn = get_battles_connection()
+            init_battles_schema(conn)
             try:
                 row = conn.execute("""
                     INSERT INTO battles (combo_id, opponent_id, stadium, finish_type,
@@ -722,8 +752,9 @@ class APIHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": "id required"}, 400)
                 return
             sys.path.insert(0, str(SCRIPTS_DIR))
-            from db import get_connection
-            conn = get_connection()
+            from db import get_battles_connection, init_battles_schema
+            conn = get_battles_connection()
+            init_battles_schema(conn)
             try:
                 conn.execute("DELETE FROM battles WHERE id = ?", [battle_id])
                 conn.commit()
@@ -743,8 +774,9 @@ class APIHandler(BaseHTTPRequestHandler):
                 return
 
             sys.path.insert(0, str(SCRIPTS_DIR))
-            from db import get_connection
-            conn = get_connection()
+            from db import get_battles_connection, init_battles_schema
+            conn = get_battles_connection()
+            init_battles_schema(conn)
             try:
                 # Auto-assign trial number
                 existing = conn.execute(

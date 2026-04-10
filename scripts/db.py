@@ -15,6 +15,13 @@ from pathlib import Path
 # Database path - single source of truth, used directly by the website
 DB_PATH = Path(__file__).parent.parent / "site" / "public" / "data" / "beyblade.duckdb"
 
+# Battles database - separate file for personal gameplay data.
+# Never touched by git stash/deploy — isolated from tournament data.
+BATTLES_DB_PATH = Path(__file__).parent.parent / "data" / "battles.duckdb"
+
+# Backup path for JSON exports of battle data
+BATTLES_BACKUP_PATH = Path(__file__).parent.parent / "data" / "backups" / "battles_backup.json"
+
 # Lock file for coordinating concurrent access
 LOCK_PATH = DB_PATH.parent / ".beyblade.lock"
 
@@ -223,13 +230,150 @@ def validate_and_fix_blade(blade_name: str) -> str:
 
 
 def get_connection(read_only: bool = False) -> duckdb.DuckDBPyConnection:
-    """Get a connection to the database.
-
-    Args:
-        read_only: If True, open in read-only mode (allows concurrent reads).
-    """
+    """Get a connection to the tournament database."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     return duckdb.connect(str(DB_PATH), read_only=read_only)
+
+
+def get_battles_connection(read_only: bool = False) -> duckdb.DuckDBPyConnection:
+    """Get a connection to the battles database (personal gameplay data).
+
+    This is a separate file from the tournament DB so it's never affected
+    by git stash/deploy cycles or tournament rescrapes. Your battle data
+    is safe even if the tournament DB gets wiped and rebuilt.
+    """
+    BATTLES_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    return duckdb.connect(str(BATTLES_DB_PATH), read_only=read_only)
+
+
+def init_battles_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
+    """Initialize the battles database schema (separate from tournament DB)."""
+    should_close = conn is None
+    if conn is None:
+        conn = get_battles_connection()
+
+    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_battles START 1")
+    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_stamina START 1")
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS battles (
+            id INTEGER PRIMARY KEY DEFAULT nextval('seq_battles'),
+            combo_id VARCHAR NOT NULL,
+            opponent_id VARCHAR NOT NULL,
+            stadium VARCHAR,
+            finish_type VARCHAR NOT NULL,
+            result VARCHAR NOT NULL,
+            points INTEGER,
+            session_id VARCHAR,
+            notes VARCHAR,
+            created_at TIMESTAMP DEFAULT current_timestamp
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS stamina_trials (
+            id INTEGER PRIMARY KEY DEFAULT nextval('seq_stamina'),
+            combo_id VARCHAR NOT NULL,
+            spin_time_ms INTEGER NOT NULL,
+            trial_number INTEGER,
+            notes VARCHAR,
+            created_at TIMESTAMP DEFAULT current_timestamp
+        )
+    """)
+
+    if should_close:
+        conn.close()
+
+
+def backup_battles_to_json() -> str:
+    """Export all battles + stamina data to a JSON file for version control.
+
+    Called manually via the "Commit" button on the tracker page.
+    The JSON file is human-readable, diffable, and safe to commit to git.
+    Returns the path of the backup file.
+    """
+    import json
+
+    conn = get_battles_connection(read_only=True)
+    try:
+        battles = conn.execute("""
+            SELECT id, combo_id, opponent_id, stadium, finish_type,
+                   result, points, session_id, notes,
+                   created_at::VARCHAR as created_at
+            FROM battles ORDER BY id
+        """).fetchall()
+
+        stamina = conn.execute("""
+            SELECT id, combo_id, spin_time_ms, trial_number, notes,
+                   created_at::VARCHAR as created_at
+            FROM stamina_trials ORDER BY id
+        """).fetchall()
+    finally:
+        conn.close()
+
+    data = {
+        "exported_at": __import__("datetime").datetime.now().isoformat(),
+        "battles": [
+            {
+                "id": r[0], "combo_id": r[1], "opponent_id": r[2],
+                "stadium": r[3], "finish_type": r[4], "result": r[5],
+                "points": r[6], "session_id": r[7], "notes": r[8],
+                "created_at": r[9],
+            }
+            for r in battles
+        ],
+        "stamina_trials": [
+            {
+                "id": r[0], "combo_id": r[1], "spin_time_ms": r[2],
+                "trial_number": r[3], "notes": r[4], "created_at": r[5],
+            }
+            for r in stamina
+        ],
+    }
+
+    BATTLES_BACKUP_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(BATTLES_BACKUP_PATH, "w") as f:
+        json.dump(data, f, indent=2)
+
+    return str(BATTLES_BACKUP_PATH)
+
+
+def restore_battles_from_json(path: str = None) -> tuple[int, int]:
+    """Restore battles + stamina from a JSON backup. Clears existing data first.
+
+    Returns (battles_count, stamina_count).
+    """
+    import json
+
+    path = path or str(BATTLES_BACKUP_PATH)
+    with open(path) as f:
+        data = json.load(f)
+
+    conn = get_battles_connection()
+    init_battles_schema(conn)
+
+    conn.execute("DELETE FROM battles")
+    conn.execute("DELETE FROM stamina_trials")
+
+    for b in data.get("battles", []):
+        conn.execute("""
+            INSERT INTO battles (combo_id, opponent_id, stadium, finish_type,
+                                 result, points, session_id, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [b["combo_id"], b["opponent_id"], b.get("stadium"),
+              b["finish_type"], b["result"], b.get("points"),
+              b.get("session_id"), b.get("notes")])
+
+    for s in data.get("stamina_trials", []):
+        conn.execute("""
+            INSERT INTO stamina_trials (combo_id, spin_time_ms, trial_number, notes)
+            VALUES (?, ?, ?, ?)
+        """, [s["combo_id"], s["spin_time_ms"], s.get("trial_number"), s.get("notes")])
+
+    conn.commit()
+    conn.close()
+
+    return len(data.get("battles", [])), len(data.get("stamina_trials", []))
 
 
 def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
@@ -334,41 +478,6 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             over_blade_3 VARCHAR,
             stage_3 VARCHAR,
             UNIQUE(tournament_id, place)
-        )
-    """)
-
-    # =================================================================
-    # Battle tracker tables (personal gameplay data)
-    # =================================================================
-    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_battles START 1")
-    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_stamina START 1")
-
-    # Each row = one battle result (not an aggregated matchup).
-    # Aggregation happens at query time for flexibility.
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS battles (
-            id INTEGER PRIMARY KEY DEFAULT nextval('seq_battles'),
-            combo_id VARCHAR NOT NULL,
-            opponent_id VARCHAR NOT NULL,
-            stadium VARCHAR,
-            finish_type VARCHAR NOT NULL,
-            result VARCHAR NOT NULL,
-            points INTEGER,
-            session_id VARCHAR,
-            notes VARCHAR,
-            created_at TIMESTAMP DEFAULT current_timestamp
-        )
-    """)
-
-    # Stamina spin time trials
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS stamina_trials (
-            id INTEGER PRIMARY KEY DEFAULT nextval('seq_stamina'),
-            combo_id VARCHAR NOT NULL,
-            spin_time_ms INTEGER NOT NULL,
-            trial_number INTEGER,
-            notes VARCHAR,
-            created_at TIMESTAMP DEFAULT current_timestamp
         )
     """)
 

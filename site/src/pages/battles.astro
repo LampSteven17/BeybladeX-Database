@@ -107,10 +107,26 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     {/* Session log */}
-    <div class="card card-padding">
+    <div class="card card-padding mb-3">
       <div class="text-xs font-mono font-bold text-fg-muted uppercase tracking-wider mb-2">Session log</div>
       <div id="session-log" class="space-y-1 max-h-48 overflow-y-auto text-xs font-mono">
         <span class="text-fg-muted">No battles yet</span>
+      </div>
+    </div>
+
+    {/* Data management */}
+    <div class="card card-padding">
+      <div class="text-xs font-mono font-bold text-fg-muted uppercase tracking-wider mb-3">Data Management</div>
+      <div class="flex gap-2">
+        <button id="commit-btn" class="flex-1 py-2.5 rounded-lg font-mono font-bold text-xs bg-positive/15 border-2 border-positive/50 text-positive">
+          Commit Data
+        </button>
+        <button id="clear-btn" class="flex-1 py-2.5 rounded-lg font-mono font-bold text-xs bg-negative/15 border-2 border-negative/50 text-negative">
+          Clear All
+        </button>
+      </div>
+      <div class="text-xs font-mono text-fg-muted mt-2">
+        Commit backs up battle data to JSON for safekeeping. Clear wipes all battles (for test data cleanup).
       </div>
     </div>
   </div>
@@ -831,6 +847,32 @@ import Layout from '../layouts/Layout.astro';
     });
 
     document.getElementById('undo-btn')!.addEventListener('click', undoLast);
+
+    document.getElementById('commit-btn')!.addEventListener('click', async () => {
+      if (!confirm('Back up all battle data to JSON? This saves your data for safekeeping.')) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/battles/commit`, { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || 'Committed!');
+      } catch (e) {
+        alert('Commit failed: ' + e);
+      }
+    });
+
+    document.getElementById('clear-btn')!.addEventListener('click', async () => {
+      if (!confirm('DELETE all battle and stamina data? This cannot be undone unless you have a backup.')) return;
+      if (!confirm('Are you SURE? This wipes everything.')) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/battles/clear`, { method: 'POST' });
+        const data = await res.json();
+        alert(`Cleared ${data.cleared_battles} battles + ${data.cleared_stamina} stamina trials`);
+        sessionWins = 0; sessionLosses = 0; myPoints = 0; oppPoints = 0;
+        updateDisplay();
+      } catch (e) {
+        alert('Clear failed: ' + e);
+      }
+    });
+
     updateDisplay();
   }
 

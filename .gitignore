@@ -42,3 +42,6 @@ data/wbo_data.json
 
 # Docker volumes (local data)
 docker-data/
+
+# Battle tracker DB — personal data, never committed (backed up via JSON)
+data/battles.duckdb
