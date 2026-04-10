@@ -274,13 +274,14 @@ class APIHandler(BaseHTTPRequestHandler):
                         LIMIT ?
                     """, [limit]).fetchall()
                     combos = []
-                    seen = set()
+                    seen_blades = set()
                     for r in rows:
                         blade_full = f"{r[1]} {r[0]}".strip() if r[1] else r[0]
-                        combo_str = f"{blade_full} {r[2]} {r[3]}"
-                        if combo_str in seen:
+                        # Unique blades only — keep the top combo per blade
+                        if blade_full in seen_blades:
                             continue
-                        seen.add(combo_str)
+                        seen_blades.add(blade_full)
+                        combo_str = f"{blade_full} {r[2]} {r[3]}"
                         combos.append({
                             "blade": r[0],
                             "lock_chip": r[1],
