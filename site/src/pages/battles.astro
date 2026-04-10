@@ -303,7 +303,7 @@ import Layout from '../layouts/Layout.astro';
   const FINISH_POINTS: Record<string, number> = { spin: 1, over: 2, xtreme: 3, burst: 2 };
 
   // State
-  type Combo = { blade: string; ratchet: string; bit: string; lockChip?: string | null };
+  type Combo = { blade: string; ratchet: string; bit: string; lockChip?: string | null; overBlade?: string | null };
   let myCombo: Combo | null = null;
   let oppCombo: Combo | null = null;
   let myPoints = 0;
@@ -319,12 +319,14 @@ import Layout from '../layouts/Layout.astro';
     const blade = c.lockChip
       ? `${c.lockChip.toLowerCase().replace(/ /g, '-')}-${c.blade.toLowerCase().replace(/ /g, '-')}`
       : c.blade.toLowerCase().replace(/ /g, '-');
-    return `${blade}_${c.ratchet}_${c.bit.toLowerCase().replace(/ /g, '-')}`;
+    const ob = c.overBlade ? `-${c.overBlade.toLowerCase()}` : '';
+    return `${blade}${ob}_${c.ratchet}_${c.bit.toLowerCase().replace(/ /g, '-')}`;
   }
 
   function comboToDisplay(c: Combo): string {
     const blade = c.lockChip ? `${c.lockChip} ${c.blade}` : c.blade;
-    return `${blade} ${c.ratchet} ${c.bit}`;
+    const parts = [blade, c.overBlade, c.ratchet, c.bit].filter(Boolean);
+    return parts.join(' ');
   }
 
   async function loadCatalog() {
@@ -562,7 +564,18 @@ import Layout from '../layouts/Layout.astro';
           .sort((a: string, b: string) => (bladeUsage[a] || 0) - (bladeUsage[b] || 0)).reverse();
         addHeader(`Lock Chip for ${state.blade}`, true);
         addPopularThenAll(chips.map((c: string) => ({ label: c, value: c, cls: 'cx' })), (val) => {
-          state.lockChip = val; showStep('ratchet');
+          state.lockChip = val; showStep('cx-over');
+        });
+
+      } else if (step === 'cx-over') {
+        const overBlades = (catalog.over_blades || []).sort();
+        addHeader('Over Blade (optional)', true);
+        addGrid([
+          { label: 'None', value: '' },
+          ...overBlades.map((o: string) => ({ label: o, value: o, cls: 'cx' })),
+        ], (val) => {
+          if (val) state.overBlade = val;
+          showStep('ratchet');
         });
 
       } else if (step === 'ratchet') {
@@ -614,7 +627,7 @@ import Layout from '../layouts/Layout.astro';
 
       function finish(val: string) {
         state.bit = val;
-        const combo: Combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip || null };
+        const combo: Combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip || null, overBlade: state.overBlade || null };
         container.classList.add('hidden');
         container.innerHTML = '';
         state = {};
