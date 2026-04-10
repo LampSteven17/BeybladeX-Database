@@ -5,145 +5,253 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="Battle Tracker">
   <div class="max-w-lg mx-auto px-3 py-4">
     {/* Session header */}
-    <div class="card card-padding mb-3">
-      <div class="flex items-center justify-between mb-2">
+    <div class="card card-padding mb-4">
+      <div class="flex items-center justify-between">
         <h1 class="text-lg font-mono font-bold text-fg">Battle Tracker</h1>
-        <div class="text-xs font-mono text-fg-muted" id="session-tally">0W / 0L</div>
-      </div>
-      <div class="flex gap-2">
-        <input id="stadium-input" type="text" placeholder="Stadium"
-               class="flex-1 bg-bg-surface border border-fg-muted/30 rounded px-2 py-1 text-fg font-mono text-xs" />
+        <div class="text-sm font-mono font-bold" id="session-tally">
+          <span class="text-positive">0</span><span class="text-fg-muted">W</span>
+          <span class="text-fg-muted mx-1">/</span>
+          <span class="text-negative">0</span><span class="text-fg-muted">L</span>
+        </div>
       </div>
     </div>
 
     {/* My Combo */}
-    <div class="card card-padding mb-2">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-mono font-bold text-accent uppercase">My Combo</span>
-        <label class="flex items-center gap-1 text-xs font-mono text-fg-muted cursor-pointer">
-          <input type="checkbox" id="lock-my-combo" class="rounded" />
+    <div class="card card-padding mb-3">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-mono font-bold text-accent uppercase tracking-wider">My Combo</span>
+        <label class="flex items-center gap-1.5 text-xs font-mono text-fg-muted cursor-pointer select-none">
+          <input type="checkbox" id="lock-my-combo" class="rounded accent-accent" />
           Lock
         </label>
       </div>
-      <div id="my-combo-display" class="text-sm font-mono font-bold text-fg mb-2 min-h-[1.5rem]">
-        <span class="text-fg-muted">Tap to pick blade...</span>
+      <div id="my-combo-display" class="combo-display mb-3" role="button" tabindex="0">
+        <span class="text-fg-muted">Tap to pick combo</span>
       </div>
-      <div id="my-combo-picker" class="hidden">
-        <div id="my-picker-steps"></div>
-      </div>
-      <button id="my-combo-btn" class="w-full text-left text-xs text-accent font-mono">Change combo</button>
+      <div id="my-combo-picker" class="hidden"></div>
     </div>
 
-    {/* Opponent Combo */}
-    <div class="card card-padding mb-3">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-mono font-bold text-series-cx uppercase">Opponent</span>
-        <button id="same-as-mine-btn" class="text-xs font-mono text-accent">= Same as mine</button>
+    {/* Opponent — top meta presets */}
+    <div class="card card-padding mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-mono font-bold text-series-cx uppercase tracking-wider">Opponent (Meta)</span>
       </div>
-      <div id="opp-combo-display" class="text-sm font-mono font-bold text-fg mb-2 min-h-[1.5rem]">
-        <span class="text-fg-muted">Tap to pick blade...</span>
+      <div id="opp-combo-display" class="combo-display mb-3">
+        <span class="text-fg-muted">Pick from top meta combos</span>
       </div>
-      <div id="opp-combo-picker" class="hidden">
-        <div id="opp-picker-steps"></div>
+      <div id="opponent-presets" class="space-y-2">
+        <div class="text-center text-fg-muted text-xs py-4">Loading meta combos...</div>
       </div>
-      <button id="opp-combo-btn" class="w-full text-left text-xs text-accent font-mono">Change combo</button>
     </div>
 
     {/* Matchup score */}
-    <div id="matchup-score" class="text-center font-mono text-lg font-bold text-fg mb-3 hidden">
-      <span id="my-score" class="text-positive">0</span>
-      <span class="text-fg-muted mx-2">—</span>
-      <span id="opp-score" class="text-negative">0</span>
+    <div id="matchup-score" class="text-center font-mono mb-4 hidden">
+      <span id="my-score" class="text-3xl font-bold text-positive">0</span>
+      <span class="text-fg-muted mx-3 text-xl">vs</span>
+      <span id="opp-score" class="text-3xl font-bold text-negative">0</span>
     </div>
 
     {/* Result buttons */}
-    <div id="result-grid" class="grid grid-cols-2 gap-2 mb-3 hidden">
-      <button data-finish="spin" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
-        SPIN WIN<br><span class="text-xs opacity-70">+1 pt</span>
+    <div id="result-grid" class="grid grid-cols-2 gap-3 mb-4 hidden">
+      <button data-finish="spin" data-result="win" class="battle-btn win-btn">
+        <div class="btn-label">SPIN</div>
+        <div class="btn-sub">WIN +1pt</div>
       </button>
-      <button data-finish="spin" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
-        SPIN LOSS<br><span class="text-xs opacity-70">-1 pt</span>
+      <button data-finish="spin" data-result="loss" class="battle-btn loss-btn">
+        <div class="btn-label">SPIN</div>
+        <div class="btn-sub">LOSS -1pt</div>
       </button>
-      <button data-finish="over" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
-        OVER WIN<br><span class="text-xs opacity-70">+2 pt</span>
+      <button data-finish="over" data-result="win" class="battle-btn win-btn">
+        <div class="btn-label">OVER</div>
+        <div class="btn-sub">WIN +2pt</div>
       </button>
-      <button data-finish="over" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
-        OVER LOSS<br><span class="text-xs opacity-70">-2 pt</span>
+      <button data-finish="over" data-result="loss" class="battle-btn loss-btn">
+        <div class="btn-label">OVER</div>
+        <div class="btn-sub">LOSS -2pt</div>
       </button>
-      <button data-finish="xtreme" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
-        XTREME WIN<br><span class="text-xs opacity-70">+3 pt</span>
+      <button data-finish="xtreme" data-result="win" class="battle-btn win-btn xtreme">
+        <div class="btn-label">XTREME</div>
+        <div class="btn-sub">WIN +3pt</div>
       </button>
-      <button data-finish="xtreme" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
-        XTREME LOSS<br><span class="text-xs opacity-70">-3 pt</span>
+      <button data-finish="xtreme" data-result="loss" class="battle-btn loss-btn xtreme">
+        <div class="btn-label">XTREME</div>
+        <div class="btn-sub">LOSS -3pt</div>
       </button>
-      <button data-finish="burst" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
-        BURST WIN<br><span class="text-xs opacity-70">+2 pt</span>
+      <button data-finish="burst" data-result="win" class="battle-btn win-btn">
+        <div class="btn-label">BURST</div>
+        <div class="btn-sub">WIN +2pt</div>
       </button>
-      <button data-finish="burst" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
-        BURST LOSS<br><span class="text-xs opacity-70">-2 pt</span>
+      <button data-finish="burst" data-result="loss" class="battle-btn loss-btn">
+        <div class="btn-label">BURST</div>
+        <div class="btn-sub">LOSS -2pt</div>
       </button>
     </div>
 
     {/* Undo */}
-    <div id="undo-bar" class="text-center mb-3 hidden">
-      <button id="undo-btn" class="text-xs font-mono text-negative underline">Undo last</button>
+    <div id="undo-bar" class="text-center mb-4 hidden">
+      <button id="undo-btn" class="text-sm font-mono text-negative border border-negative/30 rounded px-4 py-1.5">Undo last</button>
     </div>
 
-    {/* Recent combos */}
-    <div class="card card-padding mb-3">
-      <div class="text-xs font-mono font-bold text-fg-muted uppercase mb-2">Recent combos</div>
-      <div id="recent-combos" class="space-y-1 text-xs font-mono text-fg-muted">No recent combos</div>
-    </div>
-
-    {/* Session history */}
+    {/* Session log */}
     <div class="card card-padding">
-      <div class="text-xs font-mono font-bold text-fg-muted uppercase mb-2">Session log</div>
-      <div id="session-log" class="space-y-1 max-h-48 overflow-y-auto text-xs font-mono"></div>
+      <div class="text-xs font-mono font-bold text-fg-muted uppercase tracking-wider mb-2">Session log</div>
+      <div id="session-log" class="space-y-1 max-h-48 overflow-y-auto text-xs font-mono">
+        <span class="text-fg-muted">No battles yet</span>
+      </div>
     </div>
   </div>
 </Layout>
 
 <style>
+  /* Combo display pill */
+  .combo-display {
+    background: var(--color-bg-surface, #161b22);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s;
+  }
+  .combo-display:hover, .combo-display:focus {
+    border-color: var(--color-accent, #f97316);
+  }
+
+  /* Battle result buttons */
   .battle-btn {
     border: 2px solid transparent;
-    transition: transform 0.05s, opacity 0.1s;
+    border-radius: 0.75rem;
+    padding: 1rem 0.5rem;
+    text-align: center;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
+    transition: transform 0.05s, box-shadow 0.1s;
   }
   .battle-btn:active {
-    transform: scale(0.95);
-    opacity: 0.8;
+    transform: scale(0.93);
+  }
+  .btn-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+  }
+  .btn-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    opacity: 0.7;
+    margin-top: 0.25rem;
   }
   .win-btn {
-    background: rgba(34, 197, 94, 0.15);
-    border-color: rgba(34, 197, 94, 0.4);
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.5);
     color: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34,197,94,0);
+  }
+  .win-btn:active {
+    box-shadow: 0 0 20px rgba(34,197,94,0.3);
   }
   .loss-btn {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.5);
     color: #ef4444;
   }
+  .loss-btn:active {
+    box-shadow: 0 0 20px rgba(239,68,68,0.3);
+  }
+  .xtreme .btn-label {
+    color: #f59e0b;
+  }
+  .xtreme.win-btn {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+  .xtreme.loss-btn {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.35);
+  }
+
+  /* Picker buttons */
   .pick-btn {
-    padding: 0.4rem 0.6rem;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 0.5rem;
     background: var(--color-bg-surface, #161b22);
     color: var(--color-fg, #e6edf3);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.1s, background 0.1s;
   }
-  .pick-btn:hover, .pick-btn.selected {
+  .pick-btn:active {
+    transform: scale(0.95);
+  }
+  .pick-btn:hover {
     border-color: var(--color-accent, #f97316);
-    background: rgba(249, 115, 22, 0.15);
+    background: rgba(249, 115, 22, 0.1);
+  }
+
+  /* Opponent preset buttons */
+  .opp-preset {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.625rem 0.875rem;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 0.5rem;
+    background: var(--color-bg-surface, #161b22);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--color-fg, #e6edf3);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .opp-preset:hover {
+    border-color: var(--color-series-cx, #ec4899);
+    background: rgba(236, 72, 153, 0.08);
+  }
+  .opp-preset.selected {
+    border-color: var(--color-series-cx, #ec4899);
+    background: rgba(236, 72, 153, 0.15);
+    color: var(--color-series-cx, #ec4899);
+  }
+  .opp-uses {
+    font-size: 0.6rem;
+    opacity: 0.5;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .step-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--color-accent, #f97316);
   }
-  .pick-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
+  .step-back {
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    border: none;
+    background: none;
   }
 </style>
 
@@ -155,27 +263,25 @@ import Layout from '../layouts/Layout.astro';
   const FINISH_POINTS: Record<string, number> = { spin: 1, over: 2, xtreme: 3, burst: 2 };
 
   // State
-  let myCombo: { blade: string; ratchet: string; bit: string; lockChip?: string } | null = null;
-  let oppCombo: { blade: string; ratchet: string; bit: string; lockChip?: string } | null = null;
+  type Combo = { blade: string; ratchet: string; bit: string; lockChip?: string | null };
+  let myCombo: Combo | null = null;
+  let oppCombo: Combo | null = null;
   let myPoints = 0;
   let oppPoints = 0;
   let sessionWins = 0;
   let sessionLosses = 0;
   let lastBattleId: number | null = null;
-  let sessionId = `session-${Date.now()}`;
-
-  // Catalog data (loaded from parts_catalog.json)
+  const sessionId = `session-${Date.now()}`;
   let catalog: any = null;
 
-  function comboToId(c: { blade: string; ratchet: string; bit: string; lockChip?: string }): string {
+  function comboToId(c: Combo): string {
     const blade = c.lockChip
       ? `${c.lockChip.toLowerCase().replace(/ /g, '-')}-${c.blade.toLowerCase().replace(/ /g, '-')}`
       : c.blade.toLowerCase().replace(/ /g, '-');
-    const bit = c.bit.toLowerCase().replace(/ /g, '-');
-    return `${blade}_${c.ratchet}_${bit}`;
+    return `${blade}_${c.ratchet}_${c.bit.toLowerCase().replace(/ /g, '-')}`;
   }
 
-  function comboToDisplay(c: { blade: string; ratchet: string; bit: string; lockChip?: string }): string {
+  function comboToDisplay(c: Combo): string {
     const blade = c.lockChip ? `${c.lockChip} ${c.blade}` : c.blade;
     return `${blade} ${c.ratchet} ${c.bit}`;
   }
@@ -185,130 +291,177 @@ import Layout from '../layouts/Layout.astro';
       const res = await fetch('/data/parts_catalog.json?v=' + Date.now(), { cache: 'no-store' });
       catalog = await res.json();
     } catch {
-      // Fallback: minimal catalog
       catalog = { blades: [], ratchets: [], bits: [], lock_chips: [], main_blades: [], metal_blades: [] };
     }
   }
 
-  function getAllBlades(): string[] {
-    if (!catalog) return [];
-    const blades = (catalog.blades || []).map((b: any) => b.name || b);
-    return blades.sort();
-  }
-
-  function buildPicker(prefix: string, onComplete: (combo: any) => void) {
-    const container = document.getElementById(`${prefix}-picker-steps`)!;
+  // ---------------------------------------------------------------
+  // Combo picker — step-by-step with big buttons
+  // ---------------------------------------------------------------
+  function buildPicker(containerId: string, onComplete: (c: Combo) => void) {
+    const container = document.getElementById(containerId)!;
     let state: any = {};
+    let stepHistory: string[] = [];
+
+    function goBack() {
+      stepHistory.pop(); // remove current
+      const prev = stepHistory.pop(); // get previous
+      if (prev) showStep(prev);
+      else {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+      }
+    }
 
     function showStep(step: string) {
+      stepHistory.push(step);
+      container.classList.remove('hidden');
       container.innerHTML = '';
 
-      if (step === 'blade-type') {
-        // Step 0: BX/UX or CX?
-        const div = document.createElement('div');
-        div.className = 'pick-grid mb-2';
-        div.innerHTML = `
-          <div class="text-xs font-mono text-fg-muted w-full mb-1">Blade type:</div>
-        `;
-        for (const type of ['BX/UX', 'CX Main', 'CX Metal']) {
-          const btn = document.createElement('button');
-          btn.className = 'pick-btn';
-          btn.textContent = type;
-          btn.onclick = () => {
-            state.bladeType = type;
-            if (type === 'BX/UX') showStep('blade');
-            else if (type === 'CX Main') showStep('lock-chip');
-            else showStep('metal-blade');
-          };
-          div.appendChild(btn);
-        }
-        container.appendChild(div);
+      if (step === 'type') {
+        renderStep('Step 1: Blade Type', null, [
+          { label: 'BX / UX Blade', value: 'bx' },
+          { label: 'CX Main Blade', value: 'cx-main' },
+          { label: 'CX Metal Blade', value: 'cx-metal' },
+        ], (val) => {
+          state.type = val;
+          if (val === 'bx') showStep('bx-blade');
+          else if (val === 'cx-main') showStep('cx-lock');
+          else showStep('cx-metal');
+        });
 
-      } else if (step === 'lock-chip') {
+      } else if (step === 'bx-blade') {
+        const blades = (catalog.blades || []).map((b: any) => b.name || b).sort();
+        renderStep('Step 2: Blade', 'Back', blades.map((b: string) => ({ label: b, value: b })), (val) => {
+          state.blade = val;
+          showStep('ratchet');
+        });
+
+      } else if (step === 'cx-lock') {
         const chips = (catalog.lock_chips || []).map((c: any) => c.name || c).sort();
-        renderPickGrid('Lock chip:', chips, (val: string) => {
+        renderStep('Step 2: Lock Chip', 'Back', chips.map((c: string) => ({ label: c, value: c })), (val) => {
           state.lockChip = val;
-          showStep('main-blade');
+          showStep('cx-main-blade');
         });
 
-      } else if (step === 'main-blade') {
+      } else if (step === 'cx-main-blade') {
         const mains = (catalog.main_blades || []).sort();
-        renderPickGrid('Main blade:', mains, (val: string) => {
+        renderStep('Step 3: Main Blade', 'Back', mains.map((m: string) => ({ label: m, value: m })), (val) => {
           state.blade = val;
           showStep('ratchet');
         });
 
-      } else if (step === 'metal-blade') {
+      } else if (step === 'cx-metal') {
         const metals = (catalog.metal_blades || []).sort();
-        renderPickGrid('Metal blade:', metals, (val: string) => {
+        renderStep('Step 2: Metal Blade', 'Back', metals.map((m: string) => ({ label: m, value: m })), (val) => {
           state.blade = val;
-          showStep('lock-chip-for-metal');
+          showStep('cx-metal-lock');
         });
 
-      } else if (step === 'lock-chip-for-metal') {
+      } else if (step === 'cx-metal-lock') {
         const chips = (catalog.lock_chips || []).map((c: any) => c.name || c).sort();
-        renderPickGrid('Lock chip (optional):', ['None', ...chips], (val: string) => {
-          if (val !== 'None') state.lockChip = val;
-          showStep('ratchet');
-        });
-
-      } else if (step === 'blade') {
-        const blades = getAllBlades();
-        renderPickGrid('Blade:', blades, (val: string) => {
-          state.blade = val;
+        renderStep('Step 3: Lock Chip', 'Back', [{ label: 'None', value: '' }, ...chips.map((c: string) => ({ label: c, value: c }))], (val) => {
+          if (val) state.lockChip = val;
           showStep('ratchet');
         });
 
       } else if (step === 'ratchet') {
         const ratchets = (catalog.ratchets || []).sort();
-        renderPickGrid('Ratchet:', ratchets, (val: string) => {
+        const stepNum = state.type === 'bx' ? '3' : '4';
+        renderStep(`Step ${stepNum}: Ratchet`, 'Back', ratchets.map((r: string) => ({ label: r, value: r })), (val) => {
           state.ratchet = val;
           showStep('bit');
         });
 
       } else if (step === 'bit') {
         const bits = (catalog.bits || []).sort();
-        renderPickGrid('Bit:', bits, (val: string) => {
+        const stepNum = state.type === 'bx' ? '4' : '5';
+        renderStep(`Step ${stepNum}: Bit`, 'Back', bits.map((b: string) => ({ label: b, value: b })), (val) => {
           state.bit = val;
-          // Done!
-          const combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip };
-          onComplete(combo);
+          const combo: Combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip || null };
+          container.classList.add('hidden');
           container.innerHTML = '';
-          document.getElementById(`${prefix}-combo-picker`)!.classList.add('hidden');
+          state = {};
+          stepHistory = [];
+          onComplete(combo);
         });
       }
     }
 
-    function renderPickGrid(label: string, items: string[], onPick: (val: string) => void) {
-      const div = document.createElement('div');
-      div.innerHTML = `<div class="text-xs font-mono text-fg-muted mb-1">${label}</div>`;
+    function renderStep(label: string, backLabel: string | null, options: { label: string; value: string }[], onPick: (val: string) => void) {
+      const header = document.createElement('div');
+      header.className = 'step-header';
+      header.innerHTML = `<span class="step-label">${label}</span>`;
+      if (backLabel) {
+        const back = document.createElement('button');
+        back.className = 'step-back';
+        back.textContent = '< Back';
+        back.onclick = goBack;
+        header.appendChild(back);
+      }
+      container.appendChild(header);
+
       const grid = document.createElement('div');
-      grid.className = 'pick-grid';
-      for (const item of items) {
+      grid.style.display = 'flex';
+      grid.style.flexWrap = 'wrap';
+      grid.style.gap = '0.375rem';
+      for (const opt of options) {
         const btn = document.createElement('button');
         btn.className = 'pick-btn';
-        btn.textContent = item;
-        btn.onclick = () => onPick(item);
+        btn.textContent = opt.label;
+        btn.onclick = () => onPick(opt.value);
         grid.appendChild(btn);
       }
-      div.appendChild(grid);
-      container.appendChild(div);
+      container.appendChild(grid);
     }
 
-    return { show: () => showStep('blade-type') };
+    return { show: () => { state = {}; stepHistory = []; showStep('type'); } };
   }
 
-  function updateDisplay() {
-    const myDisplay = document.getElementById('my-combo-display')!;
-    const oppDisplay = document.getElementById('opp-combo-display')!;
-    myDisplay.innerHTML = myCombo
-      ? `<span class="text-accent">${comboToDisplay(myCombo)}</span>`
-      : '<span class="text-fg-muted">Tap to pick blade...</span>';
-    oppDisplay.innerHTML = oppCombo
-      ? `<span class="text-series-cx">${comboToDisplay(oppCombo)}</span>`
-      : '<span class="text-fg-muted">Tap to pick blade...</span>';
+  // ---------------------------------------------------------------
+  // Opponent presets from meta
+  // ---------------------------------------------------------------
+  async function loadOpponentPresets() {
+    const el = document.getElementById('opponent-presets')!;
+    try {
+      const res = await fetch(`${API_BASE}/api/meta/top-combos?limit=10`);
+      const data = await res.json();
+      const combos: any[] = data.combos || [];
+      if (!combos.length) {
+        el.innerHTML = '<div class="text-fg-muted text-xs text-center py-4">No meta data yet</div>';
+        return;
+      }
+      el.innerHTML = '';
+      for (const c of combos) {
+        const btn = document.createElement('button');
+        btn.className = 'opp-preset';
+        btn.innerHTML = `<span>${c.display}</span> <span class="opp-uses">${c.uses} uses</span>`;
+        btn.onclick = () => {
+          oppCombo = { blade: c.blade, ratchet: c.ratchet, bit: c.bit, lockChip: c.lock_chip };
+          myPoints = 0; oppPoints = 0;
+          // Highlight selected
+          el.querySelectorAll('.opp-preset').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          updateDisplay();
+        };
+        el.appendChild(btn);
+      }
+    } catch (e) {
+      el.innerHTML = '<div class="text-negative text-xs text-center py-4">Failed to load meta combos</div>';
+    }
+  }
 
-    // Show/hide result grid
+  // ---------------------------------------------------------------
+  // Display + battle logging
+  // ---------------------------------------------------------------
+  function updateDisplay() {
+    document.getElementById('my-combo-display')!.innerHTML = myCombo
+      ? `<span class="text-accent">${comboToDisplay(myCombo)}</span>`
+      : '<span class="text-fg-muted">Tap to pick combo</span>';
+    document.getElementById('opp-combo-display')!.innerHTML = oppCombo
+      ? `<span class="text-series-cx">${comboToDisplay(oppCombo)}</span>`
+      : '<span class="text-fg-muted">Pick from top meta combos</span>';
+
     const grid = document.getElementById('result-grid')!;
     const score = document.getElementById('matchup-score')!;
     if (myCombo && oppCombo) {
@@ -319,39 +472,12 @@ import Layout from '../layouts/Layout.astro';
       score.classList.add('hidden');
     }
 
-    // Scores
     document.getElementById('my-score')!.textContent = String(myPoints);
     document.getElementById('opp-score')!.textContent = String(oppPoints);
-    document.getElementById('session-tally')!.textContent = `${sessionWins}W / ${sessionLosses}L`;
-
-    // Save recent combos
-    saveRecentCombos();
-    renderRecentCombos();
-  }
-
-  function saveRecentCombos() {
-    const key = 'beyblade-recent-combos';
-    const recent: string[] = JSON.parse(localStorage.getItem(key) || '[]');
-    for (const c of [myCombo, oppCombo]) {
-      if (!c) continue;
-      const id = comboToId(c);
-      const idx = recent.indexOf(id);
-      if (idx >= 0) recent.splice(idx, 1);
-      recent.unshift(id);
-    }
-    localStorage.setItem(key, JSON.stringify(recent.slice(0, 10)));
-  }
-
-  function renderRecentCombos() {
-    const el = document.getElementById('recent-combos')!;
-    const recent: string[] = JSON.parse(localStorage.getItem('beyblade-recent-combos') || '[]');
-    if (recent.length === 0) {
-      el.textContent = 'No recent combos';
-      return;
-    }
-    el.innerHTML = recent.slice(0, 5).map(id =>
-      `<div class="text-fg cursor-pointer hover:text-accent py-1" data-recent="${id}">${id}</div>`
-    ).join('');
+    document.getElementById('session-tally')!.innerHTML =
+      `<span class="text-positive">${sessionWins}</span><span class="text-fg-muted">W</span>` +
+      `<span class="text-fg-muted mx-1">/</span>` +
+      `<span class="text-negative">${sessionLosses}</span><span class="text-fg-muted">L</span>`;
   }
 
   async function logBattle(finishType: string, result: string) {
@@ -362,27 +488,23 @@ import Layout from '../layouts/Layout.astro';
     else { oppPoints += pts; sessionLosses++; }
     updateDisplay();
 
-    // Haptic feedback
     if (navigator.vibrate) navigator.vibrate(50);
 
-    // Log to session
     const log = document.getElementById('session-log')!;
+    if (log.querySelector('.text-fg-muted')) log.innerHTML = '';
     const entry = document.createElement('div');
     const color = result === 'win' ? 'text-positive' : 'text-negative';
     entry.className = color;
     entry.textContent = `${finishType.toUpperCase()} ${result.toUpperCase()} (${result === 'win' ? '+' : '-'}${pts}pt)`;
     log.prepend(entry);
 
-    // POST to API
     try {
-      const stadium = (document.getElementById('stadium-input') as HTMLInputElement).value || undefined;
       const res = await fetch(`${API_BASE}/api/battles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           combo_id: comboToId(myCombo),
           opponent_id: comboToId(oppCombo),
-          stadium,
           finish_type: finishType,
           result,
           session_id: sessionId,
@@ -406,7 +528,6 @@ import Layout from '../layouts/Layout.astro';
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: lastBattleId }),
       });
-      // Rough undo of display state
       const log = document.getElementById('session-log')!;
       if (log.firstChild) log.removeChild(log.firstChild);
       lastBattleId = null;
@@ -416,72 +537,32 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  // Wire everything up on load
+  // ---------------------------------------------------------------
+  // Init
+  // ---------------------------------------------------------------
   async function init() {
     await loadCatalog();
+    await loadOpponentPresets();
 
-    // Restore stadium from localStorage
-    const stadiumInput = document.getElementById('stadium-input') as HTMLInputElement;
-    stadiumInput.value = localStorage.getItem('beyblade-stadium') || '';
-    stadiumInput.addEventListener('change', () => {
-      localStorage.setItem('beyblade-stadium', stadiumInput.value);
-    });
-
-    // My combo picker
-    const myPicker = buildPicker('my', (combo) => {
+    const myPicker = buildPicker('my-combo-picker', (combo) => {
       myCombo = combo;
       myPoints = 0; oppPoints = 0;
       updateDisplay();
     });
-    document.getElementById('my-combo-btn')!.addEventListener('click', () => {
+
+    document.getElementById('my-combo-display')!.addEventListener('click', () => {
       const locked = (document.getElementById('lock-my-combo') as HTMLInputElement).checked;
       if (locked && myCombo) return;
-      document.getElementById('my-combo-picker')!.classList.toggle('hidden');
-      myPicker.show();
-    });
-    // First click opens picker
-    document.getElementById('my-combo-display')!.addEventListener('click', () => {
-      document.getElementById('my-combo-picker')!.classList.remove('hidden');
       myPicker.show();
     });
 
-    // Opponent picker
-    const oppPicker = buildPicker('opp', (combo) => {
-      oppCombo = combo;
-      myPoints = 0; oppPoints = 0;
-      updateDisplay();
-    });
-    document.getElementById('opp-combo-btn')!.addEventListener('click', () => {
-      document.getElementById('opp-combo-picker')!.classList.toggle('hidden');
-      oppPicker.show();
-    });
-    document.getElementById('opp-combo-display')!.addEventListener('click', () => {
-      document.getElementById('opp-combo-picker')!.classList.remove('hidden');
-      oppPicker.show();
-    });
-
-    // Same as mine
-    document.getElementById('same-as-mine-btn')!.addEventListener('click', () => {
-      if (myCombo) {
-        oppCombo = { ...myCombo };
-        myPoints = 0; oppPoints = 0;
-        updateDisplay();
-      }
-    });
-
-    // Battle buttons
     document.querySelectorAll<HTMLButtonElement>('.battle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const finish = btn.dataset.finish!;
-        const result = btn.dataset.result!;
-        logBattle(finish, result);
+        logBattle(btn.dataset.finish!, btn.dataset.result!);
       });
     });
 
-    // Undo
     document.getElementById('undo-btn')!.addEventListener('click', undoLast);
-
-    renderRecentCombos();
     updateDisplay();
   }
 

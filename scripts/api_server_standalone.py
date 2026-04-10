@@ -259,6 +259,42 @@ class APIHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json({"parts": result})
 
+        elif path == "/api/meta/top-combos" or path == "/meta/top-combos":
+            try:
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                from db import get_connection
+                conn = get_connection()
+                try:
+                    limit = int(parse_qs(parsed.query).get("limit", ["10"])[0])
+                    rows = conn.execute("""
+                        SELECT blade, lock_chip, ratchet, bit, COUNT(*) as uses
+                        FROM combo_usage
+                        GROUP BY blade, lock_chip, ratchet, bit
+                        ORDER BY uses DESC
+                        LIMIT ?
+                    """, [limit]).fetchall()
+                    combos = []
+                    seen = set()
+                    for r in rows:
+                        blade_full = f"{r[1]} {r[0]}".strip() if r[1] else r[0]
+                        combo_str = f"{blade_full} {r[2]} {r[3]}"
+                        if combo_str in seen:
+                            continue
+                        seen.add(combo_str)
+                        combos.append({
+                            "blade": r[0],
+                            "lock_chip": r[1],
+                            "ratchet": r[2],
+                            "bit": r[3],
+                            "display": combo_str,
+                            "uses": r[4],
+                        })
+                    self._send_json({"combos": combos})
+                finally:
+                    conn.close()
+            except Exception as e:
+                self._send_json({"error": str(e)}, 500)
+
         elif path == "/api/battles" or path == "/battles":
             query = parse_qs(parsed.query)
             self._handle_battles_get(query)
