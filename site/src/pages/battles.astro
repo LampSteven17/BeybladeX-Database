@@ -417,15 +417,50 @@ import Layout from '../layouts/Layout.astro';
 
       if (step === 'blade') {
         addHeader('Pick Series', false);
-        addGrid([
-          { label: 'BX', value: 'bx', cls: 'bx' },
-          { label: 'UX', value: 'ux', cls: 'ux' },
-          { label: 'CX', value: 'cx', cls: 'cx' },
-        ], (val) => {
-          state.series = val;
-          if (val === 'cx') showStep('cx-type');
-          else showStep('blade-list');
-        });
+
+        const seriesGrid = document.createElement('div');
+        seriesGrid.style.display = 'flex';
+        seriesGrid.style.gap = '0.5rem';
+        seriesGrid.style.marginBottom = '0.5rem';
+
+        const seriesData = [
+          { label: 'BX', sub: 'Basic Line', value: 'bx', bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.6)', color: '#3b82f6' },
+          { label: 'UX', sub: 'Unique Line', value: 'ux', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.6)', color: '#a855f7' },
+          { label: 'CX', sub: 'Custom Line', value: 'cx', bg: 'rgba(236,72,153,0.15)', border: 'rgba(236,72,153,0.6)', color: '#ec4899' },
+        ];
+
+        for (const s of seriesData) {
+          const btn = document.createElement('button');
+          btn.style.cssText = `
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 4.5rem;
+            border: 3px solid ${s.border};
+            border-radius: 0.75rem;
+            background: ${s.bg};
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.05s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          `;
+          btn.innerHTML = `
+            <span style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:900;color:${s.color};letter-spacing:0.1em">${s.label}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:${s.color};opacity:0.6;margin-top:0.125rem">${s.sub}</span>
+          `;
+          btn.onpointerdown = () => { btn.style.transform = 'scale(0.93)'; };
+          btn.onpointerup = () => { btn.style.transform = ''; };
+          btn.onpointerleave = () => { btn.style.transform = ''; };
+          btn.onclick = () => {
+            state.series = s.value;
+            if (s.value === 'cx') showStep('cx-type');
+            else showStep('blade-list');
+          };
+          seriesGrid.appendChild(btn);
+        }
+        container.appendChild(seriesGrid);
 
       } else if (step === 'blade-list') {
         const series = state.series.toUpperCase();
