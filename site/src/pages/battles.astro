@@ -397,17 +397,52 @@ import Layout from '../layouts/Layout.astro';
       container.appendChild(lbl);
     }
 
-    function addGrid(items: { label: string; value: string; cls?: string }[], onPick: (val: string) => void) {
+    function addGrid(items: { label: string; value: string; cls?: string }[], onPick: (val: string) => void, opts?: { searchable?: boolean; maxHeight?: string }) {
+      const searchable = opts?.searchable && items.length > 8;
+      let searchInput: HTMLInputElement | null = null;
+
+      if (searchable) {
+        searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Type to filter...';
+        searchInput.style.cssText = `
+          width:100%; padding:0.5rem 0.75rem; margin-bottom:0.5rem;
+          background:var(--color-bg-surface,#161b22); border:2px solid rgba(255,255,255,0.2);
+          border-radius:0.5rem; color:var(--color-fg,#e6edf3);
+          font-family:'JetBrains Mono',monospace; font-size:0.8rem;
+          outline:none;
+        `;
+        searchInput.onfocus = () => { searchInput!.style.borderColor = 'var(--color-accent,#f97316)'; };
+        searchInput.onblur = () => { searchInput!.style.borderColor = 'rgba(255,255,255,0.2)'; };
+        container.appendChild(searchInput);
+      }
+
       const grid = document.createElement('div');
       grid.className = 'pick-grid';
+      if (opts?.maxHeight) {
+        grid.style.maxHeight = opts.maxHeight;
+        grid.style.overflowY = 'auto';
+      }
+
+      const buttons: { el: HTMLButtonElement; label: string }[] = [];
       for (const item of items) {
         const btn = document.createElement('button');
         btn.className = 'pick-btn' + (item.cls ? ` ${item.cls}` : '');
         btn.textContent = item.label;
         btn.onclick = () => onPick(item.value);
         grid.appendChild(btn);
+        buttons.push({ el: btn, label: item.label.toLowerCase() });
       }
       container.appendChild(grid);
+
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          const q = searchInput!.value.toLowerCase().trim();
+          for (const b of buttons) {
+            b.el.style.display = (!q || b.label.includes(q)) ? '' : 'none';
+          }
+        });
+      }
     }
 
     function showStep(step: string) {
@@ -472,7 +507,7 @@ import Layout from '../layouts/Layout.astro';
         addHeader(`${series} Blades`, true);
         addGrid(blades.map((b: string) => ({ label: b, value: b, cls })), (val) => {
           state.blade = val; state.type = 'bx'; showStep('ratchet');
-        });
+        }, { searchable: true, maxHeight: '50vh' });
 
       } else if (step === 'cx-type') {
         addHeader('CX Blade Type', true);
@@ -490,7 +525,7 @@ import Layout from '../layouts/Layout.astro';
         addHeader('CX Main Blade', true);
         addGrid(mains.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
           state.blade = val; state.type = 'cx-main'; showStep('cx-lock');
-        });
+        }, { searchable: true });
 
       } else if (step === 'cx-metal-list') {
         const metals = (catalog.metal_blades || []).slice()
@@ -506,7 +541,7 @@ import Layout from '../layouts/Layout.astro';
         addHeader(`Lock Chip for ${state.blade}`, true);
         addGrid(chips.map((c: string) => ({ label: c, value: c, cls: 'cx' })), (val) => {
           state.lockChip = val; showStep('ratchet');
-        });
+        }, { searchable: true });
 
       } else if (step === 'ratchet') {
         addHeader('Ratchet', true);
