@@ -898,11 +898,19 @@ import Layout from '../layouts/Layout.astro';
     document.getElementById('undo-btn')!.addEventListener('click', undoLast);
 
     document.getElementById('commit-btn')!.addEventListener('click', async () => {
-      if (!confirm('Back up all battle data to JSON? This saves your data for safekeeping.')) return;
       try {
         const res = await fetch(`${API_BASE}/api/battles/commit`, { method: 'POST' });
         const data = await res.json();
-        alert(data.message || 'Committed!');
+        if (res.ok) {
+          // Reset session state so user can start fresh
+          sessionWins = 0; sessionLosses = 0; myPoints = 0; oppPoints = 0; matchupBattles = 0;
+          scoringActive = false;
+          const log = document.getElementById('session-log')!;
+          log.innerHTML = '<span class="text-fg-muted">Data committed. Ready for new entries.</span>';
+          updateDisplay();
+        } else {
+          alert('Commit failed: ' + (data.error || 'unknown error'));
+        }
       } catch (e) {
         alert('Commit failed: ' + e);
       }
