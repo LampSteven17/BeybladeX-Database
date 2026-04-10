@@ -456,7 +456,7 @@ import Layout from '../layouts/Layout.astro';
         }
 
         expander.onclick = () => {
-          restGrid.style.display = restGrid.style.display === 'none' ? 'flex' : 'none';
+          restGrid.style.display = restGrid.style.display === 'none' ? 'grid' : 'none';
           expander.textContent = restGrid.style.display === 'none'
             ? `Show all (${rest.length} more)`
             : 'Hide';
