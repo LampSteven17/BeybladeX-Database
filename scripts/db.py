@@ -337,6 +337,41 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
         )
     """)
 
+    # =================================================================
+    # Battle tracker tables (personal gameplay data)
+    # =================================================================
+    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_battles START 1")
+    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_stamina START 1")
+
+    # Each row = one battle result (not an aggregated matchup).
+    # Aggregation happens at query time for flexibility.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS battles (
+            id INTEGER PRIMARY KEY DEFAULT nextval('seq_battles'),
+            combo_id VARCHAR NOT NULL,
+            opponent_id VARCHAR NOT NULL,
+            stadium VARCHAR,
+            finish_type VARCHAR NOT NULL,
+            result VARCHAR NOT NULL,
+            points INTEGER,
+            session_id VARCHAR,
+            notes VARCHAR,
+            created_at TIMESTAMP DEFAULT current_timestamp
+        )
+    """)
+
+    # Stamina spin time trials
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS stamina_trials (
+            id INTEGER PRIMARY KEY DEFAULT nextval('seq_stamina'),
+            combo_id VARCHAR NOT NULL,
+            spin_time_ms INTEGER NOT NULL,
+            trial_number INTEGER,
+            notes VARCHAR,
+            created_at TIMESTAMP DEFAULT current_timestamp
+        )
+    """)
+
     # Part attributes table (official Takara Tomy stats from Fandom wiki)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS part_attributes (

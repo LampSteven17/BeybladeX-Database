@@ -259,8 +259,138 @@ class APIHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json({"parts": result})
 
+        elif path == "/api/battles" or path == "/battles":
+            query = parse_qs(parsed.query)
+            self._handle_battles_get(query)
+
+        elif path == "/api/battles/stats" or path == "/battles/stats":
+            query = parse_qs(parsed.query)
+            self._handle_battles_stats(query)
+
+        elif path == "/api/stamina" or path == "/stamina":
+            query = parse_qs(parsed.query)
+            self._handle_stamina_get(query)
+
         else:
             self._send_json({"error": "Not found"}, 404)
+
+    # ------------------------------------------------------------------
+    # Battle tracker GET handlers
+    # ------------------------------------------------------------------
+
+    def _handle_battles_get(self, query):
+        try:
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_connection
+            conn = get_connection()
+            try:
+                combo = query.get("combo", [None])[0]
+                opponent = query.get("opponent", [None])[0]
+                session = query.get("session", [None])[0]
+                limit = int(query.get("limit", ["100"])[0])
+
+                where = "1=1"
+                params = []
+                if combo:
+                    where += " AND combo_id = ?"
+                    params.append(combo)
+                if opponent:
+                    where += " AND opponent_id = ?"
+                    params.append(opponent)
+                if session:
+                    where += " AND session_id = ?"
+                    params.append(session)
+
+                rows = conn.execute(f"""
+                    SELECT id, combo_id, opponent_id, stadium, finish_type,
+                           result, points, session_id, notes,
+                           created_at::VARCHAR as created_at
+                    FROM battles WHERE {where}
+                    ORDER BY created_at DESC LIMIT ?
+                """, params + [limit]).fetchall()
+
+                self._send_json({"battles": [
+                    {
+                        "id": r[0], "combo_id": r[1], "opponent_id": r[2],
+                        "stadium": r[3], "finish_type": r[4], "result": r[5],
+                        "points": r[6], "session_id": r[7], "notes": r[8],
+                        "created_at": r[9],
+                    } for r in rows
+                ]})
+            finally:
+                conn.close()
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _handle_battles_stats(self, query):
+        try:
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_connection
+            conn = get_connection()
+            try:
+                combo = query.get("combo", [None])[0]
+                where = "1=1"
+                params = []
+                if combo:
+                    where += " AND combo_id = ?"
+                    params.append(combo)
+
+                rows = conn.execute(f"""
+                    SELECT combo_id, opponent_id,
+                           SUM(CASE WHEN result='win' THEN 1 ELSE 0 END) as wins,
+                           SUM(CASE WHEN result='loss' THEN 1 ELSE 0 END) as losses,
+                           SUM(CASE WHEN result='win' THEN points ELSE 0 END) as points_won,
+                           SUM(CASE WHEN result='loss' THEN points ELSE 0 END) as points_lost,
+                           COUNT(*) as total
+                    FROM battles WHERE {where}
+                    GROUP BY combo_id, opponent_id
+                    ORDER BY total DESC
+                """, params).fetchall()
+
+                self._send_json({"matchups": [
+                    {
+                        "combo_id": r[0], "opponent_id": r[1],
+                        "wins": r[2], "losses": r[3],
+                        "points_won": r[4], "points_lost": r[5],
+                        "total": r[6],
+                        "win_rate": round(r[2] / r[6] * 100, 1) if r[6] > 0 else 0,
+                    } for r in rows
+                ]})
+            finally:
+                conn.close()
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _handle_stamina_get(self, query):
+        try:
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_connection
+            conn = get_connection()
+            try:
+                combo = query.get("combo", [None])[0]
+                where = "1=1"
+                params = []
+                if combo:
+                    where += " AND combo_id = ?"
+                    params.append(combo)
+
+                rows = conn.execute(f"""
+                    SELECT id, combo_id, spin_time_ms, trial_number, notes,
+                           created_at::VARCHAR as created_at
+                    FROM stamina_trials WHERE {where}
+                    ORDER BY created_at DESC
+                """, params).fetchall()
+
+                self._send_json({"trials": [
+                    {
+                        "id": r[0], "combo_id": r[1], "spin_time_ms": r[2],
+                        "trial_number": r[3], "notes": r[4], "created_at": r[5],
+                    } for r in rows
+                ]})
+            finally:
+                conn.close()
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
 
     def do_POST(self):
         parsed = urlparse(self.path)
@@ -480,8 +610,129 @@ class APIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_json({"error": str(e)}, 400)
 
+        elif path == "/api/battles" or path == "/battles":
+            self._handle_battles_post(body)
+
+        elif path == "/api/battles/delete" or path == "/battles/delete":
+            # DELETE method isn't always easy from JS; accept POST with {id: N}
+            self._handle_battles_delete(body)
+
+        elif path == "/api/stamina" or path == "/stamina":
+            self._handle_stamina_post(body)
+
         else:
             self._send_json({"error": "Not found"}, 404)
+
+    # ------------------------------------------------------------------
+    # Battle tracker POST handlers
+    # ------------------------------------------------------------------
+
+    FINISH_POINTS = {"spin": 1, "over": 2, "xtreme": 3, "burst": 2}
+
+    def _handle_battles_post(self, body):
+        try:
+            data = json.loads(body.decode("utf-8")) if body else {}
+            combo_id = data.get("combo_id")
+            opponent_id = data.get("opponent_id")
+            finish_type = data.get("finish_type")
+            result = data.get("result")
+            if not all([combo_id, opponent_id, finish_type, result]):
+                self._send_json({"error": "combo_id, opponent_id, finish_type, result required"}, 400)
+                return
+            if finish_type not in self.FINISH_POINTS:
+                self._send_json({"error": f"finish_type must be spin/over/xtreme/burst"}, 400)
+                return
+            if result not in ("win", "loss"):
+                self._send_json({"error": "result must be win or loss"}, 400)
+                return
+
+            points = self.FINISH_POINTS[finish_type]
+            stadium = data.get("stadium")
+            session_id = data.get("session_id")
+            notes = data.get("notes")
+
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_connection
+            conn = get_connection()
+            try:
+                row = conn.execute("""
+                    INSERT INTO battles (combo_id, opponent_id, stadium, finish_type,
+                                        result, points, session_id, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    RETURNING id, created_at::VARCHAR
+                """, [combo_id, opponent_id, stadium, finish_type,
+                      result, points, session_id, notes]).fetchone()
+                conn.commit()
+                self._send_json({
+                    "success": True,
+                    "id": row[0],
+                    "points": points,
+                    "created_at": row[1],
+                })
+            finally:
+                conn.close()
+        except json.JSONDecodeError:
+            self._send_json({"error": "invalid JSON"}, 400)
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _handle_battles_delete(self, body):
+        try:
+            data = json.loads(body.decode("utf-8")) if body else {}
+            battle_id = data.get("id")
+            if not battle_id:
+                self._send_json({"error": "id required"}, 400)
+                return
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_connection
+            conn = get_connection()
+            try:
+                conn.execute("DELETE FROM battles WHERE id = ?", [battle_id])
+                conn.commit()
+                self._send_json({"success": True})
+            finally:
+                conn.close()
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _handle_stamina_post(self, body):
+        try:
+            data = json.loads(body.decode("utf-8")) if body else {}
+            combo_id = data.get("combo_id")
+            spin_time_ms = data.get("spin_time_ms")
+            if not combo_id or spin_time_ms is None:
+                self._send_json({"error": "combo_id and spin_time_ms required"}, 400)
+                return
+
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_connection
+            conn = get_connection()
+            try:
+                # Auto-assign trial number
+                existing = conn.execute(
+                    "SELECT COUNT(*) FROM stamina_trials WHERE combo_id = ?",
+                    [combo_id],
+                ).fetchone()[0]
+                trial_num = existing + 1
+
+                row = conn.execute("""
+                    INSERT INTO stamina_trials (combo_id, spin_time_ms, trial_number, notes)
+                    VALUES (?, ?, ?, ?)
+                    RETURNING id, created_at::VARCHAR
+                """, [combo_id, spin_time_ms, trial_num, data.get("notes")]).fetchone()
+                conn.commit()
+                self._send_json({
+                    "success": True,
+                    "id": row[0],
+                    "trial_number": trial_num,
+                    "created_at": row[1],
+                })
+            finally:
+                conn.close()
+        except json.JSONDecodeError:
+            self._send_json({"error": "invalid JSON"}, 400)
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
 
     def log_message(self, format, *args):
         print(f"[{datetime.now().isoformat()}] {args[0]}")

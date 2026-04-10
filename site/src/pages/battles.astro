@@ -1,0 +1,489 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Battle Tracker">
+  <div class="max-w-lg mx-auto px-3 py-4">
+    {/* Session header */}
+    <div class="card card-padding mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <h1 class="text-lg font-mono font-bold text-fg">Battle Tracker</h1>
+        <div class="text-xs font-mono text-fg-muted" id="session-tally">0W / 0L</div>
+      </div>
+      <div class="flex gap-2">
+        <input id="stadium-input" type="text" placeholder="Stadium"
+               class="flex-1 bg-bg-surface border border-fg-muted/30 rounded px-2 py-1 text-fg font-mono text-xs" />
+      </div>
+    </div>
+
+    {/* My Combo */}
+    <div class="card card-padding mb-2">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-mono font-bold text-accent uppercase">My Combo</span>
+        <label class="flex items-center gap-1 text-xs font-mono text-fg-muted cursor-pointer">
+          <input type="checkbox" id="lock-my-combo" class="rounded" />
+          Lock
+        </label>
+      </div>
+      <div id="my-combo-display" class="text-sm font-mono font-bold text-fg mb-2 min-h-[1.5rem]">
+        <span class="text-fg-muted">Tap to pick blade...</span>
+      </div>
+      <div id="my-combo-picker" class="hidden">
+        <div id="my-picker-steps"></div>
+      </div>
+      <button id="my-combo-btn" class="w-full text-left text-xs text-accent font-mono">Change combo</button>
+    </div>
+
+    {/* Opponent Combo */}
+    <div class="card card-padding mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-mono font-bold text-series-cx uppercase">Opponent</span>
+        <button id="same-as-mine-btn" class="text-xs font-mono text-accent">= Same as mine</button>
+      </div>
+      <div id="opp-combo-display" class="text-sm font-mono font-bold text-fg mb-2 min-h-[1.5rem]">
+        <span class="text-fg-muted">Tap to pick blade...</span>
+      </div>
+      <div id="opp-combo-picker" class="hidden">
+        <div id="opp-picker-steps"></div>
+      </div>
+      <button id="opp-combo-btn" class="w-full text-left text-xs text-accent font-mono">Change combo</button>
+    </div>
+
+    {/* Matchup score */}
+    <div id="matchup-score" class="text-center font-mono text-lg font-bold text-fg mb-3 hidden">
+      <span id="my-score" class="text-positive">0</span>
+      <span class="text-fg-muted mx-2">—</span>
+      <span id="opp-score" class="text-negative">0</span>
+    </div>
+
+    {/* Result buttons */}
+    <div id="result-grid" class="grid grid-cols-2 gap-2 mb-3 hidden">
+      <button data-finish="spin" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
+        SPIN WIN<br><span class="text-xs opacity-70">+1 pt</span>
+      </button>
+      <button data-finish="spin" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
+        SPIN LOSS<br><span class="text-xs opacity-70">-1 pt</span>
+      </button>
+      <button data-finish="over" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
+        OVER WIN<br><span class="text-xs opacity-70">+2 pt</span>
+      </button>
+      <button data-finish="over" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
+        OVER LOSS<br><span class="text-xs opacity-70">-2 pt</span>
+      </button>
+      <button data-finish="xtreme" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
+        XTREME WIN<br><span class="text-xs opacity-70">+3 pt</span>
+      </button>
+      <button data-finish="xtreme" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
+        XTREME LOSS<br><span class="text-xs opacity-70">-3 pt</span>
+      </button>
+      <button data-finish="burst" data-result="win" class="battle-btn win-btn rounded-lg py-4 font-mono font-bold text-sm">
+        BURST WIN<br><span class="text-xs opacity-70">+2 pt</span>
+      </button>
+      <button data-finish="burst" data-result="loss" class="battle-btn loss-btn rounded-lg py-4 font-mono font-bold text-sm">
+        BURST LOSS<br><span class="text-xs opacity-70">-2 pt</span>
+      </button>
+    </div>
+
+    {/* Undo */}
+    <div id="undo-bar" class="text-center mb-3 hidden">
+      <button id="undo-btn" class="text-xs font-mono text-negative underline">Undo last</button>
+    </div>
+
+    {/* Recent combos */}
+    <div class="card card-padding mb-3">
+      <div class="text-xs font-mono font-bold text-fg-muted uppercase mb-2">Recent combos</div>
+      <div id="recent-combos" class="space-y-1 text-xs font-mono text-fg-muted">No recent combos</div>
+    </div>
+
+    {/* Session history */}
+    <div class="card card-padding">
+      <div class="text-xs font-mono font-bold text-fg-muted uppercase mb-2">Session log</div>
+      <div id="session-log" class="space-y-1 max-h-48 overflow-y-auto text-xs font-mono"></div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .battle-btn {
+    border: 2px solid transparent;
+    transition: transform 0.05s, opacity 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .battle-btn:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  .win-btn {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+  }
+  .loss-btn {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+  }
+  .pick-btn {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.375rem;
+    background: var(--color-bg-surface, #161b22);
+    color: var(--color-fg, #e6edf3);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pick-btn:hover, .pick-btn.selected {
+    border-color: var(--color-accent, #f97316);
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--color-accent, #f97316);
+  }
+  .pick-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+</style>
+
+<script>
+  const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:8081'
+    : window.location.origin;
+
+  const FINISH_POINTS: Record<string, number> = { spin: 1, over: 2, xtreme: 3, burst: 2 };
+
+  // State
+  let myCombo: { blade: string; ratchet: string; bit: string; lockChip?: string } | null = null;
+  let oppCombo: { blade: string; ratchet: string; bit: string; lockChip?: string } | null = null;
+  let myPoints = 0;
+  let oppPoints = 0;
+  let sessionWins = 0;
+  let sessionLosses = 0;
+  let lastBattleId: number | null = null;
+  let sessionId = `session-${Date.now()}`;
+
+  // Catalog data (loaded from parts_catalog.json)
+  let catalog: any = null;
+
+  function comboToId(c: { blade: string; ratchet: string; bit: string; lockChip?: string }): string {
+    const blade = c.lockChip
+      ? `${c.lockChip.toLowerCase().replace(/ /g, '-')}-${c.blade.toLowerCase().replace(/ /g, '-')}`
+      : c.blade.toLowerCase().replace(/ /g, '-');
+    const bit = c.bit.toLowerCase().replace(/ /g, '-');
+    return `${blade}_${c.ratchet}_${bit}`;
+  }
+
+  function comboToDisplay(c: { blade: string; ratchet: string; bit: string; lockChip?: string }): string {
+    const blade = c.lockChip ? `${c.lockChip} ${c.blade}` : c.blade;
+    return `${blade} ${c.ratchet} ${c.bit}`;
+  }
+
+  async function loadCatalog() {
+    try {
+      const res = await fetch('/data/parts_catalog.json?v=' + Date.now(), { cache: 'no-store' });
+      catalog = await res.json();
+    } catch {
+      // Fallback: minimal catalog
+      catalog = { blades: [], ratchets: [], bits: [], lock_chips: [], main_blades: [], metal_blades: [] };
+    }
+  }
+
+  function getAllBlades(): string[] {
+    if (!catalog) return [];
+    const blades = (catalog.blades || []).map((b: any) => b.name || b);
+    return blades.sort();
+  }
+
+  function buildPicker(prefix: string, onComplete: (combo: any) => void) {
+    const container = document.getElementById(`${prefix}-picker-steps`)!;
+    let state: any = {};
+
+    function showStep(step: string) {
+      container.innerHTML = '';
+
+      if (step === 'blade-type') {
+        // Step 0: BX/UX or CX?
+        const div = document.createElement('div');
+        div.className = 'pick-grid mb-2';
+        div.innerHTML = `
+          <div class="text-xs font-mono text-fg-muted w-full mb-1">Blade type:</div>
+        `;
+        for (const type of ['BX/UX', 'CX Main', 'CX Metal']) {
+          const btn = document.createElement('button');
+          btn.className = 'pick-btn';
+          btn.textContent = type;
+          btn.onclick = () => {
+            state.bladeType = type;
+            if (type === 'BX/UX') showStep('blade');
+            else if (type === 'CX Main') showStep('lock-chip');
+            else showStep('metal-blade');
+          };
+          div.appendChild(btn);
+        }
+        container.appendChild(div);
+
+      } else if (step === 'lock-chip') {
+        const chips = (catalog.lock_chips || []).map((c: any) => c.name || c).sort();
+        renderPickGrid('Lock chip:', chips, (val: string) => {
+          state.lockChip = val;
+          showStep('main-blade');
+        });
+
+      } else if (step === 'main-blade') {
+        const mains = (catalog.main_blades || []).sort();
+        renderPickGrid('Main blade:', mains, (val: string) => {
+          state.blade = val;
+          showStep('ratchet');
+        });
+
+      } else if (step === 'metal-blade') {
+        const metals = (catalog.metal_blades || []).sort();
+        renderPickGrid('Metal blade:', metals, (val: string) => {
+          state.blade = val;
+          showStep('lock-chip-for-metal');
+        });
+
+      } else if (step === 'lock-chip-for-metal') {
+        const chips = (catalog.lock_chips || []).map((c: any) => c.name || c).sort();
+        renderPickGrid('Lock chip (optional):', ['None', ...chips], (val: string) => {
+          if (val !== 'None') state.lockChip = val;
+          showStep('ratchet');
+        });
+
+      } else if (step === 'blade') {
+        const blades = getAllBlades();
+        renderPickGrid('Blade:', blades, (val: string) => {
+          state.blade = val;
+          showStep('ratchet');
+        });
+
+      } else if (step === 'ratchet') {
+        const ratchets = (catalog.ratchets || []).sort();
+        renderPickGrid('Ratchet:', ratchets, (val: string) => {
+          state.ratchet = val;
+          showStep('bit');
+        });
+
+      } else if (step === 'bit') {
+        const bits = (catalog.bits || []).sort();
+        renderPickGrid('Bit:', bits, (val: string) => {
+          state.bit = val;
+          // Done!
+          const combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip };
+          onComplete(combo);
+          container.innerHTML = '';
+          document.getElementById(`${prefix}-combo-picker`)!.classList.add('hidden');
+        });
+      }
+    }
+
+    function renderPickGrid(label: string, items: string[], onPick: (val: string) => void) {
+      const div = document.createElement('div');
+      div.innerHTML = `<div class="text-xs font-mono text-fg-muted mb-1">${label}</div>`;
+      const grid = document.createElement('div');
+      grid.className = 'pick-grid';
+      for (const item of items) {
+        const btn = document.createElement('button');
+        btn.className = 'pick-btn';
+        btn.textContent = item;
+        btn.onclick = () => onPick(item);
+        grid.appendChild(btn);
+      }
+      div.appendChild(grid);
+      container.appendChild(div);
+    }
+
+    return { show: () => showStep('blade-type') };
+  }
+
+  function updateDisplay() {
+    const myDisplay = document.getElementById('my-combo-display')!;
+    const oppDisplay = document.getElementById('opp-combo-display')!;
+    myDisplay.innerHTML = myCombo
+      ? `<span class="text-accent">${comboToDisplay(myCombo)}</span>`
+      : '<span class="text-fg-muted">Tap to pick blade...</span>';
+    oppDisplay.innerHTML = oppCombo
+      ? `<span class="text-series-cx">${comboToDisplay(oppCombo)}</span>`
+      : '<span class="text-fg-muted">Tap to pick blade...</span>';
+
+    // Show/hide result grid
+    const grid = document.getElementById('result-grid')!;
+    const score = document.getElementById('matchup-score')!;
+    if (myCombo && oppCombo) {
+      grid.classList.remove('hidden');
+      score.classList.remove('hidden');
+    } else {
+      grid.classList.add('hidden');
+      score.classList.add('hidden');
+    }
+
+    // Scores
+    document.getElementById('my-score')!.textContent = String(myPoints);
+    document.getElementById('opp-score')!.textContent = String(oppPoints);
+    document.getElementById('session-tally')!.textContent = `${sessionWins}W / ${sessionLosses}L`;
+
+    // Save recent combos
+    saveRecentCombos();
+    renderRecentCombos();
+  }
+
+  function saveRecentCombos() {
+    const key = 'beyblade-recent-combos';
+    const recent: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+    for (const c of [myCombo, oppCombo]) {
+      if (!c) continue;
+      const id = comboToId(c);
+      const idx = recent.indexOf(id);
+      if (idx >= 0) recent.splice(idx, 1);
+      recent.unshift(id);
+    }
+    localStorage.setItem(key, JSON.stringify(recent.slice(0, 10)));
+  }
+
+  function renderRecentCombos() {
+    const el = document.getElementById('recent-combos')!;
+    const recent: string[] = JSON.parse(localStorage.getItem('beyblade-recent-combos') || '[]');
+    if (recent.length === 0) {
+      el.textContent = 'No recent combos';
+      return;
+    }
+    el.innerHTML = recent.slice(0, 5).map(id =>
+      `<div class="text-fg cursor-pointer hover:text-accent py-1" data-recent="${id}">${id}</div>`
+    ).join('');
+  }
+
+  async function logBattle(finishType: string, result: string) {
+    if (!myCombo || !oppCombo) return;
+
+    const pts = FINISH_POINTS[finishType];
+    if (result === 'win') { myPoints += pts; sessionWins++; }
+    else { oppPoints += pts; sessionLosses++; }
+    updateDisplay();
+
+    // Haptic feedback
+    if (navigator.vibrate) navigator.vibrate(50);
+
+    // Log to session
+    const log = document.getElementById('session-log')!;
+    const entry = document.createElement('div');
+    const color = result === 'win' ? 'text-positive' : 'text-negative';
+    entry.className = color;
+    entry.textContent = `${finishType.toUpperCase()} ${result.toUpperCase()} (${result === 'win' ? '+' : '-'}${pts}pt)`;
+    log.prepend(entry);
+
+    // POST to API
+    try {
+      const stadium = (document.getElementById('stadium-input') as HTMLInputElement).value || undefined;
+      const res = await fetch(`${API_BASE}/api/battles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          combo_id: comboToId(myCombo),
+          opponent_id: comboToId(oppCombo),
+          stadium,
+          finish_type: finishType,
+          result,
+          session_id: sessionId,
+        }),
+      });
+      const data = await res.json();
+      if (data.id) {
+        lastBattleId = data.id;
+        document.getElementById('undo-bar')!.classList.remove('hidden');
+      }
+    } catch (e) {
+      console.error('Failed to log battle:', e);
+    }
+  }
+
+  async function undoLast() {
+    if (!lastBattleId) return;
+    try {
+      await fetch(`${API_BASE}/api/battles/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: lastBattleId }),
+      });
+      // Rough undo of display state
+      const log = document.getElementById('session-log')!;
+      if (log.firstChild) log.removeChild(log.firstChild);
+      lastBattleId = null;
+      document.getElementById('undo-bar')!.classList.add('hidden');
+    } catch (e) {
+      console.error('Undo failed:', e);
+    }
+  }
+
+  // Wire everything up on load
+  async function init() {
+    await loadCatalog();
+
+    // Restore stadium from localStorage
+    const stadiumInput = document.getElementById('stadium-input') as HTMLInputElement;
+    stadiumInput.value = localStorage.getItem('beyblade-stadium') || '';
+    stadiumInput.addEventListener('change', () => {
+      localStorage.setItem('beyblade-stadium', stadiumInput.value);
+    });
+
+    // My combo picker
+    const myPicker = buildPicker('my', (combo) => {
+      myCombo = combo;
+      myPoints = 0; oppPoints = 0;
+      updateDisplay();
+    });
+    document.getElementById('my-combo-btn')!.addEventListener('click', () => {
+      const locked = (document.getElementById('lock-my-combo') as HTMLInputElement).checked;
+      if (locked && myCombo) return;
+      document.getElementById('my-combo-picker')!.classList.toggle('hidden');
+      myPicker.show();
+    });
+    // First click opens picker
+    document.getElementById('my-combo-display')!.addEventListener('click', () => {
+      document.getElementById('my-combo-picker')!.classList.remove('hidden');
+      myPicker.show();
+    });
+
+    // Opponent picker
+    const oppPicker = buildPicker('opp', (combo) => {
+      oppCombo = combo;
+      myPoints = 0; oppPoints = 0;
+      updateDisplay();
+    });
+    document.getElementById('opp-combo-btn')!.addEventListener('click', () => {
+      document.getElementById('opp-combo-picker')!.classList.toggle('hidden');
+      oppPicker.show();
+    });
+    document.getElementById('opp-combo-display')!.addEventListener('click', () => {
+      document.getElementById('opp-combo-picker')!.classList.remove('hidden');
+      oppPicker.show();
+    });
+
+    // Same as mine
+    document.getElementById('same-as-mine-btn')!.addEventListener('click', () => {
+      if (myCombo) {
+        oppCombo = { ...myCombo };
+        myPoints = 0; oppPoints = 0;
+        updateDisplay();
+      }
+    });
+
+    // Battle buttons
+    document.querySelectorAll<HTMLButtonElement>('.battle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const finish = btn.dataset.finish!;
+        const result = btn.dataset.result!;
+        logBattle(finish, result);
+      });
+    });
+
+    // Undo
+    document.getElementById('undo-btn')!.addEventListener('click', undoLast);
+
+    renderRecentCombos();
+    updateDisplay();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
