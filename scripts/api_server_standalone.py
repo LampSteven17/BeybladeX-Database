@@ -664,6 +664,33 @@ class APIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_json({"error": str(e)}, 500)
 
+        elif path == "/api/battles/import" or path == "/battles/import":
+            try:
+                data = json.loads(body.decode("utf-8")) if body else {}
+                battles_list = data.get("battles", [])
+                stamina_list = data.get("stamina_trials", [])
+                sys.path.insert(0, str(SCRIPTS_DIR))
+                from db import get_battles_connection, init_battles_schema
+                conn = get_battles_connection()
+                init_battles_schema(conn)
+                for b in battles_list:
+                    conn.execute(
+                        "INSERT INTO battles (combo_id, opponent_id, stadium, finish_type, result, points, session_id) VALUES (?,?,?,?,?,?,?)",
+                        [b["combo_id"], b["opponent_id"], b.get("stadium"), b["finish_type"], b["result"], b.get("points", 0), b.get("session_id", "import")]
+                    )
+                for s in stamina_list:
+                    conn.execute(
+                        "INSERT INTO stamina_trials (combo_id, spin_time_ms, trial_number) VALUES (?,?,?)",
+                        [s["combo_id"], s["spin_time_ms"], s.get("trial_number")]
+                    )
+                conn.commit()
+                conn.close()
+                print(f"[{datetime.now().isoformat()}] Imported {len(battles_list)} battles + {len(stamina_list)} stamina")
+                self._send_json({"success": True, "imported_battles": len(battles_list), "imported_stamina": len(stamina_list)})
+            except Exception as e:
+                import traceback; traceback.print_exc()
+                self._send_json({"error": str(e)}, 500)
+
         elif path == "/api/battles/clear-session" or path == "/battles/clear-session":
             try:
                 data = json.loads(body.decode("utf-8")) if body else {}
