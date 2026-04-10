@@ -63,6 +63,9 @@ import Layout from '../layouts/Layout.astro';
       <span id="my-score" class="text-3xl font-bold text-positive">0</span>
       <span class="text-fg-muted mx-3 text-xl">vs</span>
       <span id="opp-score" class="text-3xl font-bold text-negative">0</span>
+      <div class="text-xs text-fg-muted mt-1">
+        <span id="battle-count">0</span> battles
+      </div>
     </div>
 
     {/* Result buttons */}
@@ -336,6 +339,7 @@ import Layout from '../layouts/Layout.astro';
   const sessionId = `session-${Date.now()}`;
   let catalog: any = null;
   let scoringActive = false;
+  let matchupBattles = 0;
 
   function comboToId(c: Combo): string {
     const blade = c.lockChip
@@ -743,6 +747,7 @@ import Layout from '../layouts/Layout.astro';
 
     document.getElementById('my-score')!.textContent = String(myPoints);
     document.getElementById('opp-score')!.textContent = String(oppPoints);
+    document.getElementById('battle-count')!.textContent = String(matchupBattles);
     document.getElementById('session-tally')!.innerHTML =
       `<span class="text-positive">${sessionWins}</span><span class="text-fg-muted">W</span>` +
       `<span class="text-fg-muted mx-1">/</span>` +
@@ -755,6 +760,7 @@ import Layout from '../layouts/Layout.astro';
     const pts = FINISH_POINTS[finishType];
     if (result === 'win') { myPoints += pts; sessionWins++; }
     else { oppPoints += pts; sessionLosses++; }
+    matchupBattles++;
     updateDisplay();
 
     if (navigator.vibrate) navigator.vibrate(50);
@@ -837,12 +843,14 @@ import Layout from '../layouts/Layout.astro';
         scoringActive = true;
         myPoints = 0;
         oppPoints = 0;
+        matchupBattles = 0;
         updateDisplay();
       }
     });
 
     document.getElementById('change-matchup-btn')!.addEventListener('click', () => {
       scoringActive = false;
+      matchupBattles = 0;
       updateDisplay();
     });
 
