@@ -337,13 +337,13 @@ import Layout from '../layouts/Layout.astro';
       // Load all data in parallel
       const [summary, blades, combos, ratchets, bits, spotlight, seriesBlades, allBlades] = await Promise.all([
         getDatabaseSummary(region),
-        getRankedBlades(8, 3, region),
-        getRankedCombos(8, 2, region),
-        getRankedRatchets(5, 3, region),
-        getRankedBits(5, 3, region),
+        getRankedBlades(8, 1, region),
+        getRankedCombos(8, 1, region),
+        getRankedRatchets(5, 1, region),
+        getRankedBits(5, 1, region),
         getMetaSpotlight(region),
         getTopBladesBySeries(5, 2, region),
-        getRankedBlades(50, 2, region),
+        getRankedBlades(50, 1, region),
       ]);
 
       // Fetch real sparkline data for top blades and combos

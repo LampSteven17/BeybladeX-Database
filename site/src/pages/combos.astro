@@ -147,7 +147,7 @@ import Layout from '../layouts/Layout.astro';
     try {
       await initDB();
       const region = getSelectedRegion();
-      allCombos = await getRankedCombos(500, 2, region);
+      allCombos = await getRankedCombos(500, 1, region);
       allCombosWithRare = await getRankedCombos(2000, 1, region);
       filteredCombos = allCombos;
 

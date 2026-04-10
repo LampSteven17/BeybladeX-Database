@@ -121,7 +121,7 @@ import Layout from '../layouts/Layout.astro';
     try {
       await initDB();
       const region = getSelectedRegion();
-      allBits = await getRankedBits(50, 2, region);
+      allBits = await getRankedBits(50, 1, region);
       renderTable(allBits);
       setupSearch();
     } catch (error) {

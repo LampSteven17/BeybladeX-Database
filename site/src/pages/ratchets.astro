@@ -186,7 +186,7 @@ import Layout from '../layouts/Layout.astro';
     try {
       await initDB();
       const region = getSelectedRegion();
-      allRatchets = await getRankedRatchets(50, 2, region);
+      allRatchets = await getRankedRatchets(50, 1, region);
       renderTable(allRatchets);
       setupSearch();
       setupFilters();

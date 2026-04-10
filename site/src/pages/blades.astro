@@ -138,7 +138,7 @@ import Layout from '../layouts/Layout.astro';
     try {
       await initDB();
       const region = getSelectedRegion();
-      allBlades = await getRankedBlades(100, 2, region);
+      allBlades = await getRankedBlades(100, 1, region);
       currentBlades = allBlades;
       renderTable(currentBlades);
       setupSeriesFilters();
