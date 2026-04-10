@@ -146,12 +146,7 @@ import Layout from '../layouts/Layout.astro';
           <span class="rank-number text-lg">${index + 1}</span>
         </td>
         <td>
-          <div class="flex items-center gap-2">
-            <span class="px-3 py-1 text-sm font-mono font-bold rounded bg-series-cx/20 text-series-cx border border-series-cx/40">
-              ${ob.name}
-            </span>
-            <span class="text-xs font-mono text-fg-muted">CX</span>
-          </div>
+          <span class="font-mono font-bold text-fg">${ob.name}</span>
         </td>
         <td class="text-right font-mono text-accent">${ob.raw_score.toFixed(1)}</td>
         <td class="text-right font-mono">${ob.uses}</td>
