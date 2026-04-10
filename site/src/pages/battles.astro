@@ -266,6 +266,12 @@ import Layout from '../layouts/Layout.astro';
     background: rgba(236, 72, 153, 0.15);
     color: var(--color-series-cx, #ec4899);
   }
+  .opp-rank {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--color-accent, #f97316);
+    margin-right: 0.25rem;
+  }
   .opp-uses {
     font-size: 0.6rem;
     opacity: 0.5;
@@ -650,10 +656,10 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
       el.innerHTML = '';
-      for (const c of combos) {
+      combos.forEach((c: any, i: number) => {
         const btn = document.createElement('button');
         btn.className = 'opp-preset';
-        btn.innerHTML = `<span>${c.display}</span> <span class="opp-uses">${c.uses} uses</span>`;
+        btn.innerHTML = `<span class="opp-rank">#${i + 1}</span> <span>${c.display}</span> <span class="opp-uses">${c.uses} uses</span>`;
         btn.onclick = () => {
           oppCombo = { blade: c.blade, ratchet: c.ratchet, bit: c.bit, lockChip: c.lock_chip };
           myPoints = 0; oppPoints = 0;
@@ -663,7 +669,7 @@ import Layout from '../layouts/Layout.astro';
           updateDisplay();
         };
         el.appendChild(btn);
-      }
+      });
     } catch (e) {
       el.innerHTML = '<div class="text-negative text-xs text-center py-4">Failed to load meta combos</div>';
     }
