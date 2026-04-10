@@ -570,11 +570,8 @@ import Layout from '../layouts/Layout.astro';
       } else if (step === 'cx-over') {
         const overBlades = (catalog.over_blades || []).sort();
         addHeader('Over Blade (optional)', true);
-        addGrid([
-          { label: 'None', value: '' },
-          ...overBlades.map((o: string) => ({ label: o, value: o, cls: 'cx' })),
-        ], (val) => {
-          if (val) state.overBlade = val;
+        addGrid(overBlades.map((o: string) => ({ label: o, value: o, cls: 'cx' })), (val) => {
+          state.overBlade = val;
           showStep('ratchet');
         });
 
