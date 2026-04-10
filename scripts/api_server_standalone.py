@@ -266,13 +266,14 @@ class APIHandler(BaseHTTPRequestHandler):
                 conn = get_connection()
                 try:
                     limit = int(parse_qs(parsed.query).get("limit", ["10"])[0])
+                    # Fetch more rows than requested since blade dedup reduces count
                     rows = conn.execute("""
                         SELECT blade, lock_chip, ratchet, bit, COUNT(*) as uses
                         FROM combo_usage
                         GROUP BY blade, lock_chip, ratchet, bit
                         ORDER BY uses DESC
                         LIMIT ?
-                    """, [limit]).fetchall()
+                    """, [limit * 10]).fetchall()
                     combos = []
                     seen_blades = set()
                     for r in rows:
@@ -290,7 +291,7 @@ class APIHandler(BaseHTTPRequestHandler):
                             "display": combo_str,
                             "uses": r[4],
                         })
-                    self._send_json({"combos": combos})
+                    self._send_json({"combos": combos[:limit]})
                 finally:
                     conn.close()
             except Exception as e:
