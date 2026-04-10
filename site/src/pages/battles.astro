@@ -39,9 +39,14 @@ import Layout from '../layouts/Layout.astro';
       <div id="opp-combo-display" class="combo-display mb-3">
         <span class="text-fg-muted">Pick from top meta combos</span>
       </div>
+      <div class="flex gap-2 mb-3">
+        <button id="opp-meta-tab" class="flex-1 py-2 rounded-lg font-mono font-bold text-xs border-2 border-accent/50 bg-accent/15 text-accent">Top 10 Meta</button>
+        <button id="opp-custom-tab" class="flex-1 py-2 rounded-lg font-mono font-bold text-xs border-2 border-fg-muted/30 text-fg-muted">Custom</button>
+      </div>
       <div id="opponent-presets" class="space-y-2">
         <div class="text-center text-fg-muted text-xs py-4">Loading meta combos...</div>
       </div>
+      <div id="opp-custom-picker" class="hidden"></div>
     </div>
 
     {/* Start scoring gate */}
@@ -830,6 +835,33 @@ import Layout from '../layouts/Layout.astro';
       const locked = (document.getElementById('lock-my-combo') as HTMLInputElement).checked;
       if (locked && myCombo) return;
       myPicker.show();
+    });
+
+    // Opponent tabs: Meta presets vs Custom picker
+    const oppMetaTab = document.getElementById('opp-meta-tab')!;
+    const oppCustomTab = document.getElementById('opp-custom-tab')!;
+    const oppPresets = document.getElementById('opponent-presets')!;
+    const oppCustom = document.getElementById('opp-custom-picker')!;
+
+    const oppPicker = buildPicker('opp-custom-picker', (combo) => {
+      oppCombo = combo;
+      myPoints = 0; oppPoints = 0; matchupBattles = 0;
+      updateDisplay();
+    });
+
+    oppMetaTab.addEventListener('click', () => {
+      oppPresets.classList.remove('hidden');
+      oppCustom.classList.add('hidden');
+      oppMetaTab.className = 'flex-1 py-2 rounded-lg font-mono font-bold text-xs border-2 border-accent/50 bg-accent/15 text-accent';
+      oppCustomTab.className = 'flex-1 py-2 rounded-lg font-mono font-bold text-xs border-2 border-fg-muted/30 text-fg-muted';
+    });
+
+    oppCustomTab.addEventListener('click', () => {
+      oppPresets.classList.add('hidden');
+      oppCustom.classList.remove('hidden');
+      oppCustomTab.className = 'flex-1 py-2 rounded-lg font-mono font-bold text-xs border-2 border-accent/50 bg-accent/15 text-accent';
+      oppMetaTab.className = 'flex-1 py-2 rounded-lg font-mono font-bold text-xs border-2 border-fg-muted/30 text-fg-muted';
+      oppPicker.show();
     });
 
     document.querySelectorAll<HTMLButtonElement>('.battle-btn').forEach(btn => {
