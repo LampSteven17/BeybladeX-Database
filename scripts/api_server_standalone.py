@@ -664,20 +664,23 @@ class APIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_json({"error": str(e)}, 500)
 
-        elif path == "/api/battles/clear" or path == "/battles/clear":
+        elif path == "/api/battles/clear-session" or path == "/battles/clear-session":
             try:
+                data = json.loads(body.decode("utf-8")) if body else {}
+                sid = data.get("session_id")
+                if not sid:
+                    self._send_json({"error": "session_id required"}, 400)
+                    return
                 sys.path.insert(0, str(SCRIPTS_DIR))
                 from db import get_battles_connection, init_battles_schema
                 conn = get_battles_connection()
                 init_battles_schema(conn)
-                b = conn.execute("SELECT COUNT(*) FROM battles").fetchone()[0]
-                s = conn.execute("SELECT COUNT(*) FROM stamina_trials").fetchone()[0]
-                conn.execute("DELETE FROM battles")
-                conn.execute("DELETE FROM stamina_trials")
+                count = conn.execute("SELECT COUNT(*) FROM battles WHERE session_id = ?", [sid]).fetchone()[0]
+                conn.execute("DELETE FROM battles WHERE session_id = ?", [sid])
                 conn.commit()
                 conn.close()
-                print(f"[{datetime.now().isoformat()}] Cleared {b} battles + {s} stamina trials")
-                self._send_json({"success": True, "cleared_battles": b, "cleared_stamina": s})
+                print(f"[{datetime.now().isoformat()}] Cleared {count} battles from session {sid}")
+                self._send_json({"success": True, "cleared": count})
             except Exception as e:
                 self._send_json({"error": str(e)}, 500)
 

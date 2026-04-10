@@ -125,11 +125,11 @@ import Layout from '../layouts/Layout.astro';
           Commit Data
         </button>
         <button id="clear-btn" class="flex-1 py-2.5 rounded-lg font-mono font-bold text-xs bg-negative/15 border-2 border-negative/50 text-negative">
-          Clear All
+          Clear Session
         </button>
       </div>
       <div class="text-xs font-mono text-fg-muted mt-2">
-        Commit backs up battle data to JSON for safekeeping. Clear wipes all battles (for test data cleanup).
+        Commit backs up all battle data to JSON. Clear removes only this session's uncommitted entries.
       </div>
     </div>
   </div>
@@ -868,13 +868,18 @@ import Layout from '../layouts/Layout.astro';
     });
 
     document.getElementById('clear-btn')!.addEventListener('click', async () => {
-      if (!confirm('DELETE all battle and stamina data? This cannot be undone unless you have a backup.')) return;
-      if (!confirm('Are you SURE? This wipes everything.')) return;
+      if (!confirm('Clear all battles entered this session? Previously committed data is safe.')) return;
       try {
-        const res = await fetch(`${API_BASE}/api/battles/clear`, { method: 'POST' });
+        const res = await fetch(`${API_BASE}/api/battles/clear-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
         const data = await res.json();
-        alert(`Cleared ${data.cleared_battles} battles + ${data.cleared_stamina} stamina trials`);
-        sessionWins = 0; sessionLosses = 0; myPoints = 0; oppPoints = 0;
+        alert(`Cleared ${data.cleared} battles from this session`);
+        sessionWins = 0; sessionLosses = 0; myPoints = 0; oppPoints = 0; matchupBattles = 0;
+        const log = document.getElementById('session-log')!;
+        log.innerHTML = '<span class="text-fg-muted">No battles yet</span>';
         updateDisplay();
       } catch (e) {
         alert('Clear failed: ' + e);
