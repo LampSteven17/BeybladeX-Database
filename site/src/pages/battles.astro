@@ -180,25 +180,49 @@ import Layout from '../layouts/Layout.astro';
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 2.75rem;
-    padding: 0.5rem 0.75rem;
-    border: 2px solid rgba(255,255,255,0.12);
+    min-height: 3rem;
+    padding: 0.625rem 0.875rem;
+    border: 2px solid rgba(255,255,255,0.2);
     border-radius: 0.5rem;
     background: var(--color-bg-surface, #161b22);
     color: var(--color-fg, #e6edf3);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.7rem;
+    font-weight: 700;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: border-color 0.1s, background 0.1s;
+    transition: border-color 0.1s, background 0.1s, transform 0.05s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
   .pick-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.93);
+    box-shadow: none;
   }
   .pick-btn:hover {
     border-color: var(--color-accent, #f97316);
     background: rgba(249, 115, 22, 0.1);
+  }
+  .pick-btn.bx { border-color: rgba(59,130,246,0.4); }
+  .pick-btn.ux { border-color: rgba(168,85,247,0.4); }
+  .pick-btn.cx { border-color: rgba(236,72,153,0.4); }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.375rem 0;
+    margin-top: 0.5rem;
+  }
+  .section-label.bx { color: #3b82f6; }
+  .section-label.ux { color: #a855f7; }
+  .section-label.cx { color: #ec4899; }
+  .section-label.disc { color: var(--color-fg-muted); }
+  .pick-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
   }
 
   /* Opponent preset buttons */
@@ -296,7 +320,34 @@ import Layout from '../layouts/Layout.astro';
   }
 
   // ---------------------------------------------------------------
-  // Combo picker — step-by-step with big buttons
+  // Meta usage data for sorting blades by popularity
+  // ---------------------------------------------------------------
+  let bladeUsage: Record<string, number> = {};
+  let bladeSeriesMap: Record<string, string> = {};
+
+  async function loadBladeUsage() {
+    try {
+      const res = await fetch(`${API_BASE}/api/meta/top-combos?limit=500`);
+      const data = await res.json();
+      for (const c of (data.combos || [])) {
+        const name = c.lock_chip ? `${c.lock_chip} ${c.blade}` : c.blade;
+        bladeUsage[name] = (bladeUsage[name] || 0) + c.uses;
+        // Also track individual blade name for CX
+        bladeUsage[c.blade] = (bladeUsage[c.blade] || 0) + c.uses;
+      }
+      // Build series map from catalog
+      for (const b of (catalog.blades || [])) {
+        const name = b.name || b;
+        const sys = b.system || 'BX';
+        bladeSeriesMap[name] = sys;
+      }
+      for (const m of (catalog.main_blades || [])) bladeSeriesMap[m] = 'CX';
+      for (const m of (catalog.metal_blades || [])) bladeSeriesMap[m] = 'CX';
+    } catch {}
+  }
+
+  // ---------------------------------------------------------------
+  // Combo picker — organized by series + usage
   // ---------------------------------------------------------------
   function buildPicker(containerId: string, onComplete: (c: Combo) => void) {
     const container = document.getElementById(containerId)!;
@@ -304,95 +355,17 @@ import Layout from '../layouts/Layout.astro';
     let stepHistory: string[] = [];
 
     function goBack() {
-      stepHistory.pop(); // remove current
-      const prev = stepHistory.pop(); // get previous
+      stepHistory.pop();
+      const prev = stepHistory.pop();
       if (prev) showStep(prev);
-      else {
-        container.classList.add('hidden');
-        container.innerHTML = '';
-      }
+      else { container.classList.add('hidden'); container.innerHTML = ''; }
     }
 
-    function showStep(step: string) {
-      stepHistory.push(step);
-      container.classList.remove('hidden');
-      container.innerHTML = '';
-
-      if (step === 'type') {
-        renderStep('Step 1: Blade Type', null, [
-          { label: 'BX / UX Blade', value: 'bx' },
-          { label: 'CX Main Blade', value: 'cx-main' },
-          { label: 'CX Metal Blade', value: 'cx-metal' },
-        ], (val) => {
-          state.type = val;
-          if (val === 'bx') showStep('bx-blade');
-          else if (val === 'cx-main') showStep('cx-lock');
-          else showStep('cx-metal');
-        });
-
-      } else if (step === 'bx-blade') {
-        const blades = (catalog.blades || []).map((b: any) => b.name || b).sort();
-        renderStep('Step 2: Blade', 'Back', blades.map((b: string) => ({ label: b, value: b })), (val) => {
-          state.blade = val;
-          showStep('ratchet');
-        });
-
-      } else if (step === 'cx-lock') {
-        const chips = (catalog.lock_chips || []).map((c: any) => c.name || c).sort();
-        renderStep('Step 2: Lock Chip', 'Back', chips.map((c: string) => ({ label: c, value: c })), (val) => {
-          state.lockChip = val;
-          showStep('cx-main-blade');
-        });
-
-      } else if (step === 'cx-main-blade') {
-        const mains = (catalog.main_blades || []).sort();
-        renderStep('Step 3: Main Blade', 'Back', mains.map((m: string) => ({ label: m, value: m })), (val) => {
-          state.blade = val;
-          showStep('ratchet');
-        });
-
-      } else if (step === 'cx-metal') {
-        const metals = (catalog.metal_blades || []).sort();
-        renderStep('Step 2: Metal Blade', 'Back', metals.map((m: string) => ({ label: m, value: m })), (val) => {
-          state.blade = val;
-          showStep('cx-metal-lock');
-        });
-
-      } else if (step === 'cx-metal-lock') {
-        const chips = (catalog.lock_chips || []).map((c: any) => c.name || c).sort();
-        renderStep('Step 3: Lock Chip', 'Back', [{ label: 'None', value: '' }, ...chips.map((c: string) => ({ label: c, value: c }))], (val) => {
-          if (val) state.lockChip = val;
-          showStep('ratchet');
-        });
-
-      } else if (step === 'ratchet') {
-        const ratchets = (catalog.ratchets || []).sort();
-        const stepNum = state.type === 'bx' ? '3' : '4';
-        renderStep(`Step ${stepNum}: Ratchet`, 'Back', ratchets.map((r: string) => ({ label: r, value: r })), (val) => {
-          state.ratchet = val;
-          showStep('bit');
-        });
-
-      } else if (step === 'bit') {
-        const bits = (catalog.bits || []).sort();
-        const stepNum = state.type === 'bx' ? '4' : '5';
-        renderStep(`Step ${stepNum}: Bit`, 'Back', bits.map((b: string) => ({ label: b, value: b })), (val) => {
-          state.bit = val;
-          const combo: Combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip || null };
-          container.classList.add('hidden');
-          container.innerHTML = '';
-          state = {};
-          stepHistory = [];
-          onComplete(combo);
-        });
-      }
-    }
-
-    function renderStep(label: string, backLabel: string | null, options: { label: string; value: string }[], onPick: (val: string) => void) {
+    function addHeader(label: string, showBack: boolean) {
       const header = document.createElement('div');
       header.className = 'step-header';
       header.innerHTML = `<span class="step-label">${label}</span>`;
-      if (backLabel) {
+      if (showBack) {
         const back = document.createElement('button');
         back.className = 'step-back';
         back.textContent = '< Back';
@@ -400,22 +373,146 @@ import Layout from '../layouts/Layout.astro';
         header.appendChild(back);
       }
       container.appendChild(header);
+    }
 
+    function addSectionLabel(text: string, cls: string) {
+      const lbl = document.createElement('div');
+      lbl.className = `section-label ${cls}`;
+      lbl.textContent = text;
+      container.appendChild(lbl);
+    }
+
+    function addGrid(items: { label: string; value: string; cls?: string }[], onPick: (val: string) => void) {
       const grid = document.createElement('div');
-      grid.style.display = 'flex';
-      grid.style.flexWrap = 'wrap';
-      grid.style.gap = '0.375rem';
-      for (const opt of options) {
+      grid.className = 'pick-grid';
+      for (const item of items) {
         const btn = document.createElement('button');
-        btn.className = 'pick-btn';
-        btn.textContent = opt.label;
-        btn.onclick = () => onPick(opt.value);
+        btn.className = 'pick-btn' + (item.cls ? ` ${item.cls}` : '');
+        btn.textContent = item.label;
+        btn.onclick = () => onPick(item.value);
         grid.appendChild(btn);
       }
       container.appendChild(grid);
     }
 
-    return { show: () => { state = {}; stepHistory = []; showStep('type'); } };
+    function showStep(step: string) {
+      stepHistory.push(step);
+      container.classList.remove('hidden');
+      container.innerHTML = '';
+
+      if (step === 'blade') {
+        addHeader('Pick Blade', true);
+
+        // Group blades by series, sorted by usage within each group
+        const bxBlades: string[] = [];
+        const uxBlades: string[] = [];
+        for (const b of (catalog.blades || [])) {
+          const name = b.name || b;
+          const sys = b.system || 'BX';
+          if (sys === 'UX') uxBlades.push(name);
+          else bxBlades.push(name);
+        }
+
+        const sortByUsage = (a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0);
+        bxBlades.sort(sortByUsage);
+        uxBlades.sort(sortByUsage);
+
+        const cxMains = (catalog.main_blades || []).slice().sort(sortByUsage);
+        const cxMetals = (catalog.metal_blades || []).slice().sort(sortByUsage);
+
+        // UX section (usually the meta)
+        addSectionLabel('UX Series', 'ux');
+        addGrid(uxBlades.map(b => ({ label: b, value: b, cls: 'ux' })), (val) => {
+          state.blade = val; state.type = 'bx'; showStep('ratchet');
+        });
+
+        // BX section
+        addSectionLabel('BX Series', 'bx');
+        addGrid(bxBlades.map(b => ({ label: b, value: b, cls: 'bx' })), (val) => {
+          state.blade = val; state.type = 'bx'; showStep('ratchet');
+        });
+
+        // CX Main Blades (needs lock chip next)
+        addSectionLabel('CX Main Blades', 'cx');
+        addGrid(cxMains.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
+          state.blade = val; state.type = 'cx-main'; showStep('cx-lock');
+        });
+
+        // CX Metal Blades (needs lock chip next)
+        if (cxMetals.length) {
+          addSectionLabel('CX Metal Blades', 'cx');
+          addGrid(cxMetals.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
+            state.blade = val; state.type = 'cx-metal'; showStep('cx-lock');
+          });
+        }
+
+      } else if (step === 'cx-lock') {
+        const chips = (catalog.lock_chips || []).map((c: any) => c.name || c)
+          .sort((a: string, b: string) => (bladeUsage[a] || 0) - (bladeUsage[b] || 0)).reverse();
+        addHeader(`Lock Chip for ${state.blade}`, true);
+        addGrid(chips.map((c: string) => ({ label: c, value: c, cls: 'cx' })), (val) => {
+          state.lockChip = val; showStep('ratchet');
+        });
+
+      } else if (step === 'ratchet') {
+        addHeader('Ratchet', true);
+
+        // Group by disc size, sort by height within each group
+        const ratchets: string[] = (catalog.ratchets || []).slice();
+        const groups: Record<string, string[]> = {};
+        for (const r of ratchets) {
+          const parts = r.split('-');
+          if (parts.length !== 2) continue;
+          const disc = parts[1];
+          if (!groups[disc]) groups[disc] = [];
+          groups[disc].push(r);
+        }
+        // Sort disc sizes
+        const discOrder = ['50', '55', '60', '65', '70', '80', '85'];
+        const heightOrder = ['0','1','2','3','4','5','6','7','8','9','M'];
+
+        for (const disc of discOrder) {
+          if (!groups[disc]) continue;
+          groups[disc].sort((a, b) => {
+            const ha = a.split('-')[0];
+            const hb = b.split('-')[0];
+            return heightOrder.indexOf(ha) - heightOrder.indexOf(hb);
+          });
+          addSectionLabel(`-${disc}`, 'disc');
+          addGrid(groups[disc].map(r => ({ label: r, value: r })), (val) => {
+            state.ratchet = val; showStep('bit');
+          });
+        }
+
+      } else if (step === 'bit') {
+        addHeader('Bit', true);
+
+        // Sort bits: single-word first (by usage), then multi-word
+        const bits: string[] = (catalog.bits || []).slice();
+        const single = bits.filter(b => !b.includes(' ')).sort((a, b) => (bladeUsage[a] || 0) - (bladeUsage[b] || 0)).reverse();
+        const multi = bits.filter(b => b.includes(' ')).sort();
+
+        addSectionLabel('Standard', 'disc');
+        addGrid(single.map(b => ({ label: b, value: b })), finish);
+
+        if (multi.length) {
+          addSectionLabel('Multi-word', 'disc');
+          addGrid(multi.map(b => ({ label: b, value: b })), finish);
+        }
+      }
+
+      function finish(val: string) {
+        state.bit = val;
+        const combo: Combo = { blade: state.blade, ratchet: state.ratchet, bit: val, lockChip: state.lockChip || null };
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        state = {};
+        stepHistory = [];
+        onComplete(combo);
+      }
+    }
+
+    return { show: () => { state = {}; stepHistory = []; showStep('blade'); } };
   }
 
   // ---------------------------------------------------------------
@@ -542,6 +639,7 @@ import Layout from '../layouts/Layout.astro';
   // ---------------------------------------------------------------
   async function init() {
     await loadCatalog();
+    await loadBladeUsage();
     await loadOpponentPresets();
 
     const myPicker = buildPicker('my-combo-picker', (combo) => {
