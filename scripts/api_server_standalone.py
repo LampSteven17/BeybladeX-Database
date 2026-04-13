@@ -305,6 +305,10 @@ class APIHandler(BaseHTTPRequestHandler):
             query = parse_qs(parsed.query)
             self._handle_battles_stats(query)
 
+        elif path == "/api/battles/consistency" or path == "/battles/consistency":
+            query = parse_qs(parsed.query)
+            self._handle_battles_consistency(query)
+
         elif path == "/api/stamina" or path == "/stamina":
             query = parse_qs(parsed.query)
             self._handle_stamina_get(query)
@@ -396,6 +400,127 @@ class APIHandler(BaseHTTPRequestHandler):
                         "win_rate": round(r[2] / r[6] * 100, 1) if r[6] > 0 else 0,
                     } for r in rows
                 ]})
+            finally:
+                conn.close()
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _handle_battles_consistency(self, query):
+        """Compute finish-type consistency profile per combo from battle data.
+
+        Returns per combo:
+        - finish_profile: {spin: %, over: %, burst: %, xtreme: %} of wins
+        - dominant_finish: most common win finish type
+        - dominant_pct: % of wins via dominant finish
+        - consistency: 0-100 score = dominant_pct * (opponents with that finish / total opponents)
+        - opponents_tested: number of unique opponents faced
+        - total_wins / total_battles
+        """
+        try:
+            sys.path.insert(0, str(SCRIPTS_DIR))
+            from db import get_battles_connection, init_battles_schema
+            conn = get_battles_connection()
+            init_battles_schema(conn)
+            try:
+                combo = query.get("combo", [None])[0]
+                where = "1=1"
+                params = []
+                if combo:
+                    where += " AND combo_id = ?"
+                    params.append(combo)
+
+                # Get all battles grouped by combo, opponent, finish_type, result
+                rows = conn.execute(f"""
+                    SELECT combo_id, opp_blade, finish_type, result,
+                           blade, ratchet, bit, lock_chip, over_blade, assist,
+                           COUNT(*) as cnt
+                    FROM battles
+                    WHERE {where}
+                    GROUP BY combo_id, opp_blade, finish_type, result,
+                             blade, ratchet, bit, lock_chip, over_blade, assist
+                    ORDER BY combo_id
+                """, params).fetchall()
+
+                # Aggregate per combo
+                combos: dict = {}
+                for r in rows:
+                    cid = r[0]
+                    if cid not in combos:
+                        combos[cid] = {
+                            "combo_id": cid,
+                            "blade": r[4], "ratchet": r[5], "bit": r[6],
+                            "lock_chip": r[7], "over_blade": r[8], "assist": r[9],
+                            "opponents": {},
+                            "finish_wins": {},
+                            "total_wins": 0,
+                            "total_battles": 0,
+                        }
+                    c = combos[cid]
+                    opp = r[1] or r[0]  # fallback to combo string if opp_blade null
+                    finish = r[2]
+                    result = r[3]
+                    cnt = r[10]
+
+                    c["total_battles"] += cnt
+                    if result == "win":
+                        c["total_wins"] += cnt
+                        c["finish_wins"][finish] = c["finish_wins"].get(finish, 0) + cnt
+                        # Track which opponents this finish type works against
+                        if opp not in c["opponents"]:
+                            c["opponents"][opp] = {}
+                        c["opponents"][opp][finish] = c["opponents"][opp].get(finish, 0) + cnt
+
+                results = []
+                for cid, c in combos.items():
+                    total_wins = c["total_wins"]
+                    if total_wins == 0:
+                        continue
+
+                    # Finish profile (% of wins per type)
+                    finish_profile = {}
+                    for ft in ["spin", "over", "burst", "xtreme"]:
+                        finish_profile[ft] = round(c["finish_wins"].get(ft, 0) / total_wins * 100, 1)
+
+                    # Dominant finish
+                    dominant = max(c["finish_wins"], key=c["finish_wins"].get)
+                    dominant_pct = finish_profile[dominant]
+
+                    # How many opponents did the dominant finish work against?
+                    opponents_tested = len(c["opponents"])
+                    opponents_with_dominant = sum(
+                        1 for opp_finishes in c["opponents"].values()
+                        if dominant in opp_finishes
+                    )
+
+                    # Consistency = dominant_pct% * (opponents_with_dominant / opponents_tested)
+                    # Range 0-100. High = predictable combo behavior across matchups.
+                    if opponents_tested > 0:
+                        consistency = round(
+                            (dominant_pct / 100) * (opponents_with_dominant / opponents_tested) * 100, 1
+                        )
+                    else:
+                        consistency = 0
+
+                    results.append({
+                        "combo_id": cid,
+                        "blade": c["blade"],
+                        "ratchet": c["ratchet"],
+                        "bit": c["bit"],
+                        "lock_chip": c["lock_chip"],
+                        "over_blade": c["over_blade"],
+                        "assist": c["assist"],
+                        "finish_profile": finish_profile,
+                        "dominant_finish": dominant,
+                        "dominant_pct": dominant_pct,
+                        "consistency": consistency,
+                        "opponents_tested": opponents_tested,
+                        "total_wins": total_wins,
+                        "total_battles": c["total_battles"],
+                        "win_rate": round(total_wins / c["total_battles"] * 100, 1),
+                    })
+
+                results.sort(key=lambda x: x["consistency"], reverse=True)
+                self._send_json({"consistency": results})
             finally:
                 conn.close()
         except Exception as e:

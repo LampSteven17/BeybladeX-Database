@@ -63,7 +63,7 @@ import Layout from '../layouts/Layout.astro';
               <th>Ratchet</th>
               <th>Bit</th>
               <th>Series</th>
-              <th class="text-right">Score</th>
+              <th class="text-right">APEX</th>
               <th class="text-right">Uses</th>
               <th class="text-right">1st</th>
               <th class="text-right">2nd</th>
@@ -100,6 +100,51 @@ import Layout from '../layouts/Layout.astro';
 <script>
   import { initDB, getRankedCombos, getComboRadarStats, getMetaAverageRadarStats, BLADE_SERIES, type ComboStats, type ComboRadarStats, type Region } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
+
+  const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:8081'
+    : window.location.origin;
+
+  interface ConsistencyData {
+    combo_id: string;
+    blade: string;
+    ratchet: string;
+    bit: string;
+    finish_profile: { spin: number; over: number; burst: number; xtreme: number };
+    dominant_finish: string;
+    dominant_pct: number;
+    consistency: number;
+    opponents_tested: number;
+    total_wins: number;
+    total_battles: number;
+    win_rate: number;
+  }
+
+  let consistencyCache: ConsistencyData[] | null = null;
+
+  async function fetchConsistencyData(): Promise<ConsistencyData[]> {
+    if (consistencyCache) return consistencyCache;
+    try {
+      const res = await fetch(`${API_BASE}/api/battles/consistency`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      consistencyCache = data.consistency || [];
+      return consistencyCache!;
+    } catch {
+      return [];
+    }
+  }
+
+  function findConsistency(allData: ConsistencyData[], blade: string, ratchet: string, bit: string): ConsistencyData | null {
+    const bladeL = blade.toLowerCase();
+    const ratchetL = ratchet.toLowerCase();
+    const bitL = bit.toLowerCase();
+    return allData.find(c =>
+      (c.blade || '').toLowerCase() === bladeL &&
+      (c.ratchet || '').toLowerCase() === ratchetL &&
+      (c.bit || '').toLowerCase() === bitL
+    ) || null;
+  }
   import { Chart, RadarController, RadialLinearScale, PointElement, LineElement, Filler, Tooltip } from 'chart.js';
 
   // Register Chart.js components for radar charts
@@ -341,6 +386,10 @@ import Layout from '../layouts/Layout.astro';
                 <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Official Stats</div>
                 <div class="text-fg-muted text-sm py-4">Loading stats...</div>
               </div>
+              <div class="w-full md:w-56 flex-shrink-0" id="consistency-panel">
+                <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Battle Consistency</div>
+                <div class="text-fg-muted text-sm py-4">Loading...</div>
+              </div>
             </div>
           </div>
         </div>
@@ -459,6 +508,61 @@ import Layout from '../layouts/Layout.astro';
         },
       },
     });
+
+    // Populate consistency panel (async, non-blocking)
+    const consistencyPanel = detailRow!.querySelector('#consistency-panel');
+    if (consistencyPanel) {
+      fetchConsistencyData().then(allData => {
+        const c = findConsistency(allData, blade, ratchet, bit);
+        if (!c || c.total_battles === 0) {
+          consistencyPanel.innerHTML = `
+            <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Battle Consistency</div>
+            <div class="text-fg-disabled text-xs py-2">No battle data yet</div>
+          `;
+          return;
+        }
+
+        const finishColors: Record<string, string> = {
+          spin: '#22c55e', over: '#3b82f6', burst: '#a855f7', xtreme: '#f97316'
+        };
+
+        const finishBars = ['spin', 'over', 'burst', 'xtreme'].map(ft => {
+          const pct = c.finish_profile[ft as keyof typeof c.finish_profile] || 0;
+          const color = finishColors[ft];
+          const isDominant = ft === c.dominant_finish;
+          return `
+            <div class="flex items-center gap-2 text-xs ${isDominant ? 'text-fg' : 'text-fg-muted'}">
+              <span class="w-14 font-mono uppercase text-[10px]">${ft}</span>
+              <div class="flex-1 h-1.5 bg-surface rounded-full overflow-hidden">
+                <div class="h-full rounded-full" style="width: ${pct}%; background: ${color};"></div>
+              </div>
+              <span class="w-10 text-right font-mono tabular-nums">${pct}%</span>
+            </div>
+          `;
+        }).join('');
+
+        consistencyPanel.innerHTML = `
+          <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Battle Consistency</div>
+          <div class="text-center mb-3">
+            <div class="text-2xl font-mono font-bold tabular-nums ${c.consistency >= 70 ? 'text-positive' : c.consistency >= 40 ? 'text-accent' : 'text-fg-muted'}">${c.consistency}</div>
+            <div class="text-[9px] font-mono uppercase tracking-wider text-fg-muted">Consistency</div>
+          </div>
+          <div class="space-y-1.5 mb-3">
+            ${finishBars}
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-center border-t border-stroke pt-2">
+            <div>
+              <div class="text-sm font-mono font-bold text-positive tabular-nums">${c.win_rate}%</div>
+              <div class="text-[9px] font-mono uppercase text-fg-muted">Win Rate</div>
+            </div>
+            <div>
+              <div class="text-sm font-mono font-bold text-series-ux tabular-nums">${c.opponents_tested}</div>
+              <div class="text-[9px] font-mono uppercase text-fg-muted">Opponents</div>
+            </div>
+          </div>
+        `;
+      });
+    }
   }
 
   function renderTable(combos: ComboStats[]) {

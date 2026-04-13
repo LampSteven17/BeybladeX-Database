@@ -538,6 +538,36 @@
     text-shadow: 0 0 40px rgba(251, 191, 36, 0.5);
   }
 
+  .spotlight-silver {
+    @apply relative overflow-hidden rounded-sm w-full;
+    @apply border border-[#9CA3AF]/40;
+    @apply bg-gradient-to-br from-[#9CA3AF]/10 via-terminal-surface to-terminal-surface;
+    box-shadow: 0 0 20px rgba(156, 163, 175, 0.1), inset 0 1px 0 rgba(156, 163, 175, 0.1);
+    border-left: 3px solid #9CA3AF;
+  }
+
+  .spotlight-silver::before {
+    content: '';
+    @apply absolute inset-0;
+    background: radial-gradient(ellipse at top center, rgba(156, 163, 175, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .spotlight-bronze {
+    @apply relative overflow-hidden rounded-sm w-full;
+    @apply border border-[#CD7F32]/40;
+    @apply bg-gradient-to-br from-[#CD7F32]/10 via-terminal-surface to-terminal-surface;
+    box-shadow: 0 0 20px rgba(205, 127, 50, 0.1), inset 0 1px 0 rgba(205, 127, 50, 0.1);
+    border-left: 3px solid #CD7F32;
+  }
+
+  .spotlight-bronze::before {
+    content: '';
+    @apply absolute inset-0;
+    background: radial-gradient(ellipse at top center, rgba(205, 127, 50, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
   /* ===========================================
    * Sparkline Container
    * =========================================== */

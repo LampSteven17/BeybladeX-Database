@@ -7,20 +7,43 @@ interface Props {
 
 const { currentPath = '/' } = Astro.props;
 
-const navItems = [
-  { href: '/combos', label: 'Combos' },
-  { href: '/blades', label: 'Blades' },
-  { href: '/ratchets', label: 'Ratchets' },
-  { href: '/bits', label: 'Bits' },
-  { href: '/assist', label: 'Assists' },
-  { href: '/lockchips', label: 'Lock Chips' },
-  { href: '/overblades', label: 'Over Blades' },
-  { href: '/battles', label: 'Tracker' },
+const navGroups = [
+  {
+    label: 'Rankings',
+    items: [
+      { href: '/combos', label: 'Combos' },
+      { href: '/lockchips', label: 'Lock Chips' },
+      { href: '/overblades', label: 'Over Blades' },
+      { href: '/blades', label: 'Blades' },
+      { href: '/assist', label: 'Assists' },
+      { href: '/ratchets', label: 'Ratchets' },
+      { href: '/bits', label: 'Bits' },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { href: '/battles', label: 'Tracker' },
+    ],
+  },
+  {
+    label: 'Data Analysis',
+    items: [
+      { href: '/tools', label: 'Advanced Analysis' },
+      { href: '/projections', label: 'Projections' },
+      { href: '/methodology', label: 'Methodology' },
+      { href: '/admin/new-parts', label: 'Part Approval' },
+    ],
+  },
 ];
 
 function isActive(href: string): boolean {
   if (href === '/') return currentPath === '/';
   return currentPath.startsWith(href);
+}
+
+function groupIsActive(items: { href: string }[]): boolean {
+  return items.some((item) => isActive(item.href));
 }
 ---
 
@@ -39,19 +62,38 @@ function isActive(href: string): boolean {
       </a>
 
       <!-- Desktop Navigation -->
-      <div class="hidden lg:flex items-center gap-0.5">
-        {navItems.map((item) => (
-          <a
-            href={item.href}
-            class:list={[
-              'px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-all duration-150 whitespace-nowrap border-b-2',
-              isActive(item.href)
-                ? 'border-pink text-fg bg-panel'
-                : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50',
-            ]}
-          >
-            {item.label}
-          </a>
+      <div class="hidden lg:flex items-center gap-1">
+        {navGroups.map((group) => (
+          <div class="nav-dropdown relative">
+            <button
+              class:list={[
+                'nav-dropdown-btn flex items-center gap-1 px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-all duration-150 whitespace-nowrap border-b-2',
+                groupIsActive(group.items)
+                  ? 'border-pink text-fg bg-panel'
+                  : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50',
+              ]}
+            >
+              {group.label}
+              <svg class="w-3 h-3 nav-chevron transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="nav-dropdown-panel hidden absolute top-full left-0 mt-px min-w-[180px] bg-canvas border border-stroke shadow-lg shadow-black/40">
+              {group.items.map((item) => (
+                <a
+                  href={item.href}
+                  class:list={[
+                    'block px-4 py-2.5 text-xs font-mono uppercase tracking-wider transition-all duration-150 border-l-2',
+                    isActive(item.href)
+                      ? 'border-pink text-fg bg-panel'
+                      : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50 hover:bg-panel',
+                  ]}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </div>
         ))}
         <div class="ml-3 pl-3 border-l border-stroke">
           <RegionFilter />
@@ -74,18 +116,40 @@ function isActive(href: string): boolean {
   <!-- Mobile Navigation -->
   <div id="mobile-menu" class="hidden lg:hidden border-t border-stroke bg-canvas/95 backdrop-blur-sm">
     <div class="px-4 py-3 space-y-1">
-      {navItems.map((item) => (
-        <a
-          href={item.href}
-          class:list={[
-            'block px-4 py-2.5 text-sm font-mono uppercase tracking-wider transition-all duration-150 border-l-2',
-            isActive(item.href)
-              ? 'border-pink text-fg bg-panel'
-              : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50 hover:bg-panel',
-          ]}
-        >
-          {item.label}
-        </a>
+      {navGroups.map((group) => (
+        <div class="mobile-nav-group">
+          <button
+            class:list={[
+              'mobile-group-btn flex items-center justify-between w-full px-4 py-2.5 text-sm font-mono uppercase tracking-wider transition-all duration-150 border-l-2',
+              groupIsActive(group.items)
+                ? 'border-pink text-fg'
+                : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50',
+            ]}
+          >
+            {group.label}
+            <svg class="w-4 h-4 mobile-chevron transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div class:list={[
+            'mobile-group-panel pl-4 space-y-0.5 overflow-hidden transition-all duration-200',
+            groupIsActive(group.items) ? '' : 'hidden',
+          ]}>
+            {group.items.map((item) => (
+              <a
+                href={item.href}
+                class:list={[
+                  'block px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all duration-150 border-l-2',
+                  isActive(item.href)
+                    ? 'border-pink text-fg bg-panel'
+                    : 'border-transparent text-fg-secondary hover:text-fg hover:border-pink/50 hover:bg-panel',
+                ]}
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </div>
       ))}
       <div class="pt-3 mt-3 border-t border-stroke">
         <RegionFilter class="justify-center" />
@@ -95,6 +159,35 @@ function isActive(href: string): boolean {
 </nav>
 
 <script>
+  // Desktop dropdowns
+  document.querySelectorAll('.nav-dropdown').forEach((dropdown) => {
+    const btn = dropdown.querySelector('.nav-dropdown-btn');
+    const panel = dropdown.querySelector('.nav-dropdown-panel');
+    const chevron = dropdown.querySelector('.nav-chevron');
+    if (!btn || !panel) return;
+
+    btn.addEventListener('click', () => {
+      const isOpen = !panel.classList.contains('hidden');
+      // Close all other dropdowns first
+      document.querySelectorAll('.nav-dropdown-panel').forEach((p) => p.classList.add('hidden'));
+      document.querySelectorAll('.nav-chevron').forEach((c) => c.classList.remove('rotate-180'));
+      if (!isOpen) {
+        panel.classList.remove('hidden');
+        chevron?.classList.add('rotate-180');
+      }
+    });
+  });
+
+  // Close desktop dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    const target = e.target as Node;
+    if (!(target as Element).closest?.('.nav-dropdown')) {
+      document.querySelectorAll('.nav-dropdown-panel').forEach((p) => p.classList.add('hidden'));
+      document.querySelectorAll('.nav-chevron').forEach((c) => c.classList.remove('rotate-180'));
+    }
+  });
+
+  // Mobile menu toggle
   const menuBtn = document.getElementById('mobile-menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
 
@@ -102,7 +195,20 @@ function isActive(href: string): boolean {
     mobileMenu?.classList.toggle('hidden');
   });
 
-  // Close menu when clicking outside
+  // Mobile group accordions
+  document.querySelectorAll('.mobile-group-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const group = btn.closest('.mobile-nav-group');
+      const panel = group?.querySelector('.mobile-group-panel');
+      const chevron = btn.querySelector('.mobile-chevron');
+      if (!panel) return;
+
+      panel.classList.toggle('hidden');
+      chevron?.classList.toggle('rotate-180');
+    });
+  });
+
+  // Close mobile menu when clicking outside
   document.addEventListener('click', (e) => {
     if (!menuBtn?.contains(e.target as Node) && !mobileMenu?.contains(e.target as Node)) {
       mobileMenu?.classList.add('hidden');

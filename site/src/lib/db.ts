@@ -336,6 +336,14 @@ let db: duckdb.AsyncDuckDB | null = null;
 let conn: duckdb.AsyncDuckDBConnection | null = null;
 let initPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
 
+// Query result cache — keyed on SQL string, cleared on refreshDB()
+const queryCache = new Map<string, { data: unknown[]; ts: number }>();
+const QUERY_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function clearQueryCache(): void {
+  queryCache.clear();
+}
+
 /**
  * Fetch parts_catalog.json and overlay its entries into the module-level
  * lookup tables (BLADE_SERIES, METAL_LOCK_CHIPS, BIT_DISPLAY_NAMES, etc.).
@@ -412,6 +420,9 @@ async function loadCatalogJson(): Promise<void> {
 export async function refreshDB(): Promise<void> {
   console.log('[DuckDB] Refreshing database connection...');
 
+  // Clear query cache
+  clearQueryCache();
+
   // Close existing connection
   if (conn) {
     await conn.close();
@@ -446,6 +457,106 @@ function getPlacementScore(place: number, stage?: string | null): number {
   const basePoints = PLACEMENT_POINTS[place] || 0;
   const stageMultiplier = stage ? (STAGE_MULTIPLIER[stage] ?? 1.0) : 1.0;
   return basePoints * stageMultiplier;
+}
+
+/**
+ * Generic scoring engine for ranking any set of named items by placement data.
+ * Handles recency weighting, trend calculation, and rank/tier assignment.
+ */
+interface ScoringRow {
+  name: string;
+  place: number;
+  tournament_date: string;
+  stage: string | null;
+}
+
+function scoreAndRank(
+  rows: ScoringRow[],
+  opts: { limit: number; minUses: number; assignTiers?: boolean }
+): PartStats[] {
+  const scores: Record<string, PartStats & {
+    _recent_score: number; _older_score: number;
+    _recent_uses: number; _older_uses: number;
+  }> = {};
+
+  const referenceDate = new Date();
+  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
+  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
+
+  for (const row of rows) {
+    if (!scores[row.name]) {
+      scores[row.name] = {
+        name: row.name, raw_score: 0, uses: 0,
+        first: 0, second: 0, third: 0, avg_score: 0, trend: 0,
+        _recent_score: 0, _older_score: 0, _recent_uses: 0, _older_uses: 0,
+      };
+    }
+
+    const tournamentDate = new Date(row.tournament_date);
+    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
+    const points = getPlacementScore(row.place, row.stage);
+    const weightedScore = points * weight;
+
+    const s = scores[row.name];
+    s.raw_score += weightedScore;
+    s.uses += 1;
+    if (row.place === 1) s.first += 1;
+    else if (row.place === 2) s.second += 1;
+    else if (row.place === 3) s.third += 1;
+
+    if (tournamentDate >= recentCutoff) {
+      s._recent_score += weightedScore;
+      s._recent_uses += 1;
+    } else if (tournamentDate >= olderCutoff) {
+      s._older_score += weightedScore;
+      s._older_uses += 1;
+    }
+  }
+
+  const list = Object.values(scores)
+    .filter(s => s.uses >= opts.minUses)
+    .map(s => {
+      s.avg_score = s.raw_score / s.uses;
+
+      if (s._recent_uses > 0 && s._older_uses > 0) {
+        const recentRate = s._recent_score / s._recent_uses;
+        const olderRate = s._older_score / s._older_uses;
+        s.trend = (recentRate - olderRate) / olderRate;
+      } else if (s._recent_uses > 0 && s._older_uses === 0) {
+        s.trend = 0.5;
+      } else if (s._recent_uses === 0 && s._older_uses > 0) {
+        s.trend = -Math.min(0.5, s._older_uses * 0.1);
+      } else {
+        s.trend = 0;
+      }
+
+      // Clean up internal fields
+      const result: PartStats = {
+        name: s.name, raw_score: s.raw_score, uses: s.uses,
+        first: s.first, second: s.second, third: s.third,
+        avg_score: s.avg_score, trend: s.trend,
+      };
+      return result;
+    })
+    .sort((a, b) => b.raw_score - a.raw_score)
+    .slice(0, opts.limit);
+
+  // Assign ranks and optionally tiers
+  for (let i = 0; i < list.length; i++) {
+    list[i].rank = i + 1;
+    if (opts.assignTiers) {
+      const percentile = (i / list.length) * 100;
+      if (percentile < 3) list[i].tier = 'SS';
+      else if (percentile < 13) list[i].tier = 'S';
+      else if (percentile < 30) list[i].tier = 'A';
+      else if (percentile < 50) list[i].tier = 'B';
+      else if (percentile < 70) list[i].tier = 'C';
+      else if (percentile < 97) list[i].tier = 'D';
+      else list[i].tier = 'F';
+    }
+  }
+
+  return list;
 }
 
 /**
@@ -615,6 +726,13 @@ function toJSValue(value: unknown): unknown {
  * Values are converted from Arrow types to plain JavaScript types.
  */
 export async function query<T = Record<string, unknown>>(sql: string, _params?: unknown[]): Promise<T[]> {
+  // Check cache
+  const now = Date.now();
+  const cached = queryCache.get(sql);
+  if (cached && (now - cached.ts) < QUERY_CACHE_TTL) {
+    return cached.data as T[];
+  }
+
   const connection = await initDB();
   const result = await connection.query(sql);
 
@@ -623,13 +741,16 @@ export async function query<T = Record<string, unknown>>(sql: string, _params?: 
 
   // Convert each row to a plain object using column names
   // This is more reliable than Object.entries() on StructRowProxy objects
-  return result.toArray().map((row) => {
+  const data = result.toArray().map((row) => {
     const obj: Record<string, unknown> = {};
     for (const col of columns) {
       obj[col] = toJSValue(row[col]);
     }
     return obj;
   }) as T[];
+
+  queryCache.set(sql, { data, ts: now });
+  return data;
 }
 
 // =============================================================================
@@ -679,6 +800,7 @@ export interface PartStats {
   avg_score: number;
   trend: number;
   rank?: number;
+  tier?: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 }
 
 export interface DatabaseSummary {
@@ -686,6 +808,7 @@ export interface DatabaseSummary {
   placements: number;
   unique_players: number;
   unique_blades: number;
+  unique_combos: number;
   earliest_tournament: string | null;
   latest_tournament: string | null;
 }
@@ -745,6 +868,7 @@ export async function getDatabaseSummary(region?: Region): Promise<DatabaseSumma
     placements: bigint;
     unique_players: bigint;
     unique_blades: bigint;
+    unique_combos: bigint;
     earliest: string | null;
     latest: string | null;
   }>(`
@@ -753,6 +877,7 @@ export async function getDatabaseSummary(region?: Region): Promise<DatabaseSumma
       (SELECT COUNT(*) FROM beyblade.placements p JOIN beyblade.tournaments t ON p.tournament_id = t.id WHERE 1=1${regionFilterAnd.replace('region', 't.region')}) as placements,
       (SELECT COUNT(DISTINCT player_name) FROM beyblade.placements p JOIN beyblade.tournaments t ON p.tournament_id = t.id WHERE 1=1${regionFilterAnd.replace('region', 't.region')}) as unique_players,
       (SELECT COUNT(DISTINCT blade) FROM combo_usage WHERE 1=1${regionFilterAnd}) as unique_blades,
+      (SELECT COUNT(DISTINCT blade || ' ' || ratchet || ' ' || bit) FROM combo_usage WHERE 1=1${regionFilterAnd}) as unique_combos,
       (SELECT MIN(date) FROM beyblade.tournaments ${regionFilter})::VARCHAR as earliest,
       (SELECT MAX(date) FROM beyblade.tournaments ${regionFilter})::VARCHAR as latest
   `);
@@ -762,9 +887,25 @@ export async function getDatabaseSummary(region?: Region): Promise<DatabaseSumma
     placements: Number(stats.placements),
     unique_players: Number(stats.unique_players),
     unique_blades: Number(stats.unique_blades),
+    unique_combos: Number(stats.unique_combos),
     earliest_tournament: stats.earliest,
     latest_tournament: stats.latest,
   };
+}
+
+/**
+ * Get tournament counts grouped by month.
+ */
+export async function getTournamentsByMonth(region?: Region): Promise<{ month: string; count: number }[]> {
+  const regionFilter = region && region !== 'ALL' ? `WHERE region = '${region}'` : '';
+  const rows = await query<{ month: string; count: bigint }>(`
+    SELECT strftime(date, '%Y-%m') as month, COUNT(*) as count
+    FROM beyblade.tournaments
+    ${regionFilter}
+    GROUP BY month
+    ORDER BY month
+  `);
+  return rows.map(r => ({ month: r.month, count: Number(r.count) }));
 }
 
 /**
@@ -781,114 +922,32 @@ export async function getRankedBlades(limit = 20, minUses = 1, region?: Region):
     SELECT blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
-    ORDER BY tournament_date DESC
   `);
 
-  const bladeScores: Record<string, BladeStats> = {};
-  const referenceDate = new Date();
-  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
-  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
+  // Normalize blade names into ScoringRow format
+  const scoringRows: ScoringRow[] = rows.map(r => ({
+    name: normalizeBladeDisplay(r.blade),
+    place: r.place,
+    tournament_date: r.tournament_date,
+    stage: r.stage,
+  }));
 
-  for (const row of rows) {
-    const blade = normalizeBladeDisplay(row.blade);
-    if (!bladeScores[blade]) {
-      bladeScores[blade] = {
-        blade,
-        raw_score: 0,
-        uses: 0,
-        first: 0,
-        second: 0,
-        third: 0,
-        avg_score: 0,
-        trend: 0,
-      };
-    }
+  const ranked = scoreAndRank(scoringRows, { limit, minUses, assignTiers: true });
 
-    const tournamentDate = new Date(row.tournament_date);
-    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place, row.stage);
-    const weightedScore = points * weight;
-
-    const stats = bladeScores[blade];
-    stats.raw_score += weightedScore;
-    stats.uses += 1;
-
-    if (row.place === 1) stats.first += 1;
-    else if (row.place === 2) stats.second += 1;
-    else if (row.place === 3) stats.third += 1;
-
-    // Track recent (last 30 days) vs previous period (30-60 days ago) for trend
-    if (tournamentDate >= recentCutoff) {
-      (stats as any).recent_score = ((stats as any).recent_score || 0) + weightedScore;
-      (stats as any).recent_uses = ((stats as any).recent_uses || 0) + 1;
-    } else if (tournamentDate >= olderCutoff) {
-      (stats as any).older_score = ((stats as any).older_score || 0) + weightedScore;
-      (stats as any).older_uses = ((stats as any).older_uses || 0) + 1;
-    }
-  }
-
-  // Calculate derived metrics and filter
-  const bladeList = Object.values(bladeScores)
-    .filter((b) => b.uses >= minUses)
-    .map((b) => {
-      b.avg_score = b.raw_score / b.uses;
-      const recentScore = (b as any).recent_score || 0;
-      const olderScore = (b as any).older_score || 0;
-      const recentUses = (b as any).recent_uses || 0;
-      const olderUses = (b as any).older_uses || 0;
-
-      // Calculate trend based on usage change between periods
-      if (recentUses > 0 && olderUses > 0) {
-        // Both periods have data - compare rates
-        const recentRate = recentScore / recentUses;
-        const olderRate = olderScore / olderUses;
-        b.trend = (recentRate - olderRate) / olderRate;
-      } else if (recentUses > 0 && olderUses === 0) {
-        // New/rising: appeared recently but not in previous period
-        b.trend = 0.5;
-      } else if (recentUses === 0 && olderUses > 0) {
-        // Declining: was used before but not recently
-        // Scale by how much they were used before (more uses = bigger decline indicator)
-        b.trend = -Math.min(0.5, olderUses * 0.1);
-      } else {
-        // No data in either period - neutral
-        b.trend = 0;
-      }
-
-
-      delete (b as any).recent_score;
-      delete (b as any).older_score;
-      delete (b as any).recent_uses;
-      delete (b as any).older_uses;
-      return b;
-    })
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, limit);
-
-  // Assign ranks and tiers using bell curve distribution based on percentile rank
-  // SS: top 3%, S: 3-13%, A: 13-30%, B: 30-50%, C: 50-70%, D: 70-97%, F: bottom 3%
-  // This creates a bell curve with C as the middle/most common tier
-  if (bladeList.length > 0) {
-    const total = bladeList.length;
-    for (let i = 0; i < bladeList.length; i++) {
-      const blade = bladeList[i];
-      blade.rank = i + 1; // Assign rank (1-indexed)
-      const percentile = (i / total) * 100; // 0 = best, 100 = worst
-
-      if (percentile < 3) blade.tier = 'SS';        // Top 3%
-      else if (percentile < 13) blade.tier = 'S';   // Next 10%
-      else if (percentile < 30) blade.tier = 'A';   // Next 17%
-      else if (percentile < 50) blade.tier = 'B';   // Next 20%
-      else if (percentile < 70) blade.tier = 'C';   // Middle 20% (most common)
-      else if (percentile < 97) blade.tier = 'D';   // Next 27%
-      else blade.tier = 'F';                        // Bottom 3%
-
-      // Add series info
-      blade.series = BLADE_SERIES[blade.blade];
-    }
-  }
-
-  return bladeList;
+  // Convert PartStats to BladeStats with series info
+  return ranked.map(p => ({
+    blade: p.name,
+    raw_score: p.raw_score,
+    uses: p.uses,
+    first: p.first,
+    second: p.second,
+    third: p.third,
+    avg_score: p.avg_score,
+    trend: p.trend,
+    rank: p.rank,
+    tier: p.tier,
+    series: BLADE_SERIES[p.name],
+  }));
 }
 
 /**
@@ -911,123 +970,57 @@ export async function getRankedCombos(limit = 20, minUses = 1, region?: Region):
     SELECT blade, ratchet, bit, lock_chip, assist, over_blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
     WHERE 1=1${regionFilter}
-    ORDER BY tournament_date DESC
   `);
 
-  const comboScores: Record<string, ComboStats & { recent_score?: number; older_score?: number }> = {};
-  const referenceDate = new Date();
-  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
-  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
+  // Build scoring rows with combo metadata preserved in a side map
+  const comboMeta: Record<string, { combo: string; blade: string; ratchet: string; bit: string; lockChip: string | null; assist: string | null; overBlade: string | null }> = {};
+  const scoringRows: ScoringRow[] = [];
 
   for (const row of rows) {
-    // Skip invalid CX combos - main blades that require a lock chip but don't have one
-    if (CX_BLADES_REQUIRING_LOCKCHIP.has(row.blade) && !row.lock_chip) {
-      continue;
-    }
+    if (CX_BLADES_REQUIRING_LOCKCHIP.has(row.blade) && !row.lock_chip) continue;
 
     const ratchet = normalizeRatchet(row.ratchet);
     const bit = normalizeBit(row.bit);
-    const lockChip = row.lock_chip;
-    const assist = row.assist;
-    const overBlade = row.over_blade;
-    const blade = getFullBladeName(row.blade, lockChip);
-    // Include assist and over_blade in key/combo string when present
-    const keyParts = [blade, overBlade, assist, ratchet, bit].filter(Boolean);
+    const blade = getFullBladeName(row.blade, row.lock_chip);
+    const keyParts = [blade, row.over_blade, row.assist, ratchet, bit].filter(Boolean);
     const key = keyParts.join('|');
-    const comboStrParts = [blade, overBlade, assist, ratchet, bit].filter(Boolean);
-    const comboStr = comboStrParts.join(' ');
 
-    if (!comboScores[key]) {
-      comboScores[key] = {
-        combo: comboStr,
-        blade: blade,
-        ratchet: ratchet,
-        bit: bit,
-        lockChip: lockChip ? getLockChipMaterial(lockChip) : null,
-        assist: assist,
-        overBlade: overBlade,
-        raw_score: 0,
-        uses: 0,
-        first: 0,
-        second: 0,
-        third: 0,
-        avg_score: 0,
-        trend: 0,
-        recent_score: 0,
-        older_score: 0,
+    if (!comboMeta[key]) {
+      comboMeta[key] = {
+        combo: keyParts.join(' '),
+        blade, ratchet, bit,
+        lockChip: row.lock_chip ? getLockChipMaterial(row.lock_chip) : null,
+        assist: row.assist,
+        overBlade: row.over_blade,
       };
     }
 
-    const tournamentDate = new Date(row.tournament_date);
-    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place, row.stage);
-    const weightedScore = points * weight;
-
-    const stats = comboScores[key];
-    stats.raw_score += weightedScore;
-    stats.uses += 1;
-
-    if (row.place === 1) stats.first += 1;
-    else if (row.place === 2) stats.second += 1;
-    else if (row.place === 3) stats.third += 1;
-
-    // Track recent (last 30 days) vs previous period (30-60 days ago) for trend
-    if (tournamentDate >= recentCutoff) {
-      stats.recent_score! += weightedScore;
-      (stats as any).recent_uses = ((stats as any).recent_uses || 0) + 1;
-    } else if (tournamentDate >= olderCutoff) {
-      stats.older_score! += weightedScore;
-      (stats as any).older_uses = ((stats as any).older_uses || 0) + 1;
-    }
+    scoringRows.push({ name: key, place: row.place, tournament_date: row.tournament_date, stage: row.stage });
   }
 
-  const comboList = Object.values(comboScores)
-    .filter((c) => c.uses >= minUses)
-    .map((c) => {
-      c.avg_score = c.raw_score / c.uses;
-      const recentUses = (c as any).recent_uses || 0;
-      const olderUses = (c as any).older_uses || 0;
+  const ranked = scoreAndRank(scoringRows, { limit, minUses, assignTiers: true });
 
-      if (recentUses > 0 && olderUses > 0) {
-        const recentRate = c.recent_score! / recentUses;
-        const olderRate = c.older_score! / olderUses;
-        c.trend = (recentRate - olderRate) / olderRate;
-      } else if (recentUses > 0 && olderUses === 0) {
-        c.trend = 0.5;
-      } else if (recentUses === 0 && olderUses > 0) {
-        c.trend = -Math.min(0.5, olderUses * 0.1);
-      } else {
-        c.trend = 0;
-      }
-
-      delete c.recent_score;
-      delete c.older_score;
-      delete (c as any).recent_uses;
-      delete (c as any).older_uses;
-      return c;
-    })
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, limit);
-
-  // Assign ranks and tiers using bell curve distribution based on percentile rank
-  if (comboList.length > 0) {
-    const total = comboList.length;
-    for (let i = 0; i < comboList.length; i++) {
-      const combo = comboList[i];
-      combo.rank = i + 1; // Assign rank (1-indexed)
-      const percentile = (i / total) * 100;
-
-      if (percentile < 3) combo.tier = 'SS';
-      else if (percentile < 13) combo.tier = 'S';
-      else if (percentile < 30) combo.tier = 'A';
-      else if (percentile < 50) combo.tier = 'B';
-      else if (percentile < 70) combo.tier = 'C';
-      else if (percentile < 97) combo.tier = 'D';
-      else combo.tier = 'F';
-    }
-  }
-
-  return comboList;
+  return ranked.map(p => {
+    const meta = comboMeta[p.name];
+    return {
+      combo: meta.combo,
+      blade: meta.blade,
+      ratchet: meta.ratchet,
+      bit: meta.bit,
+      lockChip: meta.lockChip,
+      assist: meta.assist,
+      overBlade: meta.overBlade,
+      raw_score: p.raw_score,
+      uses: p.uses,
+      first: p.first,
+      second: p.second,
+      third: p.third,
+      avg_score: p.avg_score,
+      trend: p.trend,
+      rank: p.rank,
+      tier: p.tier,
+    };
+  });
 }
 
 /**
@@ -1045,10 +1038,17 @@ export async function getRankedBits(limit = 15, minUses = 1, region?: Region): P
 }
 
 /**
- * Generic part ranking (ratchets or bits).
+ * Generic part ranking — handles ratchet, bit, assist, lock_chip, over_blade.
  */
-async function getRankedParts(partType: 'ratchet' | 'bit', limit: number, minUses: number, region?: Region): Promise<PartStats[]> {
+type RankablePartType = 'ratchet' | 'bit' | 'assist' | 'lock_chip' | 'over_blade';
+
+async function getRankedParts(partType: RankablePartType, limit: number, minUses: number, region?: Region): Promise<PartStats[]> {
   const regionFilter = getRegionWhereClause(region);
+  const isOptional = partType === 'assist' || partType === 'lock_chip' || partType === 'over_blade';
+  const whereClause = isOptional
+    ? `WHERE ${partType} IS NOT NULL${regionFilter}`
+    : `WHERE 1=1${regionFilter}`;
+
   const rows = await query<{
     part: string;
     place: number;
@@ -1057,88 +1057,20 @@ async function getRankedParts(partType: 'ratchet' | 'bit', limit: number, minUse
   }>(`
     SELECT ${partType} as part, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
-    WHERE 1=1${regionFilter}
+    ${whereClause}
   `);
 
-  const partScores: Record<string, PartStats & { recent_score?: number; older_score?: number }> = {};
-  const referenceDate = new Date();
-  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
-  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
-
+  // Normalize and filter rows into ScoringRow format
+  const scoringRows: ScoringRow[] = [];
   for (const row of rows) {
-    const part = partType === 'ratchet' ? normalizeRatchet(row.part) : normalizeBit(row.part);
-    if (!partScores[part]) {
-      partScores[part] = {
-        name: part,
-        raw_score: 0,
-        uses: 0,
-        first: 0,
-        second: 0,
-        third: 0,
-        avg_score: 0,
-        trend: 0,
-        recent_score: 0,
-        older_score: 0,
-      };
-    }
-
-    const tournamentDate = new Date(row.tournament_date);
-    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place, row.stage);
-    const weightedScore = points * weight;
-
-    const stats = partScores[part];
-    stats.raw_score += weightedScore;
-    stats.uses += 1;
-
-    if (row.place === 1) stats.first += 1;
-    else if (row.place === 2) stats.second += 1;
-    else if (row.place === 3) stats.third += 1;
-
-    // Track recent (last 30 days) vs previous period (30-60 days ago) for trend
-    if (tournamentDate >= recentCutoff) {
-      stats.recent_score! += weightedScore;
-      (stats as any).recent_uses = ((stats as any).recent_uses || 0) + 1;
-    } else if (tournamentDate >= olderCutoff) {
-      stats.older_score! += weightedScore;
-      (stats as any).older_uses = ((stats as any).older_uses || 0) + 1;
-    }
+    let name = row.part;
+    if (partType === 'ratchet') name = normalizeRatchet(name);
+    else if (partType === 'bit') name = normalizeBit(name);
+    if (partType === 'lock_chip' && HIDDEN_LOCK_CHIPS.has(name)) continue;
+    scoringRows.push({ name, place: row.place, tournament_date: row.tournament_date, stage: row.stage });
   }
 
-  const partList = Object.values(partScores)
-    .filter((p) => p.uses >= minUses)
-    .map((p) => {
-      p.avg_score = p.raw_score / p.uses;
-      const recentUses = (p as any).recent_uses || 0;
-      const olderUses = (p as any).older_uses || 0;
-
-      if (recentUses > 0 && olderUses > 0) {
-        const recentRate = p.recent_score! / recentUses;
-        const olderRate = p.older_score! / olderUses;
-        p.trend = (recentRate - olderRate) / olderRate;
-      } else if (recentUses > 0 && olderUses === 0) {
-        p.trend = 0.5;
-      } else if (recentUses === 0 && olderUses > 0) {
-        p.trend = -Math.min(0.5, olderUses * 0.1);
-      } else {
-        p.trend = 0;
-      }
-
-      delete p.recent_score;
-      delete p.older_score;
-      delete (p as any).recent_uses;
-      delete (p as any).older_uses;
-      return p;
-    })
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, limit);
-
-  // Assign ranks
-  partList.forEach((p, i) => {
-    p.rank = i + 1;
-  });
-
-  return partList;
+  return scoreAndRank(scoringRows, { limit, minUses });
 }
 
 /**
@@ -1979,270 +1911,15 @@ export async function getMetaSnapshot(days = 30, region?: Region): Promise<{
  * Get ranked assists with weighted scores.
  */
 export async function getRankedAssists(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  const regionFilter = getRegionWhereClause(region);
-  const rows = await query<{
-    assist: string;
-    place: number;
-    tournament_date: string;
-    stage: string | null;
-  }>(`
-    SELECT assist, place, tournament_date::VARCHAR as tournament_date, stage
-    FROM combo_usage
-    WHERE assist IS NOT NULL${regionFilter}
-  `);
-
-  const assistScores: Record<string, PartStats & { recent_score?: number; older_score?: number }> = {};
-  const referenceDate = new Date();
-  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
-  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
-
-  for (const row of rows) {
-    const assist = row.assist;
-    if (!assistScores[assist]) {
-      assistScores[assist] = {
-        name: assist,
-        raw_score: 0,
-        uses: 0,
-        first: 0,
-        second: 0,
-        third: 0,
-        avg_score: 0,
-        trend: 0,
-        recent_score: 0,
-        older_score: 0,
-      };
-    }
-
-    const tournamentDate = new Date(row.tournament_date);
-    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place, row.stage);
-    const weightedScore = points * weight;
-
-    const stats = assistScores[assist];
-    stats.raw_score += weightedScore;
-    stats.uses += 1;
-
-    if (row.place === 1) stats.first += 1;
-    else if (row.place === 2) stats.second += 1;
-    else if (row.place === 3) stats.third += 1;
-
-    // Track recent (last 30 days) vs previous period (30-60 days ago) for trend
-    if (tournamentDate >= recentCutoff) {
-      stats.recent_score! += weightedScore;
-      (stats as any).recent_uses = ((stats as any).recent_uses || 0) + 1;
-    } else if (tournamentDate >= olderCutoff) {
-      stats.older_score! += weightedScore;
-      (stats as any).older_uses = ((stats as any).older_uses || 0) + 1;
-    }
-  }
-
-  return Object.values(assistScores)
-    .filter((a) => a.uses >= minUses)
-    .map((a) => {
-      a.avg_score = a.raw_score / a.uses;
-      const recentUses = (a as any).recent_uses || 0;
-      const olderUses = (a as any).older_uses || 0;
-
-      if (recentUses > 0 && olderUses > 0) {
-        const recentRate = a.recent_score! / recentUses;
-        const olderRate = a.older_score! / olderUses;
-        a.trend = (recentRate - olderRate) / olderRate;
-      } else if (recentUses > 0 && olderUses === 0) {
-        a.trend = 0.5;
-      } else if (recentUses === 0 && olderUses > 0) {
-        a.trend = -Math.min(0.5, olderUses * 0.1);
-      } else {
-        a.trend = 0;
-      }
-
-      delete a.recent_score;
-      delete a.older_score;
-      delete (a as any).recent_uses;
-      delete (a as any).older_uses;
-      return a;
-    })
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, limit);
+  return getRankedParts('assist', limit, minUses, region);
 }
 
-/**
- * Get ranked lock chips with weighted scores.
- */
 export async function getRankedLockChips(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  const regionFilter = getRegionWhereClause(region);
-  const rows = await query<{
-    lock_chip: string;
-    place: number;
-    tournament_date: string;
-    stage: string | null;
-  }>(`
-    SELECT lock_chip, place, tournament_date::VARCHAR as tournament_date, stage
-    FROM combo_usage
-    WHERE lock_chip IS NOT NULL${regionFilter}
-  `);
-
-  const lockChipScores: Record<string, PartStats & { recent_score?: number; older_score?: number }> = {};
-  const referenceDate = new Date();
-  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
-  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
-
-  for (const row of rows) {
-    const lockChip = row.lock_chip;
-    // Skip non-legitimate lock chips (they still count as plastic in combo views)
-    if (HIDDEN_LOCK_CHIPS.has(lockChip)) continue;
-    if (!lockChipScores[lockChip]) {
-      lockChipScores[lockChip] = {
-        name: lockChip,
-        raw_score: 0,
-        uses: 0,
-        first: 0,
-        second: 0,
-        third: 0,
-        avg_score: 0,
-        trend: 0,
-        recent_score: 0,
-        older_score: 0,
-      };
-    }
-
-    const tournamentDate = new Date(row.tournament_date);
-    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place, row.stage);
-    const weightedScore = points * weight;
-
-    const stats = lockChipScores[lockChip];
-    stats.raw_score += weightedScore;
-    stats.uses += 1;
-
-    if (row.place === 1) stats.first += 1;
-    else if (row.place === 2) stats.second += 1;
-    else if (row.place === 3) stats.third += 1;
-
-    if (tournamentDate >= recentCutoff) {
-      stats.recent_score! += weightedScore;
-      (stats as any).recent_uses = ((stats as any).recent_uses || 0) + 1;
-    } else if (tournamentDate >= olderCutoff) {
-      stats.older_score! += weightedScore;
-      (stats as any).older_uses = ((stats as any).older_uses || 0) + 1;
-    }
-  }
-
-  return Object.values(lockChipScores)
-    .filter((l) => l.uses >= minUses)
-    .map((l) => {
-      l.avg_score = l.raw_score / l.uses;
-      const recentUses = (l as any).recent_uses || 0;
-      const olderUses = (l as any).older_uses || 0;
-
-      if (recentUses > 0 && olderUses > 0) {
-        const recentRate = l.recent_score! / recentUses;
-        const olderRate = l.older_score! / olderUses;
-        l.trend = (recentRate - olderRate) / olderRate;
-      } else if (recentUses > 0 && olderUses === 0) {
-        l.trend = 0.5;
-      } else if (recentUses === 0 && olderUses > 0) {
-        l.trend = -Math.min(0.5, olderUses * 0.1);
-      } else {
-        l.trend = 0;
-      }
-
-      delete l.recent_score;
-      delete l.older_score;
-      delete (l as any).recent_uses;
-      delete (l as any).older_uses;
-      return l;
-    })
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, limit);
+  return getRankedParts('lock_chip', limit, minUses, region);
 }
 
-/**
- * Get ranked over blades with weighted scores.
- */
 export async function getRankedOverBlades(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  const regionFilter = getRegionWhereClause(region);
-  const rows = await query<{
-    over_blade: string;
-    place: number;
-    tournament_date: string;
-    stage: string | null;
-  }>(`
-    SELECT over_blade, place, tournament_date::VARCHAR as tournament_date, stage
-    FROM combo_usage
-    WHERE over_blade IS NOT NULL${regionFilter}
-  `);
-
-  const overBladeScores: Record<string, PartStats & { recent_score?: number; older_score?: number }> = {};
-  const referenceDate = new Date();
-  const recentCutoff = new Date(referenceDate.getTime() - TREND_RECENT_DAYS * 24 * 60 * 60 * 1000);
-  const olderCutoff = new Date(referenceDate.getTime() - (TREND_RECENT_DAYS + TREND_COMPARE_DAYS) * 24 * 60 * 60 * 1000);
-
-  for (const row of rows) {
-    const overBlade = row.over_blade;
-    if (!overBladeScores[overBlade]) {
-      overBladeScores[overBlade] = {
-        name: overBlade,
-        raw_score: 0,
-        uses: 0,
-        first: 0,
-        second: 0,
-        third: 0,
-        avg_score: 0,
-        trend: 0,
-        recent_score: 0,
-        older_score: 0,
-      };
-    }
-
-    const tournamentDate = new Date(row.tournament_date);
-    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
-    const points = getPlacementScore(row.place, row.stage);
-    const weightedScore = points * weight;
-
-    const stats = overBladeScores[overBlade];
-    stats.raw_score += weightedScore;
-    stats.uses += 1;
-
-    if (row.place === 1) stats.first += 1;
-    else if (row.place === 2) stats.second += 1;
-    else if (row.place === 3) stats.third += 1;
-
-    if (tournamentDate >= recentCutoff) {
-      stats.recent_score! += weightedScore;
-      (stats as any).recent_uses = ((stats as any).recent_uses || 0) + 1;
-    } else if (tournamentDate >= olderCutoff) {
-      stats.older_score! += weightedScore;
-      (stats as any).older_uses = ((stats as any).older_uses || 0) + 1;
-    }
-  }
-
-  return Object.values(overBladeScores)
-    .filter((o) => o.uses >= minUses)
-    .map((o) => {
-      o.avg_score = o.raw_score / o.uses;
-      const recentUses = (o as any).recent_uses || 0;
-      const olderUses = (o as any).older_uses || 0;
-
-      if (recentUses > 0 && olderUses > 0) {
-        const recentRate = o.recent_score! / recentUses;
-        const olderRate = o.older_score! / olderUses;
-        o.trend = (recentRate - olderRate) / olderRate;
-      } else if (recentUses > 0 && olderUses === 0) {
-        o.trend = 0.5;
-      } else if (recentUses === 0 && olderUses > 0) {
-        o.trend = -Math.min(0.5, olderUses * 0.1);
-      } else {
-        o.trend = 0;
-      }
-
-      delete o.recent_score;
-      delete o.older_score;
-      delete (o as any).recent_uses;
-      delete (o as any).older_uses;
-      return o;
-    })
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, limit);
+  return getRankedParts('over_blade', limit, minUses, region);
 }
 
 /**
@@ -2434,7 +2111,7 @@ async function rateCombo(combo: DeckCombo, metaData: {
   // Calculate individual scores
   const winRate = stats.uses > 0 ? wins / stats.uses : 0;
   
-  // Meta Score: How does this compare to top meta combos? (0-100)
+  // APEX Score: How does this compare to top meta combos? (0-100)
   const metaScore = metaData.topScore > 0 
     ? Math.min((score / metaData.topScore) * 100, 100)
     : 50;
@@ -4051,17 +3728,22 @@ export async function getPartCorrelations(region?: Region): Promise<{
 /**
  * Meta spotlight data - current champion and movers.
  */
+export interface MetaSpotlightCombo {
+  combo: string;
+  blade: string;
+  ratchet: string;
+  bit: string;
+  score: number;
+  uses: number;
+  recentUses: number;
+  winRate: number;
+  dominance: number;
+  recentDominance: number;
+}
+
 export interface MetaSpotlightData {
-  champion: {
-    combo: string;
-    blade: string;
-    ratchet: string;
-    bit: string;
-    score: number;
-    uses: number;
-    winRate: number;
-    dominance: number;
-  } | null;
+  champion: MetaSpotlightCombo | null;
+  topThree: MetaSpotlightCombo[];
   risers: Array<{
     combo: string;
     blade: string;
@@ -4110,7 +3792,7 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
   const lastTournamentDate = rows.length > 0 ? rows[0].tournament_date : null;
 
   if (rows.length === 0 || !lastTournamentDate) {
-    return { champion: null, risers: [], fallers: [], lastTournamentDate: null, isStale: false, dataSource: 'recent' };
+    return { champion: null, topThree: [], risers: [], fallers: [], lastTournamentDate: null, isStale: false, dataSource: 'recent' };
   }
 
   // Use the most recent tournament date as the anchor point, but cap at today
@@ -4184,18 +3866,25 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
       .filter(c => c.uses >= minUses)
       .sort((a, b) => b.score - a.score);
 
-    const champion = sortedCombos[0] ? {
-      combo: sortedCombos[0].combo,
-      blade: sortedCombos[0].blade,
-      ratchet: sortedCombos[0].ratchet,
-      bit: sortedCombos[0].bit,
-      score: sortedCombos[0].score,
-      uses: sortedCombos[0].uses,
-      winRate: sortedCombos[0].uses > 0 ? Math.round((sortedCombos[0].wins / sortedCombos[0].uses) * 100) : 0,
-      dominance: totalPlacements > 0 ? Math.round((sortedCombos[0].uses / totalPlacements) * 100) : 0,
-    } : null;
+    function toSpotlightCombo(c: typeof sortedCombos[0]): MetaSpotlightCombo {
+      return {
+        combo: c.combo,
+        blade: c.blade,
+        ratchet: c.ratchet,
+        bit: c.bit,
+        score: c.score,
+        uses: c.uses,
+        recentUses: 0, // populated after recentRows are available
+        winRate: c.uses > 0 ? Math.round((c.wins / c.uses) * 100) : 0,
+        dominance: totalPlacements > 0 ? Math.round((c.uses / totalPlacements) * 100) : 0,
+        recentDominance: 0, // populated after recentRows are available
+      };
+    }
 
-    return { champion, comboStats, totalPlacements };
+    const champion = sortedCombos[0] ? toSpotlightCombo(sortedCombos[0]) : null;
+    const topThree = sortedCombos.slice(0, 3).map(toSpotlightCombo);
+
+    return { champion, topThree, comboStats, totalPlacements };
   }
 
   // Filter to the 30-day window ending at the most recent tournament (for risers/fallers)
@@ -4205,7 +3894,23 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
   });
 
   // Champion uses ALL data with recency decay (matching getRankedCombos scoring)
-  const { champion } = calculateStats(rows, 2);
+  const { champion, topThree } = calculateStats(rows, 2);
+
+  // Populate recentUses and recentDominance for top 3 from the 30-day window
+  if (topThree.length > 0) {
+    const recentStats = calculateStats(recentRows, 0);
+    for (const entry of topThree) {
+      const key = [entry.blade, entry.ratchet, entry.bit].filter(Boolean).join('|');
+      const match = Object.values(recentStats.comboStats).find(c => {
+        const cKey = [c.blade, c.ratchet, c.bit].filter(Boolean).join('|');
+        return cKey === key;
+      });
+      entry.recentUses = match ? match.uses : 0;
+      entry.recentDominance = recentStats.totalPlacements > 0
+        ? Math.round((entry.recentUses / recentStats.totalPlacements) * 100)
+        : 0;
+    }
+  }
 
   // Calculate risers and fallers by comparing recent 30 days vs previous 30 days
   const olderRows = rows.filter(row => {
@@ -4262,7 +3967,7 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
       .slice(0, 3);
   }
 
-  return { champion, risers, fallers, lastTournamentDate, isStale, dataSource: 'recent' };
+  return { champion, topThree, risers, fallers, lastTournamentDate, isStale, dataSource: 'recent' };
 }
 
 /**
@@ -4599,22 +4304,53 @@ export async function getBladesSparklineData(bladeNames: string[], weeks = 7, re
 
   const now = new Date();
   const result: Record<string, number[]> = {};
+  const weekTotals = new Array(weeks).fill(0); // total weighted placements per week
 
   // Initialize all blades
+  const trackedBlades = new Set<string>();
   for (const name of bladeNames) {
-    result[normalizeBladeDisplay(name)] = new Array(weeks).fill(0);
+    const normalized = normalizeBladeDisplay(name);
+    result[normalized] = new Array(weeks).fill(0);
+    trackedBlades.add(normalized);
   }
 
+  // Accumulate weighted scores per week
   for (const row of rows) {
-    const blade = normalizeBladeDisplay(row.blade);
-    if (!result[blade]) continue;
-
     const tournamentDate = new Date(row.tournament_date);
     const weeksAgo = Math.floor((now.getTime() - tournamentDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    if (weeksAgo < 0 || weeksAgo >= weeks) continue;
 
-    if (weeksAgo >= 0 && weeksAgo < weeks) {
-      const points = getPlacementScore(row.place, row.stage);
-      result[blade][weeks - 1 - weeksAgo] += points;
+    const points = getPlacementScore(row.place, row.stage);
+    const weekIdx = weeks - 1 - weeksAgo;
+    weekTotals[weekIdx] += points;
+
+    const blade = normalizeBladeDisplay(row.blade);
+    if (trackedBlades.has(blade)) {
+      result[blade][weekIdx] += points;
+    }
+  }
+
+  // Convert raw scores to meta share % per week, interpolate empty weeks
+  for (const name of Object.keys(result)) {
+    const data = result[name];
+    for (let i = 0; i < weeks; i++) {
+      if (weekTotals[i] > 0) {
+        data[i] = Math.round((data[i] / weekTotals[i]) * 100 * 10) / 10; // % with 1 decimal
+      } else {
+        data[i] = -1; // mark for interpolation
+      }
+    }
+    // Interpolate weeks with no tournament data
+    for (let i = 0; i < weeks; i++) {
+      if (data[i] !== -1) continue;
+      // Find nearest non-empty neighbors
+      let prev = -1, next = -1;
+      for (let j = i - 1; j >= 0; j--) { if (data[j] !== -1) { prev = data[j]; break; } }
+      for (let j = i + 1; j < weeks; j++) { if (data[j] !== -1) { next = data[j]; break; } }
+      if (prev !== -1 && next !== -1) data[i] = (prev + next) / 2;
+      else if (prev !== -1) data[i] = prev;
+      else if (next !== -1) data[i] = next;
+      else data[i] = 0;
     }
   }
 
@@ -4646,23 +4382,51 @@ export async function getCombosSparklineData(
 
   const now = new Date();
   const result: Record<string, number[]> = {};
+  const weekTotals = new Array(weeks).fill(0);
 
   // Initialize all combos
+  const trackedKeys = new Set<string>();
   for (const c of combos) {
     const key = `${normalizeBladeDisplay(c.blade)} ${normalizeRatchet(c.ratchet)} ${normalizeBit(c.bit)}`;
     result[key] = new Array(weeks).fill(0);
+    trackedKeys.add(key);
   }
 
+  // Accumulate weighted scores per week
   for (const row of rows) {
-    const key = `${normalizeBladeDisplay(row.blade)} ${normalizeRatchet(row.ratchet)} ${normalizeBit(row.bit)}`;
-    if (!result[key]) continue;
-
     const tournamentDate = new Date(row.tournament_date);
     const weeksAgo = Math.floor((now.getTime() - tournamentDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    if (weeksAgo < 0 || weeksAgo >= weeks) continue;
 
-    if (weeksAgo >= 0 && weeksAgo < weeks) {
-      const points = getPlacementScore(row.place, row.stage);
-      result[key][weeks - 1 - weeksAgo] += points;
+    const points = getPlacementScore(row.place, row.stage);
+    const weekIdx = weeks - 1 - weeksAgo;
+    weekTotals[weekIdx] += points;
+
+    const key = `${normalizeBladeDisplay(row.blade)} ${normalizeRatchet(row.ratchet)} ${normalizeBit(row.bit)}`;
+    if (trackedKeys.has(key)) {
+      result[key][weekIdx] += points;
+    }
+  }
+
+  // Convert raw scores to meta share % per week, interpolate empty weeks
+  for (const key of Object.keys(result)) {
+    const data = result[key];
+    for (let i = 0; i < weeks; i++) {
+      if (weekTotals[i] > 0) {
+        data[i] = Math.round((data[i] / weekTotals[i]) * 100 * 10) / 10;
+      } else {
+        data[i] = -1;
+      }
+    }
+    for (let i = 0; i < weeks; i++) {
+      if (data[i] !== -1) continue;
+      let prev = -1, next = -1;
+      for (let j = i - 1; j >= 0; j--) { if (data[j] !== -1) { prev = data[j]; break; } }
+      for (let j = i + 1; j < weeks; j++) { if (data[j] !== -1) { next = data[j]; break; } }
+      if (prev !== -1 && next !== -1) data[i] = (prev + next) / 2;
+      else if (prev !== -1) data[i] = prev;
+      else if (next !== -1) data[i] = next;
+      else data[i] = 0;
     }
   }
 

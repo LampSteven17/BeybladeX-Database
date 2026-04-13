@@ -8,10 +8,10 @@ import Layout from '../layouts/Layout.astro';
     {/* ============================================
         META CHAMPION SPOTLIGHT (Full-width Hero)
         ============================================ */}
-    <section class="mb-6">
+    <section class="mb-0">
       <div id="meta-spotlight" class="w-full">
         <!-- Loading State -->
-        <div id="spotlight-loading" class="champion-spotlight p-8 min-h-[280px] flex items-center justify-center w-full">
+        <div id="spotlight-loading" class="champion-spotlight p-8 min-h-[200px] flex items-center justify-center w-full">
           <div class="flex items-center gap-3">
             <div class="w-6 h-6 border-2 border-terminal-border border-t-gold rounded-full animate-spin"></div>
             <span class="text-fg-muted font-mono text-sm">LOADING META DATA...</span>
@@ -19,6 +19,9 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>
     </section>
+
+    {/* RUNNERS UP (2nd + 3rd) — no margin, flush against champion */}
+    <div id="runners-up" class="mb-6 space-y-px"></div>
 
     {/* ============================================
         META EVOLUTION - Historical Timeline
@@ -77,40 +80,57 @@ import Layout from '../layouts/Layout.astro';
     </section>
 
     {/* ============================================
-        MARKET OVERVIEW + MOVERS ROW
+        TOURNAMENT ACTIVITY + DATABASE STATS
         ============================================ */}
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-      {/* Database Statistics (Dense stat widgets) */}
+    <section class="mb-6">
       <div class="terminal-panel">
         <div class="terminal-panel-header">
           <span class="flex items-center gap-2">
             <span class="status-dot status-dot-live"></span>
-            Database Statistics
+            Tournament Activity
           </span>
-          <span class="text-fg-muted text-[10px]">All Time</span>
+          <span class="text-fg-muted text-[10px]">Tournaments per month</span>
         </div>
         <div class="terminal-panel-body">
-          <div class="grid grid-cols-4 gap-3">
-            <div class="stat-widget">
-              <div class="stat-widget-label">Tournaments</div>
-              <div id="stat-tournaments" class="stat-widget-value text-accent">--</div>
+          {/* Bar Chart */}
+          <div id="tournament-chart" class="w-full" style="min-height: 180px;">
+            <div class="flex items-center justify-center py-8">
+              <div class="flex items-center gap-3">
+                <div class="w-5 h-5 border-2 border-terminal-border border-t-accent rounded-full animate-spin"></div>
+                <span class="text-fg-muted font-mono text-sm">Loading activity...</span>
+              </div>
             </div>
-            <div class="stat-widget">
-              <div class="stat-widget-label">Players</div>
-              <div id="stat-players" class="stat-widget-value text-series-ux">--</div>
-            </div>
-            <div class="stat-widget">
-              <div class="stat-widget-label">Blades</div>
-              <div id="stat-blades" class="stat-widget-value text-series-bx">--</div>
-            </div>
-            <div class="stat-widget">
-              <div class="stat-widget-label">Combos</div>
-              <div id="stat-combos" class="stat-widget-value text-series-cx">--</div>
+          </div>
+
+          {/* Database Stats underneath */}
+          <div class="border-t border-stroke mt-4 pt-4">
+            <div class="grid grid-cols-4 gap-3">
+              <div class="stat-widget">
+                <div class="stat-widget-label">Tournaments</div>
+                <div id="stat-tournaments" class="stat-widget-value text-accent">--</div>
+              </div>
+              <div class="stat-widget">
+                <div class="stat-widget-label">Players</div>
+                <div id="stat-players" class="stat-widget-value text-series-ux">--</div>
+              </div>
+              <div class="stat-widget">
+                <div class="stat-widget-label">Blades</div>
+                <div id="stat-blades" class="stat-widget-value text-series-bx">--</div>
+              </div>
+              <div class="stat-widget">
+                <div class="stat-widget-label">Combos</div>
+                <div id="stat-combos" class="stat-widget-value text-series-cx">--</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </section>
 
+    {/* ============================================
+        MARKET OVERVIEW + MOVERS ROW
+        ============================================ */}
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
       {/* 30-Day Trends Panel (Risers | Fallers) */}
       <div class="terminal-panel">
         <div class="terminal-panel-header">
@@ -313,12 +333,56 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getDatabaseSummary, getRankedBlades, getRankedCombos, getRankedRatchets, getRankedBits, getMetaSpotlight, getTopBladesBySeries, getBladesSparklineData, getCombosSparklineData, getMetaEvolution, BLADE_SERIES, type Region, type BladeStats, type ComboStats, type MetaEvolutionData } from '../lib/db';
+  import { initDB, getDatabaseSummary, getRankedBlades, getRankedCombos, getRankedRatchets, getRankedBits, getMetaSpotlight, getBladesSparklineData, getCombosSparklineData, getMetaEvolution, getTournamentsByMonth, BLADE_SERIES, type Region, type BladeStats, type ComboStats, type MetaEvolutionData } from '../lib/db';
   import { staggerFadeIn, animateNumber } from '../lib/animations';
   import { generateTrendSparkline } from '../lib/sparkline';
   import { Chart, BubbleController, LinearScale, PointElement, Tooltip, Legend } from 'chart.js';
 
   Chart.register(BubbleController, LinearScale, PointElement, Tooltip, Legend);
+
+  const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:8081'
+    : window.location.origin;
+
+  interface ConsistencyData {
+    blade: string;
+    ratchet: string;
+    bit: string;
+    finish_profile: { spin: number; over: number; burst: number; xtreme: number };
+    dominant_finish: string;
+    dominant_pct: number;
+    consistency: number;
+    opponents_tested: number;
+    total_wins: number;
+    total_battles: number;
+    win_rate: number;
+  }
+
+  let consistencyCache: ConsistencyData[] | null = null;
+
+  async function fetchConsistencyData(): Promise<ConsistencyData[]> {
+    if (consistencyCache) return consistencyCache;
+    try {
+      const res = await fetch(`${API_BASE}/api/battles/consistency`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      consistencyCache = data.consistency || [];
+      return consistencyCache!;
+    } catch {
+      return [];
+    }
+  }
+
+  function findConsistency(allData: ConsistencyData[], blade: string, ratchet: string, bit: string): ConsistencyData | null {
+    const bladeL = blade.toLowerCase();
+    const ratchetL = ratchet.toLowerCase();
+    const bitL = bit.toLowerCase();
+    return allData.find(c =>
+      (c.blade || '').toLowerCase() === bladeL &&
+      (c.ratchet || '').toLowerCase() === ratchetL &&
+      (c.bit || '').toLowerCase() === bitL
+    ) || null;
+  }
 
   let metaLandscapeChart: Chart | null = null;
 
@@ -334,17 +398,28 @@ import Layout from '../layouts/Layout.astro';
       await initDB();
       const region = getSelectedRegion();
 
-      // Load all data in parallel
-      const [summary, blades, combos, ratchets, bits, spotlight, seriesBlades, allBlades] = await Promise.all([
+      // Load all data in parallel (single blade query, sliced locally)
+      const [summary, allBladesRaw, combos, ratchets, bits, spotlight, monthlyTournaments] = await Promise.all([
         getDatabaseSummary(region),
-        getRankedBlades(8, 1, region),
+        getRankedBlades(200, 1, region),
         getRankedCombos(8, 1, region),
         getRankedRatchets(5, 1, region),
         getRankedBits(5, 1, region),
         getMetaSpotlight(region),
-        getTopBladesBySeries(5, 2, region),
-        getRankedBlades(50, 1, region),
+        getTournamentsByMonth(region),
       ]);
+
+      // Derive subsets from single blade query
+      const blades = allBladesRaw.slice(0, 8);
+      const allBlades = allBladesRaw.slice(0, 50);
+      const seriesBlades = { BX: [] as BladeStats[], CX: [] as BladeStats[], UX: [] as BladeStats[] };
+      for (const blade of allBladesRaw) {
+        const series = BLADE_SERIES[blade.blade];
+        if (series && seriesBlades[series].length < 5) {
+          blade.series = series;
+          seriesBlades[series].push(blade);
+        }
+      }
 
       // Fetch real sparkline data for top blades and combos
       const [bladeSparklines, comboSparklines] = await Promise.all([
@@ -353,7 +428,7 @@ import Layout from '../layouts/Layout.astro';
       ]);
 
       // Render champion spotlight
-      renderChampionSpotlight(spotlight);
+      await renderChampionSpotlight(spotlight);
 
       // Render movers
       renderMovers(spotlight);
@@ -367,7 +442,7 @@ import Layout from '../layouts/Layout.astro';
       if (tournamentsEl) animateNumber(tournamentsEl, summary.tournaments);
       if (playersEl) animateNumber(playersEl, summary.unique_players);
       if (bladesEl) animateNumber(bladesEl, summary.unique_blades);
-      if (combosEl) animateNumber(combosEl, combos.length > 0 ? summary.unique_blades * 2 : 0);
+      if (combosEl) animateNumber(combosEl, summary.unique_combos);
 
       // Render top blades with real sparklines
       renderTopBlades(blades, bladeSparklines);
@@ -382,6 +457,9 @@ import Layout from '../layouts/Layout.astro';
       renderSeriesBlades('series-bx', seriesBlades.BX, 'series-bx');
       renderSeriesBlades('series-ux', seriesBlades.UX, 'series-ux');
       renderSeriesBlades('series-cx', seriesBlades.CX, 'series-cx');
+
+      // Render tournament activity chart
+      renderTournamentChart(monthlyTournaments);
 
       // Render meta landscape
       renderMetaLandscape(allBlades);
@@ -398,7 +476,7 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  function renderChampionSpotlight(spotlight: { champion: any; risers: any[]; fallers: any[]; lastTournamentDate: string | null; isStale: boolean; dataSource: 'recent' | 'extended' }) {
+  async function renderChampionSpotlight(spotlight: { champion: any; topThree: any[]; risers: any[]; fallers: any[]; lastTournamentDate: string | null; isStale: boolean; dataSource: 'recent' | 'extended' }) {
     const container = document.getElementById('meta-spotlight');
     if (!container) return;
 
@@ -411,13 +489,71 @@ import Layout from '../layouts/Layout.astro';
       return;
     }
 
-    const { champion, isStale } = spotlight;
-    const metaShare = ((champion.uses / 100) * champion.winRate).toFixed(1);
+    const { topThree, isStale } = spotlight;
 
+    // Fetch consistency + sparkline data for top 3 (non-blocking, graceful fallback)
+    const [consistencyData, top3Sparklines] = await Promise.all([
+      fetchConsistencyData(),
+      getCombosSparklineData(topThree.map(c => ({ blade: c.blade, ratchet: c.ratchet, bit: c.bit })), 7),
+    ]);
+
+    function getSparklineHtml(blade: string, ratchet: string, bit: string, size: 'lg' | 'sm' = 'lg'): string {
+      const key = `${blade} ${ratchet} ${bit}`;
+      const data = top3Sparklines[key] || [0, 0, 0, 0, 0, 0, 0];
+      const hasData = data.some(d => d > 0);
+      if (!hasData) return '';
+      const sparkSvg = generateTrendSparkline(data, {
+        width: size === 'lg' ? 80 : 60,
+        height: size === 'lg' ? 28 : 20,
+      });
+      return `
+        <div class="text-center">
+          <div class="flex justify-center">${sparkSvg}</div>
+          <div class="text-[${size === 'lg' ? '10px' : '9px'}] font-mono uppercase tracking-widest text-fg-muted mt-1">7w Trend</div>
+        </div>
+      `;
+    }
+
+    function getConsistencyHtml(blade: string, ratchet: string, bit: string, size: 'lg' | 'sm' = 'lg'): string {
+      const c = findConsistency(consistencyData, blade, ratchet, bit);
+      if (!c || c.total_battles === 0) {
+        if (size === 'lg') {
+          return `
+            <div class="text-center">
+              <div class="text-3xl md:text-4xl font-mono font-bold text-fg-disabled tabular-nums">--</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Consistency</div>
+            </div>
+          `;
+        }
+        return `
+          <div class="text-center">
+            <div class="text-xl md:text-2xl font-mono font-bold text-fg-disabled tabular-nums">--</div>
+            <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">Consist.</div>
+          </div>
+        `;
+      }
+      const color = c.consistency >= 70 ? 'text-positive' : c.consistency >= 40 ? 'text-accent' : 'text-fg-muted';
+      if (size === 'lg') {
+        return `
+          <div class="text-center">
+            <div class="text-3xl md:text-4xl font-mono font-bold ${color} tabular-nums">${c.consistency}</div>
+            <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Consistency</div>
+          </div>
+        `;
+      }
+      return `
+        <div class="text-center">
+          <div class="text-xl md:text-2xl font-mono font-bold ${color} tabular-nums">${c.consistency}</div>
+          <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">Consist.</div>
+        </div>
+      `;
+    }
+
+    // First place — full hero card into #meta-spotlight
+    const first = topThree[0];
     container.innerHTML = `
       <div class="champion-spotlight w-full">
-        <div class="relative p-6 md:p-8 min-h-[240px]">
-          <!-- Status Badge -->
+        <div class="relative p-6 md:p-8">
           <div class="absolute top-4 right-4 flex items-center gap-2">
             <span class="status-dot ${isStale ? 'status-dot-stale' : 'status-dot-live'}"></span>
             <span class="text-[10px] font-mono uppercase tracking-widest ${isStale ? 'text-series-cx' : 'text-positive'}">
@@ -425,38 +561,93 @@ import Layout from '../layouts/Layout.astro';
             </span>
           </div>
 
-          <!-- Champion Label -->
           <div class="text-[10px] font-mono uppercase tracking-widest text-gold mb-2">
-            Meta Champion <span class="text-fg-muted">(Last 30 Days)</span>
+            APEX Champion
           </div>
 
-          <!-- Champion Name (Hero Element) -->
           <h1 class="champion-name text-fg mb-4">
-            ${champion.blade} ${champion.ratchet} ${champion.bit}
+            ${first.blade} ${first.ratchet} ${first.bit}
           </h1>
 
-          <!-- Stats Grid -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div class="grid grid-cols-2 md:grid-cols-7 gap-4 mt-6">
             <div class="text-center">
-              <div class="text-3xl md:text-4xl font-mono font-bold text-gold tabular-nums">${champion.score.toFixed(1)}</div>
-              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Score</div>
+              <div class="text-3xl md:text-4xl font-mono font-bold text-gold tabular-nums">${first.score.toFixed(1)}</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">APEX Score</div>
             </div>
+            ${getConsistencyHtml(first.blade, first.ratchet, first.bit, 'lg')}
             <div class="text-center">
-              <div class="text-3xl md:text-4xl font-mono font-bold text-positive tabular-nums">${champion.winRate}%</div>
+              <div class="text-3xl md:text-4xl font-mono font-bold text-positive tabular-nums">${first.winRate}%</div>
               <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">1st Rate</div>
             </div>
             <div class="text-center">
-              <div class="text-3xl md:text-4xl font-mono font-bold text-series-ux tabular-nums">${champion.uses}</div>
-              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Uses</div>
+              <div class="text-3xl md:text-4xl font-mono font-bold text-series-ux tabular-nums">${first.recentUses}</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Last 30d Uses</div>
             </div>
             <div class="text-center">
-              <div class="text-3xl md:text-4xl font-mono font-bold text-accent tabular-nums">${metaShare}%</div>
+              <div class="text-3xl md:text-4xl font-mono font-bold text-accent tabular-nums">${first.recentDominance}%</div>
               <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Meta Share</div>
             </div>
+            <div class="text-center">
+              <div class="text-lg font-mono text-fg-muted tabular-nums">${first.uses}</div>
+              <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Overall Uses</div>
+            </div>
+            ${getSparklineHtml(first.blade, first.ratchet, first.bit, 'lg')}
           </div>
         </div>
       </div>
     `;
+
+    // 2nd and 3rd — compact inline cards into #runners-up
+    const runnersUp = document.getElementById('runners-up');
+    if (runnersUp && topThree.length > 1) {
+      const medalConfig2 = [
+        { class: 'spotlight-silver', label: '2nd Place', labelColor: 'text-[#9CA3AF]', nameClass: 'font-display text-xl md:text-2xl uppercase tracking-wider', accentColor: 'text-[#9CA3AF]' },
+        { class: 'spotlight-bronze', label: '3rd Place', labelColor: 'text-[#CD7F32]', nameClass: 'font-display text-xl md:text-2xl uppercase tracking-wider', accentColor: 'text-[#CD7F32]' },
+      ];
+
+      let runnersHtml = '';
+      for (let i = 1; i < topThree.length; i++) {
+        const combo = topThree[i];
+        const config = medalConfig2[i - 1];
+        runnersHtml += `
+          <div class="${config.class} w-full">
+            <div class="relative px-4 py-3 md:px-6">
+              <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
+                <div class="shrink-0">
+                  <div class="text-[10px] font-mono uppercase tracking-widest ${config.labelColor} leading-none">${config.label}</div>
+                  <div class="${config.nameClass} text-fg mt-0.5 whitespace-nowrap">${combo.blade} ${combo.ratchet} ${combo.bit}</div>
+                </div>
+                <div class="flex items-center gap-4 md:gap-6 ml-auto">
+                  <div class="text-center">
+                    <div class="text-xl md:text-2xl font-mono font-bold ${config.accentColor} tabular-nums">${combo.score.toFixed(1)}</div>
+                    <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">APEX</div>
+                  </div>
+                  ${getConsistencyHtml(combo.blade, combo.ratchet, combo.bit, 'sm')}
+                  <div class="text-center">
+                    <div class="text-xl md:text-2xl font-mono font-bold text-positive tabular-nums">${combo.winRate}%</div>
+                    <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">1st Rate</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-xl md:text-2xl font-mono font-bold text-series-ux tabular-nums">${combo.recentUses}</div>
+                    <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">30d</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-xl md:text-2xl font-mono font-bold text-accent tabular-nums">${combo.recentDominance}%</div>
+                    <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">Meta %</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-lg md:text-xl font-mono text-fg-muted tabular-nums">${combo.uses}</div>
+                    <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">Overall</div>
+                  </div>
+                  ${getSparklineHtml(combo.blade, combo.ratchet, combo.bit, 'sm')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      runnersUp.innerHTML = runnersHtml;
+    }
   }
 
   function renderMovers(spotlight: { risers: any[]; fallers: any[] }) {
@@ -887,6 +1078,48 @@ import Layout from '../layouts/Layout.astro';
         journeyChartEl.innerHTML = svg;
       });
     }
+  }
+
+  function renderTournamentChart(data: { month: string; count: number }[]) {
+    const container = document.getElementById('tournament-chart');
+    if (!container || data.length === 0) {
+      if (container) container.innerHTML = '<div class="text-fg-muted text-sm text-center py-4">No tournament data</div>';
+      return;
+    }
+
+    const maxCount = Math.max(...data.map(d => d.count));
+
+    // Red-to-green gradient skewed so low counts are very red, high counts very green
+    function barColor(count: number): string {
+      const t = Math.pow(count / maxCount, 0.6); // skew: most bars lean red unless truly high
+      const r = Math.round(220 - 180 * t);
+      const g = Math.round(50 + 180 * t);
+      const b = Math.round(50 - 20 * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const barsHtml = data.map(d => {
+      const heightPct = Math.max(3, (d.count / maxCount) * 100);
+      const [, mm] = d.month.split('-');
+      const monthIdx = parseInt(mm, 10) - 1;
+      const yr = d.month.slice(2, 4);
+      const label = `${months[monthIdx]} '${yr}`;
+      const color = barColor(d.count);
+      return `
+        <div class="flex flex-col items-center" style="flex: 1; min-width: 0;">
+          <span class="text-[10px] font-mono text-fg-muted tabular-nums leading-none mb-0.5">${d.count}</span>
+          <div class="w-full flex items-end" style="height: 100px;">
+            <div class="w-full rounded-t transition-opacity hover:opacity-80" style="height: ${heightPct}%; background: ${color};"></div>
+          </div>
+          <span class="text-[8px] font-mono text-fg-muted tracking-tight leading-none mt-1">${label}</span>
+        </div>
+      `;
+    }).join('');
+
+    container.style.minHeight = '0';
+    container.innerHTML = `<div class="flex items-end gap-0.5">${barsHtml}</div>`;
   }
 
   document.addEventListener('DOMContentLoaded', loadDashboard);

@@ -2,13 +2,13 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Scoring Methodology">
+<Layout title="APEX Scoring Methodology">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* Header */}
     <div class="page-header">
-      <h1 class="page-title">Scoring Methodology</h1>
+      <h1 class="page-title">APEX Scoring</h1>
       <p class="page-subtitle">
-        How we calculate blade, combo, and part rankings
+        Adaptive Placement EXponent — how we rank blades, combos, and parts
       </p>
     </div>
 
@@ -16,13 +16,12 @@ import Layout from '../layouts/Layout.astro';
     <section class="card card-padding mb-6">
       <h2 class="text-xl font-mono font-bold text-fg mb-4">Overview</h2>
       <p class="text-fg-secondary mb-4">
-        Our scoring system is designed to reflect competitive performance while emphasizing recent results
-        and rewarding consistency across tournament stages.
-        This approach ensures the meta rankings stay current and accurately represent what's winning in tournaments right now.
+        The APEX system ranks competitive performance by weighting tournament placements with exponential recency decay
+        and stage multipliers. This keeps rankings current and rewards what's winning right now.
       </p>
       <div class="terminal-panel p-4">
         <code class="text-accent font-mono text-sm">
-          Score = Σ (Placement Points × Stage Weight × Recency Weight)
+          APEX Score = Σ (Placement Points × Stage Weight × Recency Weight)
         </code>
       </div>
     </section>
@@ -159,7 +158,7 @@ import Layout from '../layouts/Layout.astro';
           <span class="text-accent">3 pts × 0.50 × 0.35 = <span class="text-positive">0.53</span></span>
         </div>
         <div class="border-t border-terminal-border pt-3 flex justify-between text-fg">
-          <span>Total Score</span>
+          <span>APEX Score</span>
           <span class="text-gold font-bold">5.40</span>
         </div>
       </div>
