@@ -532,18 +532,19 @@ import Layout from '../layouts/Layout.astro';
           </div>
         `;
       }
+      const avg = (c.consistency / 100).toFixed(3);
       const color = c.consistency >= 70 ? 'text-positive' : c.consistency >= 40 ? 'text-accent' : 'text-fg-muted';
       if (size === 'lg') {
         return `
           <div class="text-center">
-            <div class="text-3xl md:text-4xl font-mono font-bold ${color} tabular-nums">${c.consistency}</div>
+            <div class="text-3xl md:text-4xl font-mono font-bold ${color} tabular-nums">${avg}</div>
             <div class="text-[10px] font-mono uppercase tracking-widest text-fg-muted mt-1">Consistency</div>
           </div>
         `;
       }
       return `
         <div class="text-center">
-          <div class="text-xl md:text-2xl font-mono font-bold ${color} tabular-nums">${c.consistency}</div>
+          <div class="text-xl md:text-2xl font-mono font-bold ${color} tabular-nums">${avg}</div>
           <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-fg-muted">Consist.</div>
         </div>
       `;

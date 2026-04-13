@@ -544,7 +544,7 @@ import Layout from '../layouts/Layout.astro';
         consistencyPanel.innerHTML = `
           <div class="text-xs text-fg-muted mb-3 font-mono uppercase tracking-wider">Battle Consistency</div>
           <div class="text-center mb-3">
-            <div class="text-2xl font-mono font-bold tabular-nums ${c.consistency >= 70 ? 'text-positive' : c.consistency >= 40 ? 'text-accent' : 'text-fg-muted'}">${c.consistency}</div>
+            <div class="text-2xl font-mono font-bold tabular-nums ${c.consistency >= 70 ? 'text-positive' : c.consistency >= 40 ? 'text-accent' : 'text-fg-muted'}">${(c.consistency / 100).toFixed(3)}</div>
             <div class="text-[9px] font-mono uppercase tracking-wider text-fg-muted">Consistency</div>
           </div>
           <div class="space-y-1.5 mb-3">
