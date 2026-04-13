@@ -1044,8 +1044,8 @@ type RankablePartType = 'ratchet' | 'bit' | 'assist' | 'lock_chip' | 'over_blade
 
 async function getRankedParts(partType: RankablePartType, limit: number, minUses: number, region?: Region): Promise<PartStats[]> {
   const regionFilter = getRegionWhereClause(region);
-  const isOptional = partType === 'assist' || partType === 'lock_chip' || partType === 'over_blade';
-  const whereClause = isOptional
+  const needsNullFilter = partType === 'assist' || partType === 'lock_chip' || partType === 'over_blade' || partType === 'bit';
+  const whereClause = needsNullFilter
     ? `WHERE ${partType} IS NOT NULL${regionFilter}`
     : `WHERE 1=1${regionFilter}`;
 

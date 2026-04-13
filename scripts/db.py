@@ -492,7 +492,7 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             player_wbo_id VARCHAR,
             blade_1 VARCHAR NOT NULL,
             ratchet_1 VARCHAR NOT NULL,
-            bit_1 VARCHAR NOT NULL,
+            bit_1 VARCHAR,
             assist_1 VARCHAR,
             lock_chip_1 VARCHAR,
             over_blade_1 VARCHAR,
