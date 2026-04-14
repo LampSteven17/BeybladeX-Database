@@ -715,11 +715,11 @@ import Layout from '../layouts/Layout.astro';
 </script>
 
 <style is:global>
-  /* Combos page: compact table for dense statistical viewing */
+  /* Combos page: rem-based so it scales with the fluid root font-size (global.css html). */
   #rankings-table.data-table th {
-    @apply px-2 py-2 text-[10px];
+    @apply px-2 py-2 text-xs;
   }
   #rankings-table.data-table td {
-    @apply px-2 py-1.5 text-xs;
+    @apply px-2 py-2 text-sm;
   }
 </style>

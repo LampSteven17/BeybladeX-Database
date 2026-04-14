@@ -7,6 +7,9 @@
 @layer base {
   html {
     @apply scroll-smooth;
+    /* Fluid root font-size: 14px at 320px viewport → 18px at 1600px viewport.
+       All rem-based Tailwind sizes (text-xs, text-sm, text-base, etc.) scale with this. */
+    font-size: clamp(14px, 0.75rem + 0.45vw, 18px);
   }
 
   body {
