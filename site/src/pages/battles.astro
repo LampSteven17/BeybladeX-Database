@@ -716,12 +716,19 @@ import Layout from '../layouts/Layout.astro';
       combos.forEach((c, i) => {
         const btn = document.createElement('button');
         btn.className = 'opp-preset';
+        // c.blade from getRankedCombos already includes material prefix for CX
+        // (e.g. "Metal Emperor"), and c.lockChip holds "Metal"/"Plastic" separately.
+        // Strip the prefix so the stored Combo matches the custom-picker shape:
+        //   blade = base name, lockChip = material. comboToDisplay re-assembles them.
+        const baseBlade = c.lockChip && c.blade.startsWith(`${c.lockChip} `)
+          ? c.blade.slice(c.lockChip.length + 1)
+          : c.blade;
         const parts = [c.blade, c.overBlade, c.assist, c.ratchet, c.bit].filter(Boolean);
         const display = parts.join(' ');
         btn.innerHTML = `<span class="opp-rank">#${i + 1}</span> <span>${display}</span> <span class="opp-uses">${c.uses} uses</span>`;
         btn.onclick = () => {
           oppCombo = {
-            blade: c.blade,
+            blade: baseBlade,
             ratchet: c.ratchet,
             bit: c.bit,
             lockChip: c.lockChip ?? null,
