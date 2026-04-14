@@ -64,6 +64,7 @@ import Layout from '../layouts/Layout.astro';
               <th>Bit</th>
               <th>Series</th>
               <th class="text-right">APEX</th>
+              <th class="text-right">Consist</th>
               <th class="text-right">Uses</th>
               <th class="text-right">1st</th>
               <th class="text-right">2nd</th>
@@ -75,7 +76,7 @@ import Layout from '../layouts/Layout.astro';
             {/* Loading skeletons */}
             {Array.from({ length: 20 }, (_, i) => (
               <tr>
-                <td colspan="14">
+                <td colspan="15">
                   <div class="skeleton h-12 rounded"></div>
                 </td>
               </tr>
@@ -196,8 +197,9 @@ import Layout from '../layouts/Layout.astro';
       allCombosWithRare = await getRankedCombos(2000, 1, region);
       filteredCombos = allCombos;
 
-      // Pre-fetch meta average for radar ghost overlay
+      // Pre-fetch meta average for radar ghost overlay + consistency data
       metaAverage = await getMetaAverageRadarStats();
+      await fetchConsistencyData();
 
       renderTable(filteredCombos.slice(0, displayedCount));
       updateLoadMoreButton();
@@ -209,7 +211,7 @@ import Layout from '../layouts/Layout.astro';
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="14" class="text-center text-negative py-8">
+            <td colspan="15" class="text-center text-negative py-8">
               Failed to load combo rankings. Please refresh the page.
             </td>
           </tr>
@@ -375,7 +377,7 @@ import Layout from '../layouts/Layout.astro';
     detailRow = document.createElement('tr');
     detailRow.className = 'detail-row';
     detailRow.innerHTML = `
-      <td colspan="14">
+      <td colspan="15">
         <div class="detail-content">
           <div class="detail-inner">
             <div class="flex flex-col md:flex-row gap-6 items-start">
@@ -572,7 +574,7 @@ import Layout from '../layouts/Layout.astro';
     if (combos.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="14" class="text-center text-fg-muted py-8">
+          <td colspan="15" class="text-center text-fg-muted py-8">
             No combos found.
           </td>
         </tr>
@@ -588,6 +590,10 @@ import Layout from '../layouts/Layout.astro';
       // Extract the base blade name for CX blades (e.g., "Pegasus Blast" -> blade is the full name as stored)
       // For the radar lookup, we need the base blade name from the database
       const bladeBaseName = getBladeBaseName(combo.blade);
+      const consistencyEntry = consistencyCache ? findConsistency(consistencyCache, bladeBaseName, combo.ratchet, combo.bit) : null;
+      const consistencyHtml = consistencyEntry && consistencyEntry.total_battles > 0
+        ? `<span class="${consistencyEntry.consistency >= 70 ? 'text-positive' : consistencyEntry.consistency >= 40 ? 'text-accent' : 'text-fg-muted'}">${(consistencyEntry.consistency / 100).toFixed(3)}</span>`
+        : '<span class="text-fg-disabled">--</span>';
       return `
         <tr class="ranking-row hover:bg-panel"
             data-blade="${bladeBaseName}"
@@ -608,6 +614,7 @@ import Layout from '../layouts/Layout.astro';
           <td class="font-mono text-series-bx">${combo.bit}</td>
           <td>${series ? `<span class="${seriesBadgeClass}">${series}</span>` : '<span class="text-fg-muted">-</span>'}</td>
           <td class="text-right font-mono text-fg">${combo.raw_score.toFixed(1)}</td>
+          <td class="text-right font-mono">${consistencyHtml}</td>
           <td class="text-right font-mono">${combo.uses}</td>
           <td class="text-right font-mono text-tier-ss">${combo.first}</td>
           <td class="text-right font-mono text-fg-muted">${combo.second}</td>
@@ -706,3 +713,13 @@ import Layout from '../layouts/Layout.astro';
     loadRankings();
   });
 </script>
+
+<style is:global>
+  /* Combos page: compact table for dense statistical viewing */
+  #rankings-table.data-table th {
+    @apply px-2 py-2 text-[10px];
+  }
+  #rankings-table.data-table td {
+    @apply px-2 py-1.5 text-xs;
+  }
+</style>
