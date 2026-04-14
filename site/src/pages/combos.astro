@@ -53,10 +53,27 @@ import Layout from '../layouts/Layout.astro';
     <div class="card card-padding">
       <div class="overflow-x-auto">
         <table class="data-table" id="rankings-table">
+          <colgroup>
+            <col style="width: 3rem" />
+            <col style="width: 3.5rem" />
+            <col style="width: 14rem" />
+            <col style="width: 5rem" />
+            <col style="width: 4rem" />
+            <col style="width: 5rem" />
+            <col style="width: 7rem" />
+            <col style="width: 4rem" />
+            <col style="width: 4rem" />
+            <col style="width: 4.5rem" />
+            <col style="width: 3.5rem" />
+            <col style="width: 3rem" />
+            <col style="width: 3rem" />
+            <col style="width: 3rem" />
+            <col style="width: 4.5rem" />
+          </colgroup>
           <thead>
             <tr>
-              <th class="w-16">#</th>
-              <th class="w-20">Tier</th>
+              <th>#</th>
+              <th>Tier</th>
               <th>Blade</th>
               <th>Over</th>
               <th>Assist</th>
@@ -715,11 +732,20 @@ import Layout from '../layouts/Layout.astro';
 </script>
 
 <style is:global>
-  /* Combos page: rem-based so it scales with the fluid root font-size (global.css html). */
+  /* Combos page: rem-based so it scales with the fluid root font-size (global.css html).
+     table-layout: fixed + colgroup keeps columns stable when the row set changes
+     (e.g. toggling "Unique Blades Only" or tier filters). */
+  #rankings-table.data-table {
+    table-layout: fixed;
+    min-width: 70rem;
+  }
   #rankings-table.data-table th {
     @apply px-2 py-2 text-xs;
   }
   #rankings-table.data-table td {
     @apply px-2 py-2 text-sm;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

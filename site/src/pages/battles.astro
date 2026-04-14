@@ -326,9 +326,18 @@ import Layout from '../layouts/Layout.astro';
 </style>
 
 <script>
+  import { initDB, getRankedCombos, type Region } from '../lib/db';
+
   const API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:8081'
     : window.location.origin;
+
+  function getSelectedRegion(): Region {
+    if (typeof localStorage !== 'undefined') {
+      return (localStorage.getItem('beyblade-region') as Region) || 'ALL';
+    }
+    return 'ALL';
+  }
 
   const FINISH_POINTS: Record<string, number> = { spin: 1, over: 2, xtreme: 3, burst: 2 };
 
@@ -682,22 +691,44 @@ import Layout from '../layouts/Layout.astro';
   async function loadOpponentPresets() {
     const el = document.getElementById('opponent-presets')!;
     try {
-      const res = await fetch(`${API_BASE}/api/meta/top-combos?limit=10`);
-      const data = await res.json();
-      const combos: any[] = data.combos || [];
+      // Use the same DuckDB-WASM path as the combos page so rankings match exactly.
+      // getRankedCombos applies APEX scoring (placement points × recency × stage mult).
+      await initDB();
+      const region = getSelectedRegion();
+      const all = await getRankedCombos(500, 1, region);
+
+      // Dedup by blade (mirrors the combos page "Unique Blades Only" toggle) —
+      // top combo per blade gives a diverse 10-opponent preset.
+      const seenBlades = new Set<string>();
+      const combos = [] as typeof all;
+      for (const c of all) {
+        if (seenBlades.has(c.blade)) continue;
+        seenBlades.add(c.blade);
+        combos.push(c);
+        if (combos.length >= 10) break;
+      }
+
       if (!combos.length) {
         el.innerHTML = '<div class="text-fg-muted text-xs text-center py-4">No meta data yet</div>';
         return;
       }
       el.innerHTML = '';
-      combos.forEach((c: any, i: number) => {
+      combos.forEach((c, i) => {
         const btn = document.createElement('button');
         btn.className = 'opp-preset';
-        btn.innerHTML = `<span class="opp-rank">#${i + 1}</span> <span>${c.display}</span> <span class="opp-uses">${c.uses} uses</span>`;
+        const parts = [c.blade, c.overBlade, c.assist, c.ratchet, c.bit].filter(Boolean);
+        const display = parts.join(' ');
+        btn.innerHTML = `<span class="opp-rank">#${i + 1}</span> <span>${display}</span> <span class="opp-uses">${c.uses} uses</span>`;
         btn.onclick = () => {
-          oppCombo = { blade: c.blade, ratchet: c.ratchet, bit: c.bit, lockChip: c.lock_chip };
+          oppCombo = {
+            blade: c.blade,
+            ratchet: c.ratchet,
+            bit: c.bit,
+            lockChip: c.lockChip ?? null,
+            overBlade: c.overBlade ?? null,
+            assist: c.assist ?? null,
+          };
           myPoints = 0; oppPoints = 0;
-          // Highlight selected
           el.querySelectorAll('.opp-preset').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           updateDisplay();
@@ -705,6 +736,7 @@ import Layout from '../layouts/Layout.astro';
         el.appendChild(btn);
       });
     } catch (e) {
+      console.error('Failed to load opponent presets:', e);
       el.innerHTML = '<div class="text-negative text-xs text-center py-4">Failed to load meta combos</div>';
     }
   }
