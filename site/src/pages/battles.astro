@@ -692,21 +692,12 @@ import Layout from '../layouts/Layout.astro';
     const el = document.getElementById('opponent-presets')!;
     try {
       // Use the same DuckDB-WASM path as the combos page so rankings match exactly.
-      // getRankedCombos applies APEX scoring (placement points × recency × stage mult).
+      // No dedup — matches the combos page default view. Full CX combos surface
+      // with their over blade + assist intact.
       await initDB();
       const region = getSelectedRegion();
-      const all = await getRankedCombos(500, 1, region);
-
-      // Dedup by blade (mirrors the combos page "Unique Blades Only" toggle) —
-      // top combo per blade gives a diverse 10-opponent preset.
-      const seenBlades = new Set<string>();
-      const combos = [] as typeof all;
-      for (const c of all) {
-        if (seenBlades.has(c.blade)) continue;
-        seenBlades.add(c.blade);
-        combos.push(c);
-        if (combos.length >= 10) break;
-      }
+      const all = await getRankedCombos(50, 1, region);
+      const combos = all.slice(0, 10);
 
       if (!combos.length) {
         el.innerHTML = '<div class="text-fg-muted text-xs text-center py-4">No meta data yet</div>';
