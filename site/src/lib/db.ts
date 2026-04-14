@@ -518,10 +518,14 @@ function scoreAndRank(
     .map(s => {
       s.avg_score = s.raw_score / s.uses;
 
+      // Trend compares unweighted usage counts between the two 30-day windows.
+      // Previous version used recency-weighted *scores*, which inflated trend because the
+      // recent window (weight ~1.0) vs older window (weight ~0.35 at 30-60d) baked the
+      // decay curve into the numerator — stagnant combos showed ~+180% phantom growth.
       if (s._recent_uses > 0 && s._older_uses > 0) {
-        const recentRate = s._recent_score / s._recent_uses;
-        const olderRate = s._older_score / s._older_uses;
-        s.trend = (recentRate - olderRate) / olderRate;
+        const raw = (s._recent_uses - s._older_uses) / s._older_uses;
+        // Clamp to ±200% so a 1→3 uses jump doesn't scream +200% forever.
+        s.trend = Math.max(-2, Math.min(2, raw));
       } else if (s._recent_uses > 0 && s._older_uses === 0) {
         s.trend = 0.5;
       } else if (s._recent_uses === 0 && s._older_uses > 0) {
