@@ -31,9 +31,6 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Instagram scraper cache
-bladerleaguegermany/
-
 # Downloaded HTML pages (large, regeneratable)
 data/wbo_pages/
 data/wbo_pages.json

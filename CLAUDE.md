@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-BeybladeX-Database is a tournament meta analysis tool for Beyblade X competitive play. It scrapes tournament results from multiple sources (WBO, Japan, Germany, official championships), scrapes official part stats from the Fandom wiki, stores data in DuckDB, and serves an interactive static site with in-browser SQL queries via DuckDB-WASM.
+BeybladeX-Database is a tournament meta analysis tool for Beyblade X competitive play. It scrapes tournament results from multiple sources (WBO, Japan, official championships), scrapes official part stats from the Fandom wiki, stores data in DuckDB, and serves an interactive static site with in-browser SQL queries via DuckDB-WASM.
 
 ## Commands
 
@@ -50,11 +50,10 @@ Data Pipeline (Python)           Static Site (Astro)
 
 **Key files:**
 - `scripts/db.py` - Database schema, CX blade parsing, normalization, part lists
-- `scripts/refresh_all.py` - Main CLI orchestrating all scrapers (DEFAULT_ORDER: wbo, jp, de, champ, fandom)
+- `scripts/refresh_all.py` - Main CLI orchestrating all scrapers (DEFAULT_ORDER: wbo, jp, champ, fandom)
 - `scripts/scrapers/` - Modular scraper implementations:
   - `wbo.py` - World Beyblade Organization forum data (reads from `data/wbo_pages.json`)
   - `jp.py` - Japanese tournaments from okuyama3093.com
-  - `de.py` - German tournaments from Blader League Germany (Instagram via instaloader)
   - `fandom.py` - Fandom wiki scraper for official Takara Tomy part stats (part_attributes table)
 - `scripts/import_championships.py` - Official championship data (World Championship 2025, Asia Championship 2024)
 - `site/src/lib/db.ts` - DuckDB-WASM client, scoring system, 50+ query functions, radar chart stats

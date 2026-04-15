@@ -5,7 +5,6 @@ Unified Data Pipeline for BeybladeX-Database.
 Main entry point for refreshing all data sources:
 - WBO (World Beyblade Organization forum)
 - JP (Japanese tournaments from okuyama3093.com)
-- DE (German tournaments from BLG Instagram)
 
 Usage:
     python scripts/refresh_all.py                    # Full refresh all sources
@@ -31,7 +30,7 @@ if hasattr(signal, 'SIGPIPE'):
 sys.path.insert(0, str(Path(__file__).parent))
 
 from db import get_connection, init_schema, normalize_data, database_lock, DatabaseLockError
-from scrapers import WBOScraper, JPScraper, DEScraper, FandomScraper
+from scrapers import WBOScraper, JPScraper, FandomScraper
 from import_championships import (
     init_data_file as init_champ_data,
     import_championships,
@@ -47,12 +46,11 @@ from import_championships import (
 SCRAPERS = {
     "wbo": WBOScraper,
     "jp": JPScraper,
-    "de": DEScraper,
     "fandom": FandomScraper,
 }
 
 # Default order of scraping (champ is handled separately, fandom scrapes part stats)
-DEFAULT_ORDER = ["wbo", "jp", "de", "champ", "fandom"]
+DEFAULT_ORDER = ["wbo", "jp", "champ", "fandom"]
 
 
 # =============================================================================

@@ -4,7 +4,7 @@ Tournament meta analysis tool for Beyblade X competitive play. Scrapes tournamen
 
 ## Features
 
-- Tournament data from WBO, Japanese, and German sources
+- Tournament data from WBO and Japanese sources
 - Bloomberg terminal-inspired dark UI
 - In-browser SQL queries (no server needed for analysis)
 - Part usage statistics with recency-weighted scoring

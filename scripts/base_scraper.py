@@ -43,7 +43,7 @@ class Placement:
 @dataclass
 class Tournament:
     """A tournament with its placements."""
-    wbo_post_id: str  # Unique ID with source prefix (e.g., "okuyama_xxx", "blg_xxx")
+    wbo_post_id: str  # Unique ID with source prefix (e.g., "okuyama_xxx")
     name: str
     date: Optional[datetime]
     city: Optional[str] = None
@@ -64,8 +64,8 @@ class BaseScraper(ABC):
     Abstract base class for all data source scrapers.
 
     Subclasses must implement:
-    - source_name: Human-readable name (e.g., "WBO", "Japan", "Germany")
-    - source_prefix: ID prefix for deduplication (e.g., "", "okuyama_", "blg_")
+    - source_name: Human-readable name (e.g., "WBO", "Japan")
+    - source_prefix: ID prefix for deduplication (e.g., "", "okuyama_")
     - default_region: Default region code (e.g., "NA", "JAPAN", "EU")
     - scrape(): Main scraping method
     - clear_source_data(): Clear this source's data from database
@@ -129,7 +129,6 @@ class BaseScraper(ABC):
                 SELECT wbo_post_id FROM tournaments
                 WHERE wbo_post_id IS NOT NULL
                 AND wbo_post_id NOT LIKE 'okuyama_%'
-                AND wbo_post_id NOT LIKE 'blg_%'
             """).fetchall()
         return {row[0] for row in result}
 
@@ -261,7 +260,6 @@ class BaseScraper(ABC):
                 SELECT COUNT(*) FROM tournaments
                 WHERE wbo_post_id IS NOT NULL
                 AND wbo_post_id NOT LIKE 'okuyama_%'
-                AND wbo_post_id NOT LIKE 'blg_%'
             """).fetchone()[0]
 
             placements = conn.execute("""
@@ -269,7 +267,6 @@ class BaseScraper(ABC):
                 JOIN tournaments t ON p.tournament_id = t.id
                 WHERE t.wbo_post_id IS NOT NULL
                 AND t.wbo_post_id NOT LIKE 'okuyama_%'
-                AND t.wbo_post_id NOT LIKE 'blg_%'
             """).fetchone()[0]
 
         return {

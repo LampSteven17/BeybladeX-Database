@@ -52,13 +52,12 @@ class WBOScraper(BaseScraper):
         return None  # Infer from country
 
     def clear_source_data(self, conn) -> int:
-        """Clear WBO data (entries without okuyama_ or blg_ prefix)."""
+        """Clear WBO data (entries without okuyama_ prefix)."""
         # Get count before deletion
         count = conn.execute("""
             SELECT COUNT(*) FROM tournaments
             WHERE wbo_post_id IS NOT NULL
             AND wbo_post_id NOT LIKE 'okuyama_%'
-            AND wbo_post_id NOT LIKE 'blg_%'
         """).fetchone()[0]
 
         # Delete placements first (foreign key constraint)
@@ -67,7 +66,6 @@ class WBOScraper(BaseScraper):
                 SELECT id FROM tournaments
                 WHERE wbo_post_id IS NOT NULL
                 AND wbo_post_id NOT LIKE 'okuyama_%'
-                AND wbo_post_id NOT LIKE 'blg_%'
             )
         """)
 
@@ -76,7 +74,6 @@ class WBOScraper(BaseScraper):
             DELETE FROM tournaments
             WHERE wbo_post_id IS NOT NULL
             AND wbo_post_id NOT LIKE 'okuyama_%'
-            AND wbo_post_id NOT LIKE 'blg_%'
         """)
 
         return count
