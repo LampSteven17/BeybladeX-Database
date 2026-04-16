@@ -93,8 +93,7 @@ export let BLADE_SERIES: Record<string, 'BX' | 'CX' | 'UX'> = {
   'Spinosaurus': 'BX',       // Jurassic World collab
   'Tyrannosaurus': 'BX',     // Jurassic World collab
   // Classic series remakes/crossovers (X-Over Project)
-  'L-Drago (Upper)': 'BX',   // Metal Fight crossover
-  'L-Drago (Lower)': 'BX',   // Metal Fight crossover
+  'L-Drago': 'BX',            // Metal Fight crossover
   'Storm Pegasis': 'BX',     // Metal Fight crossover
   'Rock Leone': 'BX',        // Metal Fight crossover
   'Victory Valkyrie': 'BX',  // Burst crossover

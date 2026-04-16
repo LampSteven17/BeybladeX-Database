@@ -260,9 +260,18 @@ import Layout from '../layouts/Layout.astro';
   .section-label.disc { color: var(--color-fg-muted); }
   .pick-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.375rem;
     margin-bottom: 0.5rem;
+  }
+  @media (min-width: 768px) {
+    .pick-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .pick-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (min-width: 1280px) {
+    .pick-grid { grid-template-columns: repeat(5, 1fr); }
   }
 
   /* Opponent preset buttons */
@@ -455,12 +464,19 @@ import Layout from '../layouts/Layout.astro';
       container.appendChild(grid);
     }
 
+    function getVisibleCount(): number {
+      const w = window.innerWidth;
+      if (w >= 1280) return 40;
+      if (w >= 1024) return 30;
+      if (w >= 768) return 24;
+      return 15;
+    }
+
     function addPopularThenAll(
       items: { label: string; value: string; cls?: string }[],
       onPick: (val: string) => void,
-      popularCount = 15,
     ) {
-      // Show top N by meta usage as big buttons (no typing needed)
+      const popularCount = getVisibleCount();
       const popular = items.slice(0, popularCount);
       const rest = items.slice(popularCount);
 
@@ -567,7 +583,7 @@ import Layout from '../layouts/Layout.astro';
         const blades = (catalog.blades || [])
           .filter((b: any) => (b.system || 'BX') === series)
           .map((b: any) => b.name || b)
-          .sort((a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0));
+          .sort((a: string, b: string) => a.localeCompare(b));
         const cls = state.series;
         addHeader(`${series} Blades`, true);
         addPopularThenAll(blades.map((b: string) => ({ label: b, value: b, cls })), (val) => {
@@ -586,7 +602,7 @@ import Layout from '../layouts/Layout.astro';
 
       } else if (step === 'cx-main-list') {
         const mains = (catalog.main_blades || []).slice()
-          .sort((a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0));
+          .sort((a: string, b: string) => a.localeCompare(b));
         addHeader('CX Main Blade', true);
         addPopularThenAll(mains.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
           state.blade = val; state.type = 'cx-main'; showStep('cx-lock');
@@ -594,7 +610,7 @@ import Layout from '../layouts/Layout.astro';
 
       } else if (step === 'cx-metal-list') {
         const metals = (catalog.metal_blades || []).slice()
-          .sort((a: string, b: string) => (bladeUsage[b] || 0) - (bladeUsage[a] || 0));
+          .sort((a: string, b: string) => a.localeCompare(b));
         addHeader('CX Metal Blade', true);
         addGrid(metals.map((m: string) => ({ label: m, value: m, cls: 'cx' })), (val) => {
           state.blade = val; state.type = 'cx-metal'; showStep('cx-lock');
@@ -602,7 +618,7 @@ import Layout from '../layouts/Layout.astro';
 
       } else if (step === 'cx-lock') {
         const chips = (catalog.lock_chips || []).map((c: any) => c.name || c)
-          .sort((a: string, b: string) => (bladeUsage[a] || 0) - (bladeUsage[b] || 0)).reverse();
+          .sort((a: string, b: string) => a.localeCompare(b));
         addHeader(`Lock Chip for ${state.blade}`, true);
         addPopularThenAll(chips.map((c: string) => ({ label: c, value: c, cls: 'cx' })), (val) => {
           state.lockChip = val; showStep('cx-over');
@@ -659,7 +675,7 @@ import Layout from '../layouts/Layout.astro';
 
         // Sort bits: single-word first (by usage), then multi-word
         const bits: string[] = (catalog.bits || []).slice();
-        const single = bits.filter(b => !b.includes(' ')).sort((a, b) => (bladeUsage[a] || 0) - (bladeUsage[b] || 0)).reverse();
+        const single = bits.filter(b => !b.includes(' ')).sort((a, b) => a.localeCompare(b));
         const multi = bits.filter(b => b.includes(' ')).sort();
 
         addSectionLabel('Standard', 'disc');
@@ -691,13 +707,18 @@ import Layout from '../layouts/Layout.astro';
   async function loadOpponentPresets() {
     const el = document.getElementById('opponent-presets')!;
     try {
-      // Use the same DuckDB-WASM path as the combos page so rankings match exactly.
-      // No dedup — matches the combos page default view. Full CX combos surface
-      // with their over blade + assist intact.
+      // Unique blades only — matches combos page "Unique Blades Only" toggle
       await initDB();
       const region = getSelectedRegion();
       const all = await getRankedCombos(50, 1, region);
-      const combos = all.slice(0, 10);
+      const seenBlades = new Set<string>();
+      const combos: typeof all = [];
+      for (const c of all) {
+        if (seenBlades.has(c.blade)) continue;
+        seenBlades.add(c.blade);
+        combos.push(c);
+        if (combos.length >= 10) break;
+      }
 
       if (!combos.length) {
         el.innerHTML = '<div class="text-fg-muted text-xs text-center py-4">No meta data yet</div>';
@@ -970,5 +991,9 @@ import Layout from '../layouts/Layout.astro';
     updateDisplay();
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 </script>

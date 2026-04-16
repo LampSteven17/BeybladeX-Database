@@ -297,7 +297,11 @@ import Layout from '../layouts/Layout.astro';
     return '<span class="text-fg-muted text-sm">--</span>';
   }
 
-  document.addEventListener('DOMContentLoaded', loadRankings);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadRankings);
+  } else {
+    loadRankings();
+  }
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {

@@ -1123,6 +1123,10 @@ import Layout from '../layouts/Layout.astro';
     container.innerHTML = `<div class="flex items-end gap-0.5">${barsHtml}</div>`;
   }
 
-  document.addEventListener('DOMContentLoaded', loadDashboard);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+  } else {
+    loadDashboard();
+  }
   window.addEventListener('regionchange', loadDashboard);
 </script>

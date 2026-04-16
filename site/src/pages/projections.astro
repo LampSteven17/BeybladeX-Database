@@ -311,6 +311,10 @@ import Layout from '../layouts/Layout.astro';
     }
 
     // Initialize on page load
-    document.addEventListener('DOMContentLoaded', loadAndRender);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadAndRender);
+    } else {
+      loadAndRender();
+    }
   </script>
 </Layout>

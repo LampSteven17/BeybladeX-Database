@@ -323,7 +323,11 @@ const currentPath = Astro.url.pathname;
       }
 
       // Initialize on load and region change
-      document.addEventListener('DOMContentLoaded', initCarousel);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCarousel);
+      } else {
+        initCarousel();
+      }
       window.addEventListener('regionchange', () => {
         currentSlide = 0;
         initCarousel();

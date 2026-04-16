@@ -930,12 +930,16 @@ BLADE_NORMALIZATIONS = {
     "Savage Bear": "Bear Scratch",
     "Helm Knight": "Knight Mail",  # Hasbro UX name
     "Hammer Incendio": "Hells Hammer",  # Incendio = Hasbro for Hells
+    "Tide Whale": "Whale Wave",  # Hasbro name
+    "Scale Shark": "Shark Scale",  # word order typo
     "Optimus Prime": "Optimus Primal",
-    # L-Drago variants → normalize to L-Drago (Upper) or L-Drago (Lower)
-    "Lightning L-Drago": "L-Drago (Upper)",
-    "Lighting L-Drago": "L-Drago (Upper)",
-    "Lightning L-Drago (Upper)": "L-Drago (Upper)",
-    "Lightning L-Drago(Upper)": "L-Drago (Upper)",
+    # L-Drago variants → normalize to L-Drago (modes don't matter for rankings)
+    "Lightning L-Drago": "L-Drago",
+    "Lighting L-Drago": "L-Drago",
+    "Lightning L-Drago (Upper)": "L-Drago",
+    "Lightning L-Drago(Upper)": "L-Drago",
+    "L-Drago (Upper)": "L-Drago",
+    "L-Drago (Lower)": "L-Drago",
     # Standalone Dragoon → Dragoon Storm
     "Dragoon": "Dragoon Storm",
     # Storm Pegasus variant

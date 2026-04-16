@@ -31,7 +31,8 @@
     "W": "Wheel",
     "Wheel": "Wheel",
     "Z": "Zillion",
-    "Zillion": "Zillion"
+    "Zillion": "Zillion",
+    "wheel": "wheel"
   },
   "assists": [
     "Assault",
@@ -49,7 +50,8 @@
     "Turn",
     "Vertical",
     "Wheel",
-    "Zillion"
+    "Zillion",
+    "wheel"
   ],
   "bit_aliases": {
     "A": "Accel",
@@ -78,8 +80,10 @@
     "Flat": "Flat",
     "Free Ball": "Free Ball",
     "Free Flat": "Free Flat",
+    "Free ball": "Free ball",
     "FreeBall": "Free Ball",
     "FreeFlat": "Free Flat",
+    "Freeball": "Free ball",
     "G": "Glide",
     "GB": "Gear Ball",
     "GF": "Gear Flat",
@@ -120,9 +124,11 @@
     "Low Flat": "Low Flat",
     "Low Orb": "Low Orb",
     "Low Rush": "Low Rush",
+    "Low orb": "Low orb",
     "LowFlat": "Low Flat",
     "LowOrb": "Low Orb",
     "LowRush": "Low Rush",
+    "Loworb": "Low orb",
     "Lv": "Level",
     "M": "Merge",
     "MN": "Metal Needle",
@@ -174,7 +180,10 @@
     "Wedge": "Wedge",
     "Yielding": "Yielding",
     "Z": "Zap",
-    "Zap": "Zap"
+    "Zap": "Zap",
+    "free ball": "free ball",
+    "freeball": "free ball",
+    "rush": "rush"
   },
   "bits": [
     "Accel",
@@ -188,6 +197,7 @@
     "Flat",
     "Free Ball",
     "Free Flat",
+    "Free ball",
     "Gear Ball",
     "Gear Flat",
     "Gear Needle",
@@ -204,6 +214,7 @@
     "Low Flat",
     "Low Orb",
     "Low Rush",
+    "Low orb",
     "Merge",
     "Metal Needle",
     "Needle",
@@ -224,7 +235,9 @@
     "Wall Wedge",
     "Wedge",
     "Yielding",
-    "Zap"
+    "Zap",
+    "free ball",
+    "rush"
   ],
   "blades": [
     {
@@ -232,15 +245,7 @@
       "system": "UX"
     },
     {
-      "name": "Arrow Wizard",
-      "system": "BX"
-    },
-    {
       "name": "Bear Scratch",
-      "system": "BX"
-    },
-    {
-      "name": "Beat Tyranno",
       "system": "BX"
     },
     {
@@ -252,27 +257,11 @@
       "system": "BX"
     },
     {
-      "name": "Bumblebee",
-      "system": "BX"
-    },
-    {
-      "name": "Buster Dran",
-      "system": "UX"
-    },
-    {
       "name": "Calibur Samurai",
       "system": "BX"
     },
     {
-      "name": "Captain America",
-      "system": "BX"
-    },
-    {
       "name": "Chain Incendio",
-      "system": "BX"
-    },
-    {
-      "name": "Chewbacca",
       "system": "BX"
     },
     {
@@ -316,14 +305,6 @@
       "system": "UX"
     },
     {
-      "name": "Dagger Dran",
-      "system": "BX"
-    },
-    {
-      "name": "Darth Vader",
-      "system": "BX"
-    },
-    {
       "name": "DracielShield",
       "system": "BX"
     },
@@ -364,10 +345,6 @@
       "system": "BX"
     },
     {
-      "name": "General Grievous",
-      "system": "BX"
-    },
-    {
       "name": "Ghost Circle",
       "system": "UX"
     },
@@ -392,10 +369,6 @@
       "system": "UX"
     },
     {
-      "name": "Hammer Incendio",
-      "system": "UX"
-    },
-    {
       "name": "Hells Chain",
       "system": "BX"
     },
@@ -408,24 +381,12 @@
       "system": "BX"
     },
     {
-      "name": "Helm Knight",
-      "system": "BX"
-    },
-    {
-      "name": "Horn Rhino",
-      "system": "BX"
-    },
-    {
       "name": "Hover Wyvern",
       "system": "UX"
     },
     {
       "name": "Impact Drake",
       "system": "UX"
-    },
-    {
-      "name": "Iron Man",
-      "system": "BX"
     },
     {
       "name": "Keel Shark",
@@ -445,6 +406,10 @@
     },
     {
       "name": "Knight Shield",
+      "system": "BX"
+    },
+    {
+      "name": "L-Drago",
       "system": "BX"
     },
     {
@@ -472,15 +437,7 @@
       "system": "BX"
     },
     {
-      "name": "Mail Knight",
-      "system": "UX"
-    },
-    {
       "name": "MammothTusk",
-      "system": "BX"
-    },
-    {
-      "name": "Megatron",
       "system": "BX"
     },
     {
@@ -496,40 +453,12 @@
       "system": "BX"
     },
     {
-      "name": "Moff Gideon",
-      "system": "BX"
-    },
-    {
-      "name": "Mosasaurus",
-      "system": "BX"
-    },
-    {
       "name": "Mummy Curse",
       "system": "UX"
     },
     {
-      "name": "Obi-Wan Kenobi",
-      "system": "BX"
-    },
-    {
-      "name": "Obsidian Shell",
-      "system": "BX"
-    },
-    {
-      "name": "Optimus Primal",
-      "system": "BX"
-    },
-    {
-      "name": "Optimus Prime",
-      "system": "BX"
-    },
-    {
       "name": "Orochi Cluster",
       "system": "UX"
-    },
-    {
-      "name": "Pearl Tiger",
-      "system": "BX"
     },
     {
       "name": "Phoenix Feather",
@@ -545,14 +474,6 @@
     },
     {
       "name": "PteraSwing",
-      "system": "BX"
-    },
-    {
-      "name": "Quetzalcoatlus",
-      "system": "BX"
-    },
-    {
-      "name": "Red Hulk",
       "system": "BX"
     },
     {
@@ -572,19 +493,11 @@
       "system": "BX"
     },
     {
-      "name": "Rock Golem",
-      "system": "UX"
-    },
-    {
       "name": "Rock Leone",
       "system": "BX"
     },
     {
       "name": "Rudder Phoenix",
-      "system": "UX"
-    },
-    {
-      "name": "Saber Samurai",
       "system": "UX"
     },
     {
@@ -600,28 +513,12 @@
       "system": "BX"
     },
     {
-      "name": "Savage Bear",
-      "system": "BX"
-    },
-    {
-      "name": "Scale Shark",
-      "system": "UX"
-    },
-    {
-      "name": "Scarlet Garuda",
-      "system": "BX"
-    },
-    {
       "name": "Scorpio Spear",
       "system": "UX"
     },
     {
       "name": "Scythe Incendio",
       "system": "BX"
-    },
-    {
-      "name": "Shadow Shinobi",
-      "system": "UX"
     },
     {
       "name": "Shark Edge",
@@ -648,16 +545,8 @@
       "system": "BX"
     },
     {
-      "name": "Shockwave",
-      "system": "BX"
-    },
-    {
       "name": "Silver Wolf",
       "system": "UX"
-    },
-    {
-      "name": "Soar Phoenix",
-      "system": "BX"
     },
     {
       "name": "Spear Scorpio",
@@ -668,27 +557,11 @@
       "system": "BX"
     },
     {
-      "name": "Spider-Man",
-      "system": "BX"
-    },
-    {
-      "name": "Spinosaurus",
-      "system": "BX"
-    },
-    {
       "name": "Starscream",
       "system": "BX"
     },
     {
       "name": "Steel Samurai",
-      "system": "BX"
-    },
-    {
-      "name": "Sterling Wolf",
-      "system": "UX"
-    },
-    {
-      "name": "Sting Unicorn",
       "system": "BX"
     },
     {
@@ -708,14 +581,6 @@
       "system": "UX"
     },
     {
-      "name": "Sword Dran",
-      "system": "BX"
-    },
-    {
-      "name": "T. Rex",
-      "system": "BX"
-    },
-    {
       "name": "Tackle Goat",
       "system": "BX"
     },
@@ -733,10 +598,6 @@
     },
     {
       "name": "The Mandalorian",
-      "system": "BX"
-    },
-    {
-      "name": "Tide Whale",
       "system": "BX"
     },
     {
@@ -768,20 +629,12 @@
       "system": "BX"
     },
     {
-      "name": "Venom",
-      "system": "BX"
-    },
-    {
-      "name": "VictoryValkyrie",
+      "name": "Victory Valkyrie",
       "system": "BX"
     },
     {
       "name": "Viper Tail",
       "system": "BX"
-    },
-    {
-      "name": "Wand Wizard",
-      "system": "UX"
     },
     {
       "name": "Weiss Tiger",

@@ -721,8 +721,12 @@ import Layout from '../layouts/Layout.astro';
     applyFilters();
   });
 
-  // Load on DOM ready
-  document.addEventListener('DOMContentLoaded', loadRankings);
+  // Load on DOM ready (module scripts may run after DOMContentLoaded)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadRankings);
+  } else {
+    loadRankings();
+  }
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {

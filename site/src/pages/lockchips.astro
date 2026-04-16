@@ -339,7 +339,12 @@ import Layout from '../layouts/Layout.astro';
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => { initFilterButtons(); loadRankings(); });
+  const lockChipInit = () => { initFilterButtons(); loadRankings(); };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', lockChipInit);
+  } else {
+    lockChipInit();
+  }
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
