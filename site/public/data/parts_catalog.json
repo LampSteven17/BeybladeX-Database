@@ -31,8 +31,7 @@
     "W": "Wheel",
     "Wheel": "Wheel",
     "Z": "Zillion",
-    "Zillion": "Zillion",
-    "wheel": "wheel"
+    "Zillion": "Zillion"
   },
   "assists": [
     "Assault",
@@ -50,8 +49,7 @@
     "Turn",
     "Vertical",
     "Wheel",
-    "Zillion",
-    "wheel"
+    "Zillion"
   ],
   "bit_aliases": {
     "A": "Accel",
