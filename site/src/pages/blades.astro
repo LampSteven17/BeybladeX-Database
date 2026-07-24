@@ -138,7 +138,7 @@ import Layout from '../layouts/Layout.astro';
     try {
       await initDB();
       const region = getSelectedRegion();
-      allBlades = await getRankedBlades(100, 1, region);
+      allBlades = await getRankedBlades(100, 1, region, (window as any).getSelectedTimeWindow?.() || { mode: 'all' });
       currentBlades = allBlades;
       renderTable(currentBlades);
       setupSeriesFilters();
@@ -491,6 +491,10 @@ import Layout from '../layouts/Layout.astro';
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
+    collapseBladeDetail();
+    loadRankings();
+  });
+  window.addEventListener('timechange', () => {
     collapseBladeDetail();
     loadRankings();
   });

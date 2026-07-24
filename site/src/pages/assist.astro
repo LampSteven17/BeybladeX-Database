@@ -108,7 +108,7 @@ import Layout from '../layouts/Layout.astro';
     try {
       await initDB();
       const region = getSelectedRegion();
-      const assists = await getRankedAssists(25, 1, region);
+      const assists = await getRankedAssists(25, 1, region, (window as any).getSelectedTimeWindow?.() || { mode: 'all' });
 
       if (assists.length === 0) {
         // Show empty state
@@ -323,6 +323,10 @@ import Layout from '../layouts/Layout.astro';
 
   // Reload when region changes
   window.addEventListener('regionchange', () => {
+    collapseDetail();
+    loadRankings();
+  });
+  window.addEventListener('timechange', () => {
     collapseDetail();
     loadRankings();
   });

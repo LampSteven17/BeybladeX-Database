@@ -24,6 +24,34 @@ import Layout from '../layouts/Layout.astro';
     <div id="runners-up" class="mb-6 space-y-px"></div>
 
     {/* ============================================
+        THIS MONTH'S TOP COMBOS (unique blades)
+        Always pinned to the current month, one combo per blade.
+        ============================================ */}
+    <section class="mb-6">
+      <div class="terminal-panel border-gold/30">
+        <div class="terminal-panel-header bg-gold/5">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-gold" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+            </svg>
+            This Month's Top Combos
+            <span id="month-featured-title" class="text-fg-muted text-[10px] normal-case tracking-normal ml-1"></span>
+          </span>
+          <a href="/combos" class="text-gold hover:text-fg text-[10px] uppercase tracking-wider transition-colors">
+            View All
+          </a>
+        </div>
+        <div class="terminal-panel-body">
+          <div id="month-featured-body" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map(() => (
+              <div class="skeleton h-24 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================================
         META EVOLUTION - Historical Timeline
         ============================================ */}
     <section class="mb-6">
@@ -333,7 +361,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getDatabaseSummary, getRankedBlades, getRankedCombos, getRankedRatchets, getRankedBits, getMetaSpotlight, getBladesSparklineData, getCombosSparklineData, getMetaEvolution, getTournamentsByMonth, BLADE_SERIES, type Region, type BladeStats, type ComboStats, type MetaEvolutionData } from '../lib/db';
+  import { initDB, getDatabaseSummary, getRankedBlades, getRankedCombos, getRankedRatchets, getRankedBits, getMetaSpotlight, getBladesSparklineData, getCombosSparklineData, getMetaEvolution, getTournamentsByMonth, getAvailablePeriods, currentMonthValue, BLADE_SERIES, type Region, type BladeStats, type ComboStats, type MetaEvolutionData } from '../lib/db';
   import { staggerFadeIn, animateNumber } from '../lib/animations';
   import { generateTrendSparkline } from '../lib/sparkline';
   import { Chart, BubbleController, LinearScale, PointElement, Tooltip, Legend } from 'chart.js';
@@ -449,6 +477,9 @@ import Layout from '../layouts/Layout.astro';
 
       // Render top combos with real sparklines
       renderTopCombos(combos, comboSparklines);
+
+      // Render this month's featured combos (unique blades) — non-blocking
+      renderMonthFeatured(region);
 
       // Render part bars
       renderPartBars(ratchets, bits);
@@ -1078,6 +1109,89 @@ import Layout from '../layouts/Layout.astro';
         svg += '</svg>';
         journeyChartEl.innerHTML = svg;
       });
+    }
+  }
+
+  function fmtMonthLabel(v: string): string {
+    const [y, m] = v.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
+
+  // "This Month's Top Combos" — pinned to the current month (falls back to the
+  // most recent month with data), deduped to one combo per blade ("unique only").
+  async function renderMonthFeatured(region: Region) {
+    const container = document.getElementById('month-featured-body');
+    const titleEl = document.getElementById('month-featured-title');
+    if (!container) return;
+
+    try {
+      let month = currentMonthValue();
+      let combos = await getRankedCombos(80, 1, region, { mode: 'month', value: month });
+
+      // Nothing yet this month → fall back to the latest month that has data.
+      if (combos.length === 0) {
+        const { months } = await getAvailablePeriods(region);
+        if (months.length) {
+          month = months[0];
+          combos = await getRankedCombos(80, 1, region, { mode: 'month', value: month });
+        }
+      }
+
+      // Unique only: keep the top combo per blade.
+      const seen = new Set<string>();
+      const unique: ComboStats[] = [];
+      for (const c of combos) {
+        if (seen.has(c.blade)) continue;
+        seen.add(c.blade);
+        unique.push(c);
+        if (unique.length >= 8) break;
+      }
+
+      const isCurrent = month === currentMonthValue();
+      if (titleEl) titleEl.textContent = `// ${fmtMonthLabel(month)}${isCurrent ? '' : ' (latest)'}`;
+
+      if (unique.length === 0) {
+        container.innerHTML = '<div class="col-span-full text-center text-fg-muted font-mono text-sm py-6">No tournament data yet this month.</div>';
+        return;
+      }
+
+      container.innerHTML = unique.map((c, i) => {
+        const strength = c.strength != null ? c.strength.toFixed(0) : '--';
+        const share = c.meta_share != null ? c.meta_share.toFixed(1) : '--';
+        const rankColor = i === 0 ? 'text-gold' : 'text-fg-muted';
+        const borderCls = i === 0 ? 'border-gold/40' : 'border-stroke';
+        return `
+          <div class="terminal-panel ${borderCls} p-3 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-lg font-bold ${rankColor} tabular-nums">#${i + 1}</span>
+              <span class="text-[9px] font-mono uppercase tracking-widest text-fg-muted">${c.uses} use${c.uses === 1 ? '' : 's'}</span>
+            </div>
+            <div class="font-mono text-sm leading-tight">
+              <span class="text-accent font-medium">${c.blade}</span>
+              <span class="text-series-ux">${c.ratchet}</span><span class="text-series-bx">${c.bit}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 border-t border-stroke pt-2 mt-auto">
+              <div class="text-center">
+                <div class="text-sm font-mono font-bold text-positive tabular-nums">${strength}</div>
+                <div class="text-[8px] font-mono uppercase tracking-wider text-fg-muted">Strength</div>
+              </div>
+              <div class="text-center">
+                <div class="text-sm font-mono font-bold text-accent tabular-nums">${share}%</div>
+                <div class="text-[8px] font-mono uppercase tracking-wider text-fg-muted">Meta</div>
+              </div>
+              <div class="text-center">
+                <div class="text-sm font-mono font-bold text-tier-ss tabular-nums">${c.first}</div>
+                <div class="text-[8px] font-mono uppercase tracking-wider text-fg-muted">1st</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      staggerFadeIn(container.children, { delay: 30 });
+    } catch (e) {
+      console.error('Failed to load monthly featured combos', e);
+      container.innerHTML = '<div class="col-span-full text-center text-negative font-mono text-sm py-6">Failed to load monthly combos.</div>';
     }
   }
 

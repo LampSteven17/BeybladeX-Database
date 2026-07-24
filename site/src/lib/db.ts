@@ -471,7 +471,7 @@ interface ScoringRow {
 
 function scoreAndRank(
   rows: ScoringRow[],
-  opts: { limit: number; minUses: number; assignTiers?: boolean }
+  opts: { limit: number; minUses: number; assignTiers?: boolean; noDecay?: boolean }
 ): PartStats[] {
   const scores: Record<string, PartStats & {
     _recent_score: number; _older_score: number;
@@ -492,7 +492,10 @@ function scoreAndRank(
     }
 
     const tournamentDate = new Date(row.tournament_date);
-    const weight = calculateRecencyWeight(tournamentDate, referenceDate);
+    // When a hard time window is applied (month/week), recency decay is disabled:
+    // every result inside the window counts equally. Otherwise a window a few
+    // months back would be crushed to ~0 weight and the ranking would be noise.
+    const weight = opts.noDecay ? 1 : calculateRecencyWeight(tournamentDate, referenceDate);
     const points = getPlacementScore(row.place, row.stage);
     const weightedScore = points * weight;
 
@@ -512,43 +515,72 @@ function scoreAndRank(
     }
   }
 
-  const list = Object.values(scores)
-    .filter(s => s.uses >= opts.minUses)
-    .map(s => {
-      s.avg_score = s.raw_score / s.uses;
+  const kept = Object.values(scores).filter(s => s.uses >= opts.minUses);
 
-      // Trend compares unweighted usage counts between the two 30-day windows.
-      // Previous version used recency-weighted *scores*, which inflated trend because the
-      // recent window (weight ~1.0) vs older window (weight ~0.35 at 30-60d) baked the
-      // decay curve into the numerator — stagnant combos showed ~+180% phantom growth.
-      if (s._recent_uses > 0 && s._older_uses > 0) {
-        const raw = (s._recent_uses - s._older_uses) / s._older_uses;
-        // Clamp to ±200% so a 1→3 uses jump doesn't scream +200% forever.
-        s.trend = Math.max(-2, Math.min(2, raw));
-      } else if (s._recent_uses > 0 && s._older_uses === 0) {
-        s.trend = 0.5;
-      } else if (s._recent_uses === 0 && s._older_uses > 0) {
-        s.trend = -Math.min(0.5, s._older_uses * 0.1);
-      } else {
-        s.trend = 0;
-      }
+  // --- Two-axis metrics -----------------------------------------------------
+  // The old ranking used a single number (raw_score) that conflated popularity
+  // with strength. We now expose two explicit axes:
+  //
+  //  * meta_share  — Meta Presence. raw_score as a % of the whole field's
+  //    score. "How much of the current meta is this?" (volume-driven).
+  //
+  //  * strength    — a popularity-INDEPENDENT quality estimate. Per top-3
+  //    appearance we assign a podium-quality q (1st=1.0, 2nd=0.6, 3rd=0.35),
+  //    then shrink each item's mean q toward the global mean with an
+  //    empirical-Bayes pseudo-count (STRENGTH_PRIOR_K). Shrinkage is what stops
+  //    a 1-of-1 combo from showing a fake 100% — small samples get pulled to
+  //    the mean until they earn their rating. Scaled to 0-100.
+  const QUALITY = (first: number, second: number, third: number) =>
+    1.0 * first + 0.6 * second + 0.35 * third;
 
-      // Clean up internal fields
-      const result: PartStats = {
-        name: s.name, raw_score: s.raw_score, uses: s.uses,
-        first: s.first, second: s.second, third: s.third,
-        avg_score: s.avg_score, trend: s.trend,
-      };
-      return result;
-    })
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, opts.limit);
+  let pooledQ = 0, pooledN = 0, totalRaw = 0;
+  for (const s of kept) {
+    pooledQ += QUALITY(s.first, s.second, s.third);
+    pooledN += s.uses;
+    totalRaw += s.raw_score;
+  }
+  const globalMeanQ = pooledN > 0 ? pooledQ / pooledN : 0;
+  const STRENGTH_PRIOR_K = 8; // ~8 pseudo-appearances at the global mean
 
-  // Assign ranks and optionally tiers
-  for (let i = 0; i < list.length; i++) {
+  const list: PartStats[] = kept.map(s => {
+    s.avg_score = s.raw_score / s.uses;
+
+    // Trend compares unweighted usage counts between the two 30-day windows.
+    // Meaningless inside a fixed historical window (all rows fall in one bucket
+    // relative to "now"), so it is suppressed when decay is off.
+    if (opts.noDecay) {
+      s.trend = 0;
+    } else if (s._recent_uses > 0 && s._older_uses > 0) {
+      const raw = (s._recent_uses - s._older_uses) / s._older_uses;
+      // Clamp to ±200% so a 1→3 uses jump doesn't scream +200% forever.
+      s.trend = Math.max(-2, Math.min(2, raw));
+    } else if (s._recent_uses > 0 && s._older_uses === 0) {
+      s.trend = 0.5;
+    } else if (s._recent_uses === 0 && s._older_uses > 0) {
+      s.trend = -Math.min(0.5, s._older_uses * 0.1);
+    } else {
+      s.trend = 0;
+    }
+
+    const shrunkQ = (QUALITY(s.first, s.second, s.third) + STRENGTH_PRIOR_K * globalMeanQ) / (s.uses + STRENGTH_PRIOR_K);
+
+    return {
+      name: s.name, raw_score: s.raw_score, uses: s.uses,
+      first: s.first, second: s.second, third: s.third,
+      avg_score: s.avg_score, trend: s.trend,
+      meta_share: totalRaw > 0 ? (s.raw_score / totalRaw) * 100 : 0,
+      strength: shrunkQ * 100,
+    };
+  });
+
+  // Rank + tier over the FULL population (not the truncated slice) so tiers are
+  // stable regardless of how many rows the caller requested.
+  list.sort((a, b) => b.raw_score - a.raw_score);
+  const n = list.length;
+  for (let i = 0; i < n; i++) {
     list[i].rank = i + 1;
     if (opts.assignTiers) {
-      const percentile = (i / list.length) * 100;
+      const percentile = (i / n) * 100;
       if (percentile < 3) list[i].tier = 'SS';
       else if (percentile < 13) list[i].tier = 'S';
       else if (percentile < 30) list[i].tier = 'A';
@@ -559,7 +591,7 @@ function scoreAndRank(
     }
   }
 
-  return list;
+  return list.slice(0, opts.limit);
 }
 
 /**
@@ -769,6 +801,8 @@ export interface BladeStats {
   third: number;
   avg_score: number;
   trend: number;
+  meta_share?: number;  // % of the field's total score (Meta Presence axis)
+  strength?: number;    // confidence-adjusted quality, 0-100 (Strength axis)
   tier?: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
   series?: 'BX' | 'CX' | 'UX';
   rank?: number;
@@ -789,6 +823,8 @@ export interface ComboStats {
   third: number;
   avg_score: number;
   trend: number;
+  meta_share?: number;  // % of the field's total score (Meta Presence axis)
+  strength?: number;    // confidence-adjusted quality, 0-100 (Strength axis)
   tier?: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
   rank?: number;
 }
@@ -802,6 +838,8 @@ export interface PartStats {
   third: number;
   avg_score: number;
   trend: number;
+  meta_share?: number;  // % of the field's total score (Meta Presence axis)
+  strength?: number;    // confidence-adjusted quality, 0-100 (Strength axis)
   rank?: number;
   tier?: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 }
@@ -859,6 +897,89 @@ function getRegionWhereClause(region?: Region, tableAlias = ''): string {
   return ` AND ${prefix}region = '${region}'`;
 }
 
+// =============================================================================
+// Time window filtering (header control: All Time / Monthly / Weekly)
+// =============================================================================
+
+export type TimeMode = 'all' | 'month' | 'week';
+
+/** A selected reporting window. value is 'YYYY-MM' for month, 'YYYY-MM-DD'
+ *  (the Monday) for week, and undefined for all-time. */
+export interface TimeWindow {
+  mode: TimeMode;
+  value?: string;
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const isoDate = (d: Date) => `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+
+/** The current month as 'YYYY-MM' (UTC). */
+export function currentMonthValue(ref: Date = new Date()): string {
+  return `${ref.getUTCFullYear()}-${pad2(ref.getUTCMonth() + 1)}`;
+}
+
+/** The Monday of the current ISO week as 'YYYY-MM-DD' (UTC). */
+export function currentWeekValue(ref: Date = new Date()): string {
+  const d = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate()));
+  const day = (d.getUTCDay() + 6) % 7; // 0 = Monday
+  d.setUTCDate(d.getUTCDate() - day);
+  return isoDate(d);
+}
+
+/** Resolve a TimeWindow to an inclusive-start / exclusive-end date range. */
+export function resolveTimeRange(tw?: TimeWindow): { start: string; end: string } | null {
+  if (!tw || tw.mode === 'all' || !tw.value) return null;
+  if (tw.mode === 'month') {
+    const [y, m] = tw.value.split('-').map(Number);
+    if (!y || !m) return null;
+    const start = new Date(Date.UTC(y, m - 1, 1));
+    const end = new Date(Date.UTC(y, m, 1));
+    return { start: isoDate(start), end: isoDate(end) };
+  }
+  // week: value is the Monday
+  const [y, m, d] = tw.value.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const start = new Date(Date.UTC(y, m - 1, d));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 7);
+  return { start: isoDate(start), end: isoDate(end) };
+}
+
+/** Build the SQL clause that restricts combo_usage rows to the window.
+ *  Assumes a `tournament_date` column is in scope. */
+function getTimeWhereClause(tw?: TimeWindow, col = 'tournament_date'): string {
+  const range = resolveTimeRange(tw);
+  if (!range) return '';
+  return ` AND ${col} >= '${range.start}' AND ${col} < '${range.end}'`;
+}
+
+/** True when a hard window is active (so scoring should skip recency decay). */
+function isWindowed(tw?: TimeWindow): boolean {
+  return !!tw && tw.mode !== 'all' && !!tw.value;
+}
+
+/**
+ * List the months and weeks (Mondays) that actually have tournament data,
+ * newest first — used to populate the header period picker.
+ */
+export async function getAvailablePeriods(region?: Region): Promise<{ months: string[]; weeks: string[] }> {
+  const regionFilter = getRegionWhereClause(region);
+  const monthRows = await query<{ period: string }>(`
+    SELECT DISTINCT strftime(tournament_date, '%Y-%m') as period
+    FROM combo_usage WHERE 1=1${regionFilter}
+    ORDER BY period DESC
+  `);
+  const weekRows = await query<{ period: string }>(`
+    SELECT DISTINCT strftime(date_trunc('week', tournament_date), '%Y-%m-%d') as period
+    FROM combo_usage WHERE 1=1${regionFilter}
+    ORDER BY period DESC
+  `);
+  return {
+    months: monthRows.map(r => r.period).filter(Boolean),
+    weeks: weekRows.map(r => r.period).filter(Boolean),
+  };
+}
+
 /**
  * Get database summary.
  */
@@ -914,8 +1035,9 @@ export async function getTournamentsByMonth(region?: Region): Promise<{ month: s
 /**
  * Get ranked blades with weighted scores.
  */
-export async function getRankedBlades(limit = 20, minUses = 1, region?: Region): Promise<BladeStats[]> {
+export async function getRankedBlades(limit = 20, minUses = 1, region?: Region, timeWindow?: TimeWindow): Promise<BladeStats[]> {
   const regionFilter = getRegionWhereClause(region);
+  const timeFilter = getTimeWhereClause(timeWindow);
   const rows = await query<{
     blade: string;
     place: number;
@@ -924,7 +1046,7 @@ export async function getRankedBlades(limit = 20, minUses = 1, region?: Region):
   }>(`
     SELECT blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
-    WHERE 1=1${regionFilter}
+    WHERE 1=1${regionFilter}${timeFilter}
   `);
 
   // Normalize blade names into ScoringRow format
@@ -935,7 +1057,7 @@ export async function getRankedBlades(limit = 20, minUses = 1, region?: Region):
     stage: r.stage,
   }));
 
-  const ranked = scoreAndRank(scoringRows, { limit, minUses, assignTiers: true });
+  const ranked = scoreAndRank(scoringRows, { limit, minUses, assignTiers: true, noDecay: isWindowed(timeWindow) });
 
   // Convert PartStats to BladeStats with series info
   return ranked.map(p => ({
@@ -947,6 +1069,8 @@ export async function getRankedBlades(limit = 20, minUses = 1, region?: Region):
     third: p.third,
     avg_score: p.avg_score,
     trend: p.trend,
+    meta_share: p.meta_share,
+    strength: p.strength,
     rank: p.rank,
     tier: p.tier,
     series: BLADE_SERIES[p.name],
@@ -957,8 +1081,9 @@ export async function getRankedBlades(limit = 20, minUses = 1, region?: Region):
  * Get ranked combos with weighted scores.
  * For CX blades, lock chip is prepended to blade name (e.g., "Pegasus Blast").
  */
-export async function getRankedCombos(limit = 20, minUses = 1, region?: Region): Promise<ComboStats[]> {
+export async function getRankedCombos(limit = 20, minUses = 1, region?: Region, timeWindow?: TimeWindow): Promise<ComboStats[]> {
   const regionFilter = getRegionWhereClause(region);
+  const timeFilter = getTimeWhereClause(timeWindow);
   const rows = await query<{
     blade: string;
     ratchet: string;
@@ -972,7 +1097,7 @@ export async function getRankedCombos(limit = 20, minUses = 1, region?: Region):
   }>(`
     SELECT blade, ratchet, bit, lock_chip, assist, over_blade, place, tournament_date::VARCHAR as tournament_date, stage
     FROM combo_usage
-    WHERE 1=1${regionFilter}
+    WHERE 1=1${regionFilter}${timeFilter}
   `);
 
   // Build scoring rows with combo metadata preserved in a side map
@@ -1001,7 +1126,7 @@ export async function getRankedCombos(limit = 20, minUses = 1, region?: Region):
     scoringRows.push({ name: key, place: row.place, tournament_date: row.tournament_date, stage: row.stage });
   }
 
-  const ranked = scoreAndRank(scoringRows, { limit, minUses, assignTiers: true });
+  const ranked = scoreAndRank(scoringRows, { limit, minUses, assignTiers: true, noDecay: isWindowed(timeWindow) });
 
   return ranked.map(p => {
     const meta = comboMeta[p.name];
@@ -1020,6 +1145,8 @@ export async function getRankedCombos(limit = 20, minUses = 1, region?: Region):
       third: p.third,
       avg_score: p.avg_score,
       trend: p.trend,
+      meta_share: p.meta_share,
+      strength: p.strength,
       rank: p.rank,
       tier: p.tier,
     };
@@ -1029,15 +1156,15 @@ export async function getRankedCombos(limit = 20, minUses = 1, region?: Region):
 /**
  * Get ranked ratchets.
  */
-export async function getRankedRatchets(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  return getRankedParts('ratchet', limit, minUses, region);
+export async function getRankedRatchets(limit = 15, minUses = 1, region?: Region, timeWindow?: TimeWindow): Promise<PartStats[]> {
+  return getRankedParts('ratchet', limit, minUses, region, timeWindow);
 }
 
 /**
  * Get ranked bits.
  */
-export async function getRankedBits(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  return getRankedParts('bit', limit, minUses, region);
+export async function getRankedBits(limit = 15, minUses = 1, region?: Region, timeWindow?: TimeWindow): Promise<PartStats[]> {
+  return getRankedParts('bit', limit, minUses, region, timeWindow);
 }
 
 /**
@@ -1045,12 +1172,13 @@ export async function getRankedBits(limit = 15, minUses = 1, region?: Region): P
  */
 type RankablePartType = 'ratchet' | 'bit' | 'assist' | 'lock_chip' | 'over_blade';
 
-async function getRankedParts(partType: RankablePartType, limit: number, minUses: number, region?: Region): Promise<PartStats[]> {
+async function getRankedParts(partType: RankablePartType, limit: number, minUses: number, region?: Region, timeWindow?: TimeWindow): Promise<PartStats[]> {
   const regionFilter = getRegionWhereClause(region);
+  const timeFilter = getTimeWhereClause(timeWindow);
   const needsNullFilter = partType === 'assist' || partType === 'lock_chip' || partType === 'over_blade' || partType === 'bit';
   const whereClause = needsNullFilter
-    ? `WHERE ${partType} IS NOT NULL${regionFilter}`
-    : `WHERE 1=1${regionFilter}`;
+    ? `WHERE ${partType} IS NOT NULL${regionFilter}${timeFilter}`
+    : `WHERE 1=1${regionFilter}${timeFilter}`;
 
   const rows = await query<{
     part: string;
@@ -1073,7 +1201,7 @@ async function getRankedParts(partType: RankablePartType, limit: number, minUses
     scoringRows.push({ name, place: row.place, tournament_date: row.tournament_date, stage: row.stage });
   }
 
-  return scoreAndRank(scoringRows, { limit, minUses });
+  return scoreAndRank(scoringRows, { limit, minUses, noDecay: isWindowed(timeWindow) });
 }
 
 /**
@@ -1913,16 +2041,16 @@ export async function getMetaSnapshot(days = 30, region?: Region): Promise<{
 /**
  * Get ranked assists with weighted scores.
  */
-export async function getRankedAssists(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  return getRankedParts('assist', limit, minUses, region);
+export async function getRankedAssists(limit = 15, minUses = 1, region?: Region, timeWindow?: TimeWindow): Promise<PartStats[]> {
+  return getRankedParts('assist', limit, minUses, region, timeWindow);
 }
 
-export async function getRankedLockChips(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  return getRankedParts('lock_chip', limit, minUses, region);
+export async function getRankedLockChips(limit = 15, minUses = 1, region?: Region, timeWindow?: TimeWindow): Promise<PartStats[]> {
+  return getRankedParts('lock_chip', limit, minUses, region, timeWindow);
 }
 
-export async function getRankedOverBlades(limit = 15, minUses = 1, region?: Region): Promise<PartStats[]> {
-  return getRankedParts('over_blade', limit, minUses, region);
+export async function getRankedOverBlades(limit = 15, minUses = 1, region?: Region, timeWindow?: TimeWindow): Promise<PartStats[]> {
+  return getRankedParts('over_blade', limit, minUses, region, timeWindow);
 }
 
 /**

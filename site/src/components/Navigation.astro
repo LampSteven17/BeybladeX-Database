@@ -1,5 +1,6 @@
 ---
 import RegionFilter from './RegionFilter.astro';
+import TimeFilter from './TimeFilter.astro';
 
 interface Props {
   currentPath?: string;
@@ -96,6 +97,9 @@ function groupIsActive(items: { href: string }[]): boolean {
           </div>
         ))}
         <div class="ml-3 pl-3 border-l border-stroke">
+          <TimeFilter />
+        </div>
+        <div class="ml-3 pl-3 border-l border-stroke">
           <RegionFilter />
         </div>
       </div>
@@ -151,6 +155,9 @@ function groupIsActive(items: { href: string }[]): boolean {
           </div>
         </div>
       ))}
+      <div class="pt-3 mt-3 border-t border-stroke flex justify-center">
+        <TimeFilter class="justify-center" />
+      </div>
       <div class="pt-3 mt-3 border-t border-stroke">
         <RegionFilter class="justify-center" />
       </div>

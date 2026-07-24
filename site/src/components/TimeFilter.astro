@@ -1,0 +1,155 @@
+---
+/**
+ * Time-window filter for the navigation header.
+ * Modes: All Time / Monthly / Weekly. When Monthly or Weekly is active a
+ * period <select> appears (populated client-side from the data via
+ * getAvailablePeriods). Selection is stored in localStorage and broadcast with
+ * a 'timechange' CustomEvent that ranking pages listen for.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+
+const modes = [
+  { value: 'all', label: 'All Time' },
+  { value: 'month', label: 'Month' },
+  { value: 'week', label: 'Week' },
+];
+---
+
+<div class:list={['time-filter flex items-center gap-2', className]}>
+  <div class="flex items-center gap-0.5 bg-panel/50 rounded p-0.5">
+    {modes.map((m) => (
+      <button
+        data-time-mode={m.value}
+        class="time-mode-btn px-2 py-1 text-[10px] font-mono uppercase tracking-wider rounded transition-all duration-150 text-fg-muted hover:text-fg"
+      >
+        {m.label}
+      </button>
+    ))}
+  </div>
+  <select
+    id="time-period-select"
+    class="hidden input text-[11px] font-mono py-1 pl-2 pr-6 h-7 max-w-[10rem]"
+    aria-label="Select period"
+  ></select>
+</div>
+
+<script>
+  import { initDB, getAvailablePeriods, currentMonthValue, currentWeekValue, type TimeMode } from '../lib/db';
+
+  const MODE_KEY = 'beyblade-timemode';
+  const VALUE_KEY = 'beyblade-timevalue';
+
+  interface TW { mode: TimeMode; value?: string }
+
+  function getWindow(): TW {
+    if (typeof localStorage === 'undefined') return { mode: 'all' };
+    const mode = (localStorage.getItem(MODE_KEY) as TimeMode) || 'all';
+    const value = localStorage.getItem(VALUE_KEY) || undefined;
+    return { mode, value: mode === 'all' ? undefined : value };
+  }
+
+  function setWindow(w: TW): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(MODE_KEY, w.mode);
+      if (w.value) localStorage.setItem(VALUE_KEY, w.value);
+    }
+    window.dispatchEvent(new CustomEvent('timechange', { detail: w }));
+  }
+
+  // Expose for other scripts / pages
+  (window as any).getSelectedTimeWindow = getWindow;
+
+  function fmtMonth(v: string): string {
+    const [y, m] = v.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
+  function fmtWeek(v: string): string {
+    const [y, m, d] = v.split('-').map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    return 'Week of ' + date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  let periods: { months: string[]; weeks: string[] } = { months: [], weeks: [] };
+
+  function updateModeStyles(): void {
+    const { mode } = getWindow();
+    document.querySelectorAll('.time-mode-btn').forEach((btn) => {
+      const active = btn.getAttribute('data-time-mode') === mode;
+      btn.classList.toggle('bg-pink', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('text-fg-muted', !active);
+    });
+  }
+
+  function populateSelect(): void {
+    const sel = document.getElementById('time-period-select') as HTMLSelectElement | null;
+    if (!sel) return;
+    const w = getWindow();
+    if (w.mode === 'all') {
+      sel.classList.add('hidden');
+      return;
+    }
+    sel.classList.remove('hidden');
+    const list = w.mode === 'month' ? periods.months : periods.weeks;
+    const fmt = w.mode === 'month' ? fmtMonth : fmtWeek;
+    sel.innerHTML = list.map((p) => `<option value="${p}">${fmt(p)}</option>`).join('');
+    // Ensure a valid current value
+    let val = w.value;
+    if (!val || !list.includes(val)) {
+      val = list[0] || (w.mode === 'month' ? currentMonthValue() : currentWeekValue());
+    }
+    sel.value = val;
+    if (val !== w.value) setWindow({ mode: w.mode, value: val });
+  }
+
+  async function ensurePeriods(): Promise<void> {
+    if (periods.months.length || periods.weeks.length) return;
+    try {
+      await initDB();
+      periods = await getAvailablePeriods();
+    } catch (e) {
+      console.error('Failed to load periods', e);
+    }
+  }
+
+  async function onModeClick(mode: TimeMode): Promise<void> {
+    if (mode === 'all') {
+      setWindow({ mode: 'all' });
+      updateModeStyles();
+      populateSelect();
+      return;
+    }
+    await ensurePeriods();
+    const list = mode === 'month' ? periods.months : periods.weeks;
+    const preferred = mode === 'month' ? currentMonthValue() : currentWeekValue();
+    const value = list.includes(preferred) ? preferred : list[0];
+    setWindow({ mode, value });
+    updateModeStyles();
+    populateSelect();
+  }
+
+  function wire(): void {
+    document.querySelectorAll('.time-mode-btn').forEach((btn) => {
+      btn.addEventListener('click', () => onModeClick(btn.getAttribute('data-time-mode') as TimeMode));
+    });
+    const sel = document.getElementById('time-period-select') as HTMLSelectElement | null;
+    sel?.addEventListener('change', () => {
+      const { mode } = getWindow();
+      setWindow({ mode, value: sel.value });
+    });
+    updateModeStyles();
+    // If a non-all mode was persisted, hydrate the select in the background.
+    if (getWindow().mode !== 'all') {
+      ensurePeriods().then(populateSelect);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wire);
+  } else {
+    wire();
+  }
+</script>

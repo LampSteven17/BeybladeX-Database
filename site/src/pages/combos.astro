@@ -63,6 +63,7 @@ import Layout from '../layouts/Layout.astro';
             <col style="width: 7rem" />
             <col style="width: 4rem" />
             <col style="width: 4rem" />
+            <col style="width: 4rem" />
             <col style="width: 4.5rem" />
             <col style="width: 3.5rem" />
             <col style="width: 3rem" />
@@ -80,7 +81,8 @@ import Layout from '../layouts/Layout.astro';
               <th>Ratchet</th>
               <th>Bit</th>
               <th>Series</th>
-              <th class="text-right">APEX</th>
+              <th class="text-right" title="Meta Presence: recency-weighted share of the field (popularity + success)">APEX</th>
+              <th class="text-right" title="Strength: confidence-adjusted podium quality, independent of how often it is used">STR</th>
               <th class="text-right">Consist</th>
               <th class="text-right">Uses</th>
               <th class="text-right">1st</th>
@@ -93,7 +95,7 @@ import Layout from '../layouts/Layout.astro';
             {/* Loading skeletons */}
             {Array.from({ length: 20 }, (_, i) => (
               <tr>
-                <td colspan="15">
+                <td colspan="16">
                   <div class="skeleton h-12 rounded"></div>
                 </td>
               </tr>
@@ -204,14 +206,19 @@ import Layout from '../layouts/Layout.astro';
     return 'ALL';
   }
 
+  function getTimeWindow(): any {
+    return (window as any).getSelectedTimeWindow?.() || { mode: 'all' };
+  }
+
   let allCombosWithRare: ComboStats[] = [];
 
   async function loadRankings() {
     try {
       await initDB();
       const region = getSelectedRegion();
-      allCombos = await getRankedCombos(500, 1, region);
-      allCombosWithRare = await getRankedCombos(2000, 1, region);
+      const tw = getTimeWindow();
+      allCombos = await getRankedCombos(500, 1, region, tw);
+      allCombosWithRare = await getRankedCombos(2000, 1, region, tw);
       filteredCombos = allCombos;
 
       // Pre-fetch meta average for radar ghost overlay + consistency data
@@ -228,7 +235,7 @@ import Layout from '../layouts/Layout.astro';
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="15" class="text-center text-negative py-8">
+            <td colspan="16" class="text-center text-negative py-8">
               Failed to load combo rankings. Please refresh the page.
             </td>
           </tr>
@@ -394,7 +401,7 @@ import Layout from '../layouts/Layout.astro';
     detailRow = document.createElement('tr');
     detailRow.className = 'detail-row';
     detailRow.innerHTML = `
-      <td colspan="15">
+      <td colspan="16">
         <div class="detail-content">
           <div class="detail-inner">
             <div class="flex flex-col md:flex-row gap-6 items-start">
@@ -591,7 +598,7 @@ import Layout from '../layouts/Layout.astro';
     if (combos.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="15" class="text-center text-fg-muted py-8">
+          <td colspan="16" class="text-center text-fg-muted py-8">
             No combos found.
           </td>
         </tr>
@@ -631,6 +638,7 @@ import Layout from '../layouts/Layout.astro';
           <td class="font-mono text-series-bx">${combo.bit}</td>
           <td>${series ? `<span class="${seriesBadgeClass}">${series}</span>` : '<span class="text-fg-muted">-</span>'}</td>
           <td class="text-right font-mono text-fg">${combo.raw_score.toFixed(1)}</td>
+          <td class="text-right font-mono text-positive">${combo.strength != null ? combo.strength.toFixed(0) : '--'}</td>
           <td class="text-right font-mono">${consistencyHtml}</td>
           <td class="text-right font-mono">${combo.uses}</td>
           <td class="text-right font-mono text-tier-ss">${combo.first}</td>
@@ -728,8 +736,12 @@ import Layout from '../layouts/Layout.astro';
     loadRankings();
   }
 
-  // Reload when region changes
+  // Reload when region or time window changes
   window.addEventListener('regionchange', () => {
+    collapseDetail();
+    loadRankings();
+  });
+  window.addEventListener('timechange', () => {
     collapseDetail();
     loadRankings();
   });
@@ -741,7 +753,7 @@ import Layout from '../layouts/Layout.astro';
      (e.g. toggling "Unique Blades Only" or tier filters). */
   #rankings-table.data-table {
     table-layout: fixed;
-    min-width: 70rem;
+    min-width: 74rem;
   }
   #rankings-table.data-table th {
     @apply px-2 py-2 text-xs;
