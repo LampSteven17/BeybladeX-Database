@@ -456,6 +456,9 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
         ("suggestion_reason", "VARCHAR"),
         ("suggestion_confidence", "DOUBLE"),
         ("suggested_at", "TIMESTAMP"),
+        # 'refresh' marks a part belonging to the Infinity (∞) line/format,
+        # detected from the part's individual wiki page.
+        ("refresh", "BOOLEAN"),
     ]:
         try:
             conn.execute(f"ALTER TABLE parts_catalog ADD COLUMN {col} {typ}")

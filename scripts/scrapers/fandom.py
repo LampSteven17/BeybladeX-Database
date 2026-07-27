@@ -445,8 +445,35 @@ def _discover_from_category(url: str, part_type: str, default_system: Optional[s
     return _parse_category_soup(_fetch_page(url), part_type, default_system)
 
 
+def _detect_refresh_from_page(html: str) -> bool:
+    """True if a part's individual wiki page marks it as the Infinity (∞)
+    line / Refresh format.
+
+    The wiki can label this in a couple of places, so we check the most stable
+    structural signals case-insensitively for 'infinity' or 'refresh':
+      1. Category links at the bottom of the page (e.g. Category:Infinity ...).
+      2. Portable-infobox rows / labeled fields.
+    """
+    if not html:
+        return False
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "lxml")
+
+    for a in soup.select('a[href*="/wiki/Category:"]'):
+        blob = ((a.get_text() or "") + " " + a.get("href", "")).lower()
+        if "infinity" in blob or "refresh" in blob:
+            return True
+
+    for el in soup.select('.pi-data-value, .pi-data, [data-source], .portable-infobox'):
+        if "infinity" in (el.get_text(" ") or "").lower() or "refresh" in (el.get_text(" ") or "").lower():
+            return True
+
+    return False
+
+
 def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
-                         wiki_url: Optional[str], is_metal: bool = False) -> None:
+                         wiki_url: Optional[str], is_metal: bool = False,
+                         refresh: Optional[bool] = None) -> None:
     """Idempotent upsert for a wiki-discovered part.
 
     IMPORTANT: human decisions in the catalog (status='rejected') win over
@@ -454,6 +481,10 @@ def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
     the status alone — only refreshes wiki_url and metal flag. Otherwise
     a user's "Reject" or "Map to..." action would silently revert every
     time they re-ran the wiki bookmarklet.
+
+    `refresh` is the Infinity (∞) line flag parsed from the part's individual
+    page. None means "not determined this run" (e.g. the individual page
+    wasn't in the bundle) and leaves any existing value untouched.
     """
     existing = conn.execute(
         "SELECT status FROM parts_catalog WHERE name = ? AND part_type = ?",
@@ -465,9 +496,10 @@ def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
             conn.execute("""
                 UPDATE parts_catalog SET
                     wiki_url = COALESCE(?, wiki_url),
-                    metal = ?
+                    metal = ?,
+                    refresh = COALESCE(?, refresh)
                 WHERE name = ? AND part_type = ?
-            """, [wiki_url, is_metal, name, part_type])
+            """, [wiki_url, is_metal, refresh, name, part_type])
         else:
             conn.execute("""
                 UPDATE parts_catalog SET
@@ -476,15 +508,16 @@ def _upsert_catalog_part(conn, name: str, part_type: str, system: Optional[str],
                     status = 'accepted',
                     source = 'wiki',
                     metal = ?,
+                    refresh = COALESCE(?, refresh),
                     accepted_at = COALESCE(accepted_at, current_timestamp)
                 WHERE name = ? AND part_type = ?
-            """, [wiki_url, system, is_metal, name, part_type])
+            """, [wiki_url, system, is_metal, refresh, name, part_type])
     else:
         conn.execute("""
             INSERT INTO parts_catalog
-                (name, part_type, system, wiki_url, status, source, metal, accepted_at)
-            VALUES (?, ?, ?, ?, 'accepted', 'wiki', ?, current_timestamp)
-        """, [name, part_type, system, wiki_url, is_metal])
+                (name, part_type, system, wiki_url, status, source, metal, refresh, accepted_at)
+            VALUES (?, ?, ?, ?, 'accepted', 'wiki', ?, ?, current_timestamp)
+        """, [name, part_type, system, wiki_url, is_metal, refresh])
 
 
 # Filename prefix → part_type, used by the RAGFlow fallback when the
@@ -624,9 +657,20 @@ def populate_parts_catalog(
             print(f"    Found {len(parts)} {part_type} (via {source})")
         counts[part_type] = len(parts)
 
+        refresh_hits = 0
         for p in parts:
             is_metal = (part_type == "lock_chip" and p["name"] in METAL_LOCK_CHIPS)
-            _upsert_catalog_part(conn, p["name"], part_type, p["system"], p["wiki_url"], is_metal)
+            # If the individual part page was included in the bundle, parse it
+            # for the Infinity (∞) line flag. Absent from bundle => None (leave
+            # any existing value).
+            part_html = pages.get(p["wiki_url"]) if pages else None
+            refresh = _detect_refresh_from_page(part_html) if part_html else None
+            if refresh:
+                refresh_hits += 1
+            _upsert_catalog_part(conn, p["name"], part_type, p["system"], p["wiki_url"], is_metal, refresh)
+
+        if refresh_hits:
+            print(f"    [{part_type}] {refresh_hits} tagged Infinity (∞) from individual pages")
 
         if source == "fetch":
             time.sleep(RATE_LIMIT)

@@ -714,6 +714,74 @@ def detect_drift(conn) -> dict:
 # ----------------------------------------------------------------------
 # JSON export for the frontend
 # ----------------------------------------------------------------------
+def apply_refresh_from_wiki_api(conn) -> int:
+    """Flag parts of the Infinity (∞) wave-2 line.
+
+    'Infinity' is a wave-2 re-release spanning BX/UX/CX. There's no clean wiki
+    category for it, but every Infinity part's page literally mentions
+    "Infinity" in its text. We fetch each accepted part's wikitext via the
+    MediaWiki API (reachable server-side, unlike the Cloudflare-blocked HTML)
+    and flag those whose text contains 'infinity'. Returns the count flagged;
+    -1 if the API was unreachable (flags left unchanged).
+    """
+    import urllib.request, urllib.parse, json as _json, time
+    from collections import defaultdict
+    ua = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36"}
+
+    rows = conn.execute(
+        "SELECT name, part_type, wiki_url FROM parts_catalog "
+        "WHERE wiki_url IS NOT NULL AND status = 'accepted'"
+    ).fetchall()
+    title_map: dict[str, list] = defaultdict(list)
+    for name, ptype, url in rows:
+        if "/wiki/" not in url:
+            continue
+        title = urllib.parse.unquote(url.split("/wiki/", 1)[1]).replace("_", " ")
+        title_map[title].append((name, ptype))
+    titles = list(title_map.keys())
+    if not titles:
+        return 0
+
+    infinity_titles: set[str] = set()
+    reached = False
+    for i in range(0, len(titles), 40):
+        batch = titles[i:i + 40]
+        q = {"action": "query", "prop": "revisions", "rvprop": "content",
+             "rvslots": "main", "format": "json", "titles": "|".join(batch)}
+        url = "https://beyblade.fandom.com/api.php?" + urllib.parse.urlencode(q)
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=ua), timeout=30) as r:
+                data = _json.load(r)
+        except Exception as e:
+            print(f"  [refresh] wiki API failed: {e}")
+            if not reached:
+                return -1  # never reached the API at all — leave flags untouched
+            break
+        reached = True
+        for _pid, page in data.get("query", {}).get("pages", {}).items():
+            revs = page.get("revisions", [])
+            if not revs:
+                continue
+            content = revs[0].get("slots", {}).get("main", {}).get("*", "") or ""
+            if "infinity" in content.lower():
+                infinity_titles.add(page.get("title", ""))
+        time.sleep(0.3)
+
+    conn.execute("UPDATE parts_catalog SET refresh = FALSE")
+    flagged = 0
+    for title, parts in title_map.items():
+        if title in infinity_titles:
+            for name, ptype in parts:
+                conn.execute(
+                    "UPDATE parts_catalog SET refresh = TRUE WHERE name = ? AND part_type = ?",
+                    [name, ptype],
+                )
+                flagged += 1
+    n = conn.execute("SELECT COUNT(*) FROM parts_catalog WHERE refresh = TRUE").fetchone()[0]
+    print(f"  [refresh] {n} parts mention 'Infinity' (of {len(titles)} pages checked)")
+    return n
+
+
 def export_catalog_json(conn, path: Path = CATALOG_JSON_PATH) -> None:
     """Emit site/public/data/parts_catalog.json from the parts_catalog table.
 
@@ -722,7 +790,17 @@ def export_catalog_json(conn, path: Path = CATALOG_JSON_PATH) -> None:
     """
     cat = PartsCatalog.load(conn)
 
+    # Names of accepted parts flagged as the Infinity (∞) line/format, parsed
+    # from their individual wiki pages. Flat across part types; the frontend
+    # checks a combo's blade against this set for the REFRESH column.
+    refresh_names = [
+        r[0] for r in conn.execute(
+            "SELECT DISTINCT name FROM parts_catalog WHERE status = 'accepted' AND refresh = TRUE"
+        ).fetchall()
+    ]
+
     payload = {
+        "refresh": sorted(refresh_names),
         "lock_chips": [
             {"name": n, "metal": n in cat.metal_lock_chips}
             for n in sorted(cat.lock_chips)

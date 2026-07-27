@@ -14,7 +14,6 @@ const { class: className = '' } = Astro.props;
 const modes = [
   { value: 'all', label: 'All Time' },
   { value: 'month', label: 'Month' },
-  { value: 'week', label: 'Week' },
 ];
 ---
 
@@ -31,8 +30,9 @@ const modes = [
   </div>
   <select
     id="time-period-select"
-    class="hidden input text-[11px] font-mono py-1 pl-2 pr-6 h-7 max-w-[10rem]"
+    class="input text-[10px] font-mono py-1 pl-1.5 pr-5 h-7 w-[6.5rem]"
     aria-label="Select period"
+    title="Jump to a specific month or week"
   ></select>
 </div>
 
@@ -46,7 +46,9 @@ const modes = [
 
   function getWindow(): TW {
     if (typeof localStorage === 'undefined') return { mode: 'all' };
-    const mode = (localStorage.getItem(MODE_KEY) as TimeMode) || 'all';
+    // 'week' was removed; coerce any persisted week selection back to all-time.
+    const stored = localStorage.getItem(MODE_KEY);
+    const mode: TimeMode = stored === 'month' ? 'month' : 'all';
     const value = localStorage.getItem(VALUE_KEY) || undefined;
     return { mode, value: mode === 'all' ? undefined : value };
   }
@@ -62,14 +64,15 @@ const modes = [
   // Expose for other scripts / pages
   (window as any).getSelectedTimeWindow = getWindow;
 
+  // Abbreviated labels to keep the header control compact, e.g. "Jul '26", "Jul 6".
   function fmtMonth(v: string): string {
     const [y, m] = v.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const mon = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    return `${mon} '${String(y).slice(2)}`;
   }
   function fmtWeek(v: string): string {
     const [y, m, d] = v.split('-').map(Number);
-    const date = new Date(Date.UTC(y, m - 1, d));
-    return 'Week of ' + date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
   }
 
   let periods: { months: string[]; weeks: string[] } = { months: [], weeks: [] };
@@ -88,21 +91,15 @@ const modes = [
     const sel = document.getElementById('time-period-select') as HTMLSelectElement | null;
     if (!sel) return;
     const w = getWindow();
-    if (w.mode === 'all') {
-      sel.classList.add('hidden');
-      return;
-    }
-    sel.classList.remove('hidden');
-    const list = w.mode === 'month' ? periods.months : periods.weeks;
-    const fmt = w.mode === 'month' ? fmtMonth : fmtWeek;
-    sel.innerHTML = list.map((p) => `<option value="${p}">${fmt(p)}</option>`).join('');
-    // Ensure a valid current value
-    let val = w.value;
-    if (!val || !list.includes(val)) {
-      val = list[0] || (w.mode === 'month' ? currentMonthValue() : currentWeekValue());
-    }
-    sel.value = val;
-    if (val !== w.value) setWindow({ mode: w.mode, value: val });
+    // The selector stays visible in every mode and lists months. Picking a value
+    // while in All Time drops into Month mode (see the change handler below).
+    const list = periods.months;
+    sel.innerHTML = list.map((p) => `<option value="${p}">${fmtMonth(p)}</option>`).join('');
+    // Reflect the active value when a concrete window is set, else show the latest.
+    const val = (w.mode !== 'all' && w.value && list.includes(w.value)) ? w.value : (list[0] || '');
+    if (val) sel.value = val;
+    // Only persist a value when a real window (month/week) is active.
+    if (w.mode !== 'all' && val && val !== w.value) setWindow({ mode: w.mode, value: val });
   }
 
   async function ensurePeriods(): Promise<void> {
@@ -137,14 +134,14 @@ const modes = [
     });
     const sel = document.getElementById('time-period-select') as HTMLSelectElement | null;
     sel?.addEventListener('change', () => {
-      const { mode } = getWindow();
-      setWindow({ mode, value: sel.value });
+      // The selector always lists months now, so picking a period is Month mode.
+      setWindow({ mode: 'month', value: sel.value });
+      updateModeStyles();
     });
     updateModeStyles();
-    // If a non-all mode was persisted, hydrate the select in the background.
-    if (getWindow().mode !== 'all') {
-      ensurePeriods().then(populateSelect);
-    }
+    // Always hydrate the selector (it stays visible in every mode). initDB is a
+    // shared singleton, so this rides on the DB load the page already does.
+    ensurePeriods().then(populateSelect);
   }
 
   if (document.readyState === 'loading') {

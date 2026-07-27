@@ -198,6 +198,11 @@ let METAL_LOCK_CHIPS = new Set(['Emperor', 'Valkyrie']);
 // but still count as plastic in combo aggregation.
 let HIDDEN_LOCK_CHIPS = new Set<string>([]);
 
+// Names of parts belonging to the Infinity (∞) line/format, from
+// parts_catalog.json (refresh flag parsed from individual wiki pages). Used by
+// the combos REFRESH column.
+export let REFRESH_PARTS = new Set<string>();
+
 export function getLockChipMaterial(name: string): 'Metal' | 'Plastic' {
   return METAL_LOCK_CHIPS.has(name) ? 'Metal' : 'Plastic';
 }
@@ -364,6 +369,7 @@ async function loadCatalogJson(): Promise<void> {
     cx_full_names?: string[];
     bit_aliases?: Record<string, string>;
     metal_lock_chips?: string[];
+    refresh?: string[];
   };
 
   const cacheBuster = Date.now();
@@ -403,6 +409,11 @@ async function loadCatalogJson(): Promise<void> {
   // BIT_DISPLAY_NAMES — merge catalog aliases on top of hardcoded fallbacks
   if (cat.bit_aliases) {
     BIT_DISPLAY_NAMES = { ...BIT_DISPLAY_NAMES, ...cat.bit_aliases };
+  }
+
+  // REFRESH_PARTS — Infinity (∞) line parts
+  if (cat.refresh) {
+    REFRESH_PARTS = new Set(cat.refresh);
   }
 
   console.log(
@@ -1109,15 +1120,21 @@ export async function getRankedCombos(limit = 20, minUses = 1, region?: Region, 
 
     const ratchet = normalizeRatchet(row.ratchet);
     const bit = normalizeBit(row.bit);
-    const blade = getFullBladeName(row.blade, row.lock_chip);
-    const keyParts = [blade, row.over_blade, row.assist, ratchet, bit].filter(Boolean);
+    // Identify CX combos by the actual lock chip NAME (Valkyrie, Emperor, Dran…)
+    // rather than the material. Each chip name maps to one material, so keying on
+    // the name keeps metal-chip and plastic-chip combos separate and independently
+    // ranked, while showing players the real chip. The base blade no longer carries
+    // a material prefix — the lock chip is its own dimension.
+    const blade = normalizeBladeDisplay(row.blade);
+    const lockChip = row.lock_chip || null;
+    const keyParts = [lockChip, row.over_blade, blade, row.assist, ratchet, bit].filter(Boolean);
     const key = keyParts.join('|');
 
     if (!comboMeta[key]) {
       comboMeta[key] = {
         combo: keyParts.join(' '),
         blade, ratchet, bit,
-        lockChip: row.lock_chip ? getLockChipMaterial(row.lock_chip) : null,
+        lockChip,
         assist: row.assist,
         overBlade: row.over_blade,
       };
@@ -4012,8 +4029,17 @@ export async function getMetaSpotlight(region?: Region): Promise<MetaSpotlightDa
       };
     }
 
-    const champion = sortedCombos[0] ? toSpotlightCombo(sortedCombos[0]) : null;
-    const topThree = sortedCombos.slice(0, 3).map(toSpotlightCombo);
+    // Unique blades only: a dominant blade shouldn't hold multiple podium
+    // spots (e.g. Wizard Rod at both 1st and 3rd).
+    const seenBlade = new Set<string>();
+    const uniqueByBlade = sortedCombos.filter(c => {
+      if (seenBlade.has(c.blade)) return false;
+      seenBlade.add(c.blade);
+      return true;
+    });
+
+    const champion = uniqueByBlade[0] ? toSpotlightCombo(uniqueByBlade[0]) : null;
+    const topThree = uniqueByBlade.slice(0, 3).map(toSpotlightCombo);
 
     return { champion, topThree, comboStats, totalPlacements };
   }

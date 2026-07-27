@@ -44,11 +44,20 @@ scrape_status = {
 
 
 def copy_db_to_dist():
-    """Copy database from source to dist directory."""
+    """Copy database + parts catalog JSON from source to dist directory."""
     if SOURCE_DB.exists():
         DIST_DB.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(SOURCE_DB, DIST_DB)
         print(f"[{datetime.now().isoformat()}] Database copied to dist")
+    # Mirror the parts catalog JSON the frontend reads for part classification
+    # (series badges, lock-chip material, CX detection). Without this, wiki
+    # catalog refreshes never reach the live site.
+    src_json = SITE_DIR / "public" / "data" / "parts_catalog.json"
+    dist_json = SITE_DIR / "dist" / "data" / "parts_catalog.json"
+    if src_json.exists():
+        dist_json.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_json, dist_json)
+        print(f"[{datetime.now().isoformat()}] parts_catalog.json copied to dist")
 
 
 def run_scrape(sources: list[str] = None, full: bool = False):
@@ -613,7 +622,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 sys.path.insert(0, str(SCRIPTS_DIR / "scrapers"))
                 from db import get_connection, init_schema, normalize_data
                 from fandom import populate_parts_catalog, CATEGORY_PAGES
-                from catalog import PartsCatalog
+                from catalog import PartsCatalog, export_catalog_json, apply_refresh_from_wiki_api
 
                 # Sanity check: how many of the expected Category URLs are in
                 # the bundle? Logged so misconfigured bookmarklets are obvious.
@@ -628,6 +637,13 @@ class APIHandler(BaseHTTPRequestHandler):
                     PartsCatalog._instance = PartsCatalog.load(conn)
                     counts = populate_parts_catalog(conn, verbose=False, pages=pages)
                     fixed = normalize_data(conn)
+                    # Flag Infinity (∞) line parts from the Season 3 wiki
+                    # category via the MediaWiki API (reachable server-side).
+                    apply_refresh_from_wiki_api(conn)
+                    # Regenerate the JSON the frontend reads so newly-scraped
+                    # parts (lock chips, blades, series tags, ∞) actually reach
+                    # the site. Previously the table updated but JSON went stale.
+                    export_catalog_json(conn)
                 finally:
                     conn.close()
 

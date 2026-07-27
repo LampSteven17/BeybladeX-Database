@@ -27,18 +27,14 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
 
-    {/* Tier Filter */}
+    {/* Filters */}
     <div class="mb-6 flex flex-wrap gap-3 items-center">
-      <span class="text-fg-muted text-sm">Filter by Tier:</span>
+      <span class="text-fg-muted text-sm">Series:</span>
       <div class="flex flex-wrap gap-2">
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 bg-accent/10 text-accent border-accent/30" data-tier="all">All</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-ss border-tier-ss/30 hover:bg-tier-ss/10" data-tier="SS">SS</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-s border-tier-s/30 hover:bg-tier-s/10" data-tier="S">S</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-a border-tier-a/30 hover:bg-tier-a/10" data-tier="A">A</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-b border-tier-b/30 hover:bg-tier-b/10" data-tier="B">B</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-c border-tier-c/30 hover:bg-tier-c/10" data-tier="C">C</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-d border-tier-d/30 hover:bg-tier-d/10" data-tier="D">D</button>
-        <button class="tier-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-tier-f border-tier-f/30 hover:bg-tier-f/10" data-tier="F">F</button>
+        <button class="series-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 bg-accent/10 text-accent border-accent/30" data-series="all">All</button>
+        <button class="series-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-series-bx border-series-bx/30 hover:bg-series-bx/10" data-series="BX">BX</button>
+        <button class="series-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-series-ux border-series-ux/30 hover:bg-series-ux/10" data-series="UX">UX</button>
+        <button class="series-filter px-2 py-1 text-xs font-mono rounded border transition-all duration-200 text-series-cx border-series-cx/30 hover:bg-series-cx/10" data-series="CX">CX</button>
       </div>
       <span class="text-fg-muted text-sm ml-4">|</span>
       <button
@@ -55,16 +51,14 @@ import Layout from '../layouts/Layout.astro';
         <table class="data-table" id="rankings-table">
           <colgroup>
             <col style="width: 3rem" />
-            <col style="width: 3.5rem" />
-            <col style="width: 14rem" />
+            <col style="width: 7rem" />
             <col style="width: 5rem" />
+            <col style="width: 11rem" />
             <col style="width: 4rem" />
             <col style="width: 5rem" />
             <col style="width: 7rem" />
             <col style="width: 4rem" />
             <col style="width: 4rem" />
-            <col style="width: 4rem" />
-            <col style="width: 4.5rem" />
             <col style="width: 3.5rem" />
             <col style="width: 3rem" />
             <col style="width: 3rem" />
@@ -74,28 +68,26 @@ import Layout from '../layouts/Layout.astro';
           <thead>
             <tr>
               <th>#</th>
-              <th>Tier</th>
-              <th>Blade</th>
+              <th title="Lock chip (CX only) — dash for BX/UX">Lock</th>
               <th>Over</th>
+              <th>Blade</th>
               <th>Assist</th>
               <th>Ratchet</th>
               <th>Bit</th>
               <th>Series</th>
-              <th class="text-right" title="Meta Presence: recency-weighted share of the field (popularity + success)">APEX</th>
-              <th class="text-right" title="Strength: confidence-adjusted podium quality, independent of how often it is used">STR</th>
-              <th class="text-right">Consist</th>
+              <th class="text-center" title="Infinity (∞) line — dash for base">Refresh</th>
               <th class="text-right">Uses</th>
               <th class="text-right">1st</th>
               <th class="text-right">2nd</th>
               <th class="text-right">3rd</th>
-              <th class="text-right">Trend</th>
+              <th class="text-right" title="Change in usage: last 30 days vs the prior 30 days">Trend</th>
             </tr>
           </thead>
           <tbody id="rankings-body">
             {/* Loading skeletons */}
             {Array.from({ length: 20 }, (_, i) => (
               <tr>
-                <td colspan="16">
+                <td colspan="14">
                   <div class="skeleton h-12 rounded"></div>
                 </td>
               </tr>
@@ -118,7 +110,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { initDB, getRankedCombos, getComboRadarStats, getMetaAverageRadarStats, BLADE_SERIES, type ComboStats, type ComboRadarStats, type Region } from '../lib/db';
+  import { initDB, getRankedCombos, getComboRadarStats, getMetaAverageRadarStats, getLockChipMaterial, BLADE_SERIES, REFRESH_PARTS, type ComboStats, type ComboRadarStats, type Region } from '../lib/db';
   import { staggerFadeIn } from '../lib/animations';
 
   const API_BASE = window.location.hostname === 'localhost'
@@ -188,10 +180,16 @@ import Layout from '../layouts/Layout.astro';
   let allCombos: ComboStats[] = [];
   let filteredCombos: ComboStats[] = [];
   let displayedCount = 50;
-  let currentTier: string = 'all';
+  let currentSeries: string = 'all';
   let searchQuery: string = '';
   let uniqueBladesOnly: boolean = false;
   const LOAD_INCREMENT = 50;
+
+  // Space/case-insensitive lookup for the Infinity (∞) line, built after the
+  // catalog loads. Handles catalog names like "StormSpriggan" vs the
+  // tournament "Storm Spriggan".
+  let refreshNorm = new Set<string>();
+  const normName = (s: string) => (s || '').replace(/\s+/g, '').toLowerCase();
 
   // Radar chart state
   let expandedRow: HTMLTableRowElement | null = null;
@@ -215,6 +213,7 @@ import Layout from '../layouts/Layout.astro';
   async function loadRankings() {
     try {
       await initDB();
+      refreshNorm = new Set([...REFRESH_PARTS].map(normName));
       const region = getSelectedRegion();
       const tw = getTimeWindow();
       allCombos = await getRankedCombos(500, 1, region, tw);
@@ -227,7 +226,7 @@ import Layout from '../layouts/Layout.astro';
 
       renderTable(filteredCombos.slice(0, displayedCount));
       updateLoadMoreButton();
-      setupTierFilters();
+      setupSeriesFilters();
       setupSearch();
     } catch (error) {
       console.error('Failed to load rankings:', error);
@@ -235,7 +234,7 @@ import Layout from '../layouts/Layout.astro';
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="16" class="text-center text-negative py-8">
+            <td colspan="14" class="text-center text-negative py-8">
               Failed to load combo rankings. Please refresh the page.
             </td>
           </tr>
@@ -262,34 +261,6 @@ import Layout from '../layouts/Layout.astro';
     updateLoadMoreButton();
   }
 
-  function setupTierFilters() {
-    document.querySelectorAll('.tier-filter').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tier = btn.getAttribute('data-tier') || 'all';
-        currentTier = tier;
-        updateTierStyles(tier);
-        applyTierFilter();
-      });
-    });
-  }
-
-  function updateTierStyles(activeTier: string) {
-    document.querySelectorAll('.tier-filter').forEach(btn => {
-      const tier = btn.getAttribute('data-tier');
-      btn.classList.remove('bg-accent/10', 'bg-tier-ss/10', 'bg-tier-s/10', 'bg-tier-a/10', 'bg-tier-b/10', 'bg-tier-c/10', 'bg-tier-d/10', 'bg-tier-f/10');
-      if (tier === activeTier) {
-        if (tier === 'all') btn.classList.add('bg-accent/10');
-        else if (tier === 'SS') btn.classList.add('bg-tier-ss/10');
-        else if (tier === 'S') btn.classList.add('bg-tier-s/10');
-        else if (tier === 'A') btn.classList.add('bg-tier-a/10');
-        else if (tier === 'B') btn.classList.add('bg-tier-b/10');
-        else if (tier === 'C') btn.classList.add('bg-tier-c/10');
-        else if (tier === 'D') btn.classList.add('bg-tier-d/10');
-        else if (tier === 'F') btn.classList.add('bg-tier-f/10');
-      }
-    });
-  }
-
   function applyFilters() {
     collapseDetail();
     let filtered = searchQuery ? allCombosWithRare : allCombos;
@@ -304,8 +275,11 @@ import Layout from '../layouts/Layout.astro';
       );
     }
 
-    if (currentTier !== 'all') {
-      filtered = filtered.filter(c => c.tier === currentTier);
+    if (currentSeries !== 'all') {
+      // A lock chip is the definitive CX signal; otherwise fall back to the
+      // blade's series (BX/UX). combo.blade carries a "Metal "/"Plastic " prefix
+      // for CX, which getBladeSeries can't classify — hence the lockChip check.
+      filtered = filtered.filter(c => (c.lockChip ? 'CX' : getBladeSeries(c.blade)) === currentSeries);
     }
 
     if (uniqueBladesOnly) {
@@ -323,8 +297,27 @@ import Layout from '../layouts/Layout.astro';
     updateLoadMoreButton();
   }
 
-  function applyTierFilter() {
-    applyFilters();
+  function setupSeriesFilters() {
+    document.querySelectorAll('.series-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentSeries = btn.getAttribute('data-series') || 'all';
+        updateSeriesStyles(currentSeries);
+        applyFilters();
+      });
+    });
+  }
+
+  function updateSeriesStyles(activeSeries: string) {
+    document.querySelectorAll('.series-filter').forEach(btn => {
+      const series = btn.getAttribute('data-series');
+      btn.classList.remove('bg-accent/10', 'bg-series-bx/10', 'bg-series-ux/10', 'bg-series-cx/10');
+      if (series === activeSeries) {
+        if (series === 'all') btn.classList.add('bg-accent/10');
+        else if (series === 'BX') btn.classList.add('bg-series-bx/10');
+        else if (series === 'UX') btn.classList.add('bg-series-ux/10');
+        else if (series === 'CX') btn.classList.add('bg-series-cx/10');
+      }
+    });
   }
 
   function setupSearch() {
@@ -335,10 +328,6 @@ import Layout from '../layouts/Layout.astro';
         applyFilters();
       });
     }
-  }
-
-  function getTier(combo: ComboStats): 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F' {
-    return combo.tier || 'C';
   }
 
   // Collapse any open detail row
@@ -401,7 +390,7 @@ import Layout from '../layouts/Layout.astro';
     detailRow = document.createElement('tr');
     detailRow.className = 'detail-row';
     detailRow.innerHTML = `
-      <td colspan="16">
+      <td colspan="14">
         <div class="detail-content">
           <div class="detail-inner">
             <div class="flex flex-col md:flex-row gap-6 items-start">
@@ -598,7 +587,7 @@ import Layout from '../layouts/Layout.astro';
     if (combos.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="16" class="text-center text-fg-muted py-8">
+          <td colspan="14" class="text-center text-fg-muted py-8">
             No combos found.
           </td>
         </tr>
@@ -607,17 +596,12 @@ import Layout from '../layouts/Layout.astro';
     }
 
     tbody.innerHTML = combos.map((combo, index) => {
-      const tier = getTier(combo);
       const displayRank = uniqueBladesOnly ? index + 1 : combo.rank;
-      const series = getBladeSeries(combo.blade);
+      const series = combo.lockChip ? 'CX' : getBladeSeries(combo.blade);
       const seriesBadgeClass = series === 'BX' ? 'series-badge-bx' : series === 'UX' ? 'series-badge-ux' : series === 'CX' ? 'series-badge-cx' : '';
       // Extract the base blade name for CX blades (e.g., "Pegasus Blast" -> blade is the full name as stored)
       // For the radar lookup, we need the base blade name from the database
       const bladeBaseName = getBladeBaseName(combo.blade);
-      const consistencyEntry = consistencyCache ? findConsistency(consistencyCache, bladeBaseName, combo.ratchet, combo.bit) : null;
-      const consistencyHtml = consistencyEntry && consistencyEntry.total_battles > 0
-        ? `<span class="${consistencyEntry.consistency >= 70 ? 'text-positive' : consistencyEntry.consistency >= 40 ? 'text-accent' : 'text-fg-muted'}">${(consistencyEntry.consistency / 100).toFixed(3)}</span>`
-        : '<span class="text-fg-disabled">--</span>';
       return `
         <tr class="ranking-row hover:bg-panel"
             data-blade="${bladeBaseName}"
@@ -626,20 +610,18 @@ import Layout from '../layouts/Layout.astro';
             data-assist="${combo.assist || ''}"
             data-overblade="${combo.overBlade || ''}">
           <td class="font-mono">
-            <span class="rank-number text-lg">${displayRank}</span>
+            <span class="rank-number text-sm">${displayRank}</span>
           </td>
-          <td>
-            <span class="${getTierClass(tier)} cursor-pointer hover:ring-2 hover:ring-white/30" data-tier="${tier}">${tier}</span>
-          </td>
-          <td class="font-mono font-medium text-accent">${combo.blade}</td>
+          <td class="font-mono">${combo.lockChip
+            ? `<span class="text-series-cx">${combo.lockChip}</span> <span class="text-[10px] ${getLockChipMaterial(combo.lockChip) === 'Metal' ? 'text-amber-400' : 'text-fg-muted'}">(${getLockChipMaterial(combo.lockChip) === 'Metal' ? 'M' : 'P'})</span>`
+            : '<span class="text-fg-muted">-</span>'}</td>
           <td class="font-mono text-series-cx">${combo.overBlade || '-'}</td>
+          <td class="font-mono font-medium text-accent">${combo.blade}</td>
           <td class="font-mono text-series-cx">${combo.assist || '-'}</td>
           <td class="font-mono text-series-ux">${combo.ratchet}</td>
           <td class="font-mono text-series-bx">${combo.bit}</td>
           <td>${series ? `<span class="${seriesBadgeClass}">${series}</span>` : '<span class="text-fg-muted">-</span>'}</td>
-          <td class="text-right font-mono text-fg">${combo.raw_score.toFixed(1)}</td>
-          <td class="text-right font-mono text-positive">${combo.strength != null ? combo.strength.toFixed(0) : '--'}</td>
-          <td class="text-right font-mono">${consistencyHtml}</td>
+          <td class="text-center font-mono">${refreshNorm.has(normName(combo.blade)) ? '<span class="text-series-ix font-bold">∞</span>' : '<span class="text-fg-muted">-</span>'}</td>
           <td class="text-right font-mono">${combo.uses}</td>
           <td class="text-right font-mono text-tier-ss">${combo.first}</td>
           <td class="text-right font-mono text-fg-muted">${combo.second}</td>
@@ -653,42 +635,13 @@ import Layout from '../layouts/Layout.astro';
 
     // Add click handlers to ranking rows (for radar expansion)
     tbody.querySelectorAll('.ranking-row').forEach(row => {
-      row.addEventListener('click', (e) => {
-        // Don't expand if clicking a tier badge
-        const target = e.target as HTMLElement;
-        if (target.closest('[data-tier]') && target.closest('[data-tier]') !== row) {
-          return;
-        }
+      row.addEventListener('click', () => {
         toggleComboDetail(row as HTMLTableRowElement);
-      });
-    });
-
-    // Add click handlers to tier badges
-    tbody.querySelectorAll('.tier-badge-ss, .tier-badge-s, .tier-badge-a, .tier-badge-b, .tier-badge-c, .tier-badge-d, .tier-badge-f').forEach(badge => {
-      badge.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const tier = badge.getAttribute('data-tier') || 'all';
-        currentTier = tier;
-        updateTierStyles(tier);
-        applyTierFilter();
       });
     });
 
     // Animate rows
     staggerFadeIn(tbody.querySelectorAll('tr'), { delay: 20 });
-  }
-
-  function getTierClass(tier: string): string {
-    const classes: Record<string, string> = {
-      SS: 'tier-badge-ss',
-      S: 'tier-badge-s',
-      A: 'tier-badge-a',
-      B: 'tier-badge-b',
-      C: 'tier-badge-c',
-      D: 'tier-badge-d',
-      F: 'tier-badge-f',
-    };
-    return classes[tier] || 'tier-badge';
   }
 
   function getTrendHtml(trend: number): string {
@@ -753,13 +706,13 @@ import Layout from '../layouts/Layout.astro';
      (e.g. toggling "Unique Blades Only" or tier filters). */
   #rankings-table.data-table {
     table-layout: fixed;
-    min-width: 74rem;
+    min-width: 62rem;
   }
   #rankings-table.data-table th {
-    @apply px-2 py-2 text-xs;
+    @apply px-2 py-2 text-[11px];
   }
   #rankings-table.data-table td {
-    @apply px-2 py-2 text-sm;
+    @apply px-2 py-1.5 text-xs;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -427,15 +427,23 @@ import Layout from '../layouts/Layout.astro';
       const region = getSelectedRegion();
 
       // Load all data in parallel (single blade query, sliced locally)
-      const [summary, allBladesRaw, combos, ratchets, bits, spotlight, monthlyTournaments] = await Promise.all([
+      const [summary, allBladesRaw, combosRaw, ratchets, bits, spotlight, monthlyTournaments] = await Promise.all([
         getDatabaseSummary(region),
         getRankedBlades(200, 1, region),
-        getRankedCombos(8, 1, region),
+        getRankedCombos(100, 1, region),
         getRankedRatchets(5, 1, region),
         getRankedBits(5, 1, region),
         getMetaSpotlight(region),
         getTournamentsByMonth(region),
       ]);
+
+      // Top Combos panel: one combo per blade (no repeated blades), top 8.
+      const seenComboBlade = new Set<string>();
+      const combos = combosRaw.filter((c: ComboStats) => {
+        if (seenComboBlade.has(c.blade)) return false;
+        seenComboBlade.add(c.blade);
+        return true;
+      }).slice(0, 8);
 
       // Derive subsets from single blade query
       const blades = allBladesRaw.slice(0, 8);
@@ -1117,6 +1125,33 @@ import Layout from '../layouts/Layout.astro';
     return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   }
 
+  const SERIES_COLORS: Record<string, string> = { BX: '#0068B7', UX: '#F26522', CX: '#E4007F' };
+
+  // No blade artwork ships with the project, so we synthesize a spinner emblem
+  // per combo: a series-colored beyblade-style disc with the blade's initials.
+  function bladeEmblem(c: ComboStats, uid: string): string {
+    const series = c.lockChip ? 'CX' : (BLADE_SERIES[c.blade] || null);
+    const color = (series && SERIES_COLORS[series]) || '#f97316';
+    const base = (c.blade || '').replace(/^(Metal|Plastic)\s+/, '');
+    const initials = (base.split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+    const spokes = [0, 45, 90, 135, 180, 225, 270, 315].map(a => {
+      const x = 24 + 19 * Math.cos(a * Math.PI / 180);
+      const y = 24 + 19 * Math.sin(a * Math.PI / 180);
+      return `<line x1="24" y1="24" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="1" stroke-opacity="0.22"/>`;
+    }).join('');
+    return `
+      <svg viewBox="0 0 48 48" width="42" height="42" class="shrink-0" role="img" aria-label="${base} emblem">
+        <defs><radialGradient id="${uid}" cx="50%" cy="42%" r="62%">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0.05"/>
+        </radialGradient></defs>
+        <circle cx="24" cy="24" r="22" fill="url(#${uid})" stroke="${color}" stroke-width="1.5" stroke-opacity="0.65"/>
+        <circle cx="24" cy="24" r="15" fill="none" stroke="${color}" stroke-width="1" stroke-opacity="0.35" stroke-dasharray="3 3"/>
+        ${spokes}
+        <text x="24" y="28.5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="${color}">${initials}</text>
+      </svg>`;
+  }
+
   // "This Month's Top Combos" — pinned to the current month (falls back to the
   // most recent month with data), deduped to one combo per blade ("unique only").
   async function renderMonthFeatured(region: Region) {
@@ -1160,15 +1195,19 @@ import Layout from '../layouts/Layout.astro';
         const share = c.meta_share != null ? c.meta_share.toFixed(1) : '--';
         const rankColor = i === 0 ? 'text-gold' : 'text-fg-muted';
         const borderCls = i === 0 ? 'border-gold/40' : 'border-stroke';
+        const bladeLabel = c.lockChip ? c.blade.replace(c.lockChip + ' ', '') : c.blade;
         return `
           <div class="terminal-panel ${borderCls} p-3 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="font-mono text-lg font-bold ${rankColor} tabular-nums">#${i + 1}</span>
               <span class="text-[9px] font-mono uppercase tracking-widest text-fg-muted">${c.uses} use${c.uses === 1 ? '' : 's'}</span>
             </div>
-            <div class="font-mono text-sm leading-tight">
-              <span class="text-accent font-medium">${c.blade}</span>
-              <span class="text-series-ux">${c.ratchet}</span><span class="text-series-bx">${c.bit}</span>
+            <div class="flex items-center gap-3">
+              ${bladeEmblem(c, `mf-emblem-${i}`)}
+              <div class="font-mono text-sm leading-tight min-w-0">
+                <div class="text-accent font-medium truncate">${c.lockChip ? `<span class="text-series-cx">${c.lockChip}</span> ` : ''}${bladeLabel}</div>
+                <div><span class="text-series-ux">${c.ratchet}</span><span class="text-series-bx">${c.bit}</span></div>
+              </div>
             </div>
             <div class="grid grid-cols-3 gap-1 border-t border-stroke pt-2 mt-auto">
               <div class="text-center">
