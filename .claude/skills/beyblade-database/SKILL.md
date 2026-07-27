@@ -114,6 +114,7 @@ project memory (`project_architecture.md`).
 | Rankings fragment across duplicate blades | Collab skin not folded | Add to `SKIN_ALIASES` in `scripts/parser_aliases.py` |
 | A part ranks in two categories | Hybrid part (e.g. ratchet+bit) | Accept in the higher slot, reject in the lower, `NULL` the lower column |
 | Prod SSH times out | Stale recorded IP | Resolve live via `pvesh` (see *Determining current state*) |
+| Header/page looks wrong after a deploy, but `curl` shows correct markup | Browser cached the old build | Hard-refresh. Confirm server-side first with `curl -H 'Cache-Control: no-cache'` before debugging code |
 
 Never open a second DuckDB write connection while `beybladex-api` is running.
 
