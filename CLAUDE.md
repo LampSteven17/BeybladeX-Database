@@ -162,10 +162,20 @@ Multi-word bits: Bound Spike, Disc Ball, Free Ball, Gear Ball/Flat/Needle/Point/
 ## Deployment
 
 ### Production Server
-- **SSH host**: `beybladex-database` (ubuntu@192.168.88.62, configured in ~/.ssh/config)
+- **SSH host**: `beybladex-database` (debian@192.168.99.250, configured in ~/.ssh/config)
+- **Where it lives**: Proxmox VM `qemu/102` on node `prxy-m625q`, pool `murmur-tll-admin`
+- **Subnet**: `192.168.99.0/24` is the Light Lab **lab VLAN** — all VMs/LXCs live there, not on
+  `192.168.88.0/24` (that's the trusted-user VLAN, where your desktop sits). VLAN 88 → 99 is
+  allowed by the router, so the box is reachable from the desktop and from WSL.
 - **Repo on server**: `/opt/beybladex` (owned by root, use sudo)
 - **Web server**: nginx serving `/opt/beybladex/site/dist` on port 80
-- **Node on server**: v20.20.0
+- **Public URL**: `https://beybladex-database.thelightlab.net` via Traefik
+  (VM description is `traefik-port:80`, which is what publishes the route)
+- **API server**: systemd unit `beybladex-api` on port 8081
+- **OS / Node on server**: Debian 13 (trixie), Node v20.20.2
+
+> **Prod tracks `main`.** If prod is ever found on a feature branch, treat that as a bug and
+> reconverge — a detached feature branch on prod is how work gets stranded there (see below).
 
 ### SSH from Claude Code
 SSH hangs in Claude Code's non-interactive shell. **Always use these flags:**
@@ -176,15 +186,44 @@ ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 be
 - `ConnectTimeout=10` — fails fast instead of hanging forever
 
 ### Deploy Process
+
+**Always check prod for uncommitted work first.** `site/public/data/beyblade.duckdb` on prod holds
+live bookmarklet-uploaded data, and prod has historically carried unpushed source changes too.
+
 ```bash
-# 1. Commit and push locally
+# 1. See what prod is sitting on BEFORE touching anything
+ssh -o BatchMode=yes -o ConnectTimeout=10 beybladex-database \
+  "cd /opt/beybladex && sudo git status --short && sudo git log --oneline -3 && sudo git branch -v"
+
+# 2. Commit and push locally
 git add <files> && git commit -m "message" && git push
 
-# 2. Pull and rebuild on server
+# 3. Back up the live DB, pull, rebuild, restart the API
 ssh -o BatchMode=yes -o ConnectTimeout=10 beybladex-database \
-  "cd /opt/beybladex && sudo git pull && cd site && sudo npm run build"
+  "cd /opt/beybladex && sudo cp site/public/data/beyblade.duckdb /tmp/db-preserve.duckdb && \
+   sudo git pull && cd site && sudo npm run build && sudo systemctl restart beybladex-api"
 ```
-No nginx restart needed — it serves static files directly from `dist/`.
+
+No nginx restart needed — it serves static files directly from `dist/`. The `systemctl restart
+beybladex-api` **is** required; nginx and the API are separate.
+
+### Recovering work stranded on prod
+
+If prod has commits or edits that aren't in git, bundle them over rather than copying files by hand:
+
+```bash
+# On prod: commit the working tree, then bundle everything not in origin
+ssh beybladex-database "cd /opt/beybladex && sudo git add -A ':!*.bundle' && \
+  sudo git commit -m 'msg' && sudo git bundle create /tmp/recover.bundle <branch> ^origin/main && \
+  sudo chmod 644 /tmp/recover.bundle"
+
+# Locally: pull the bundle in and verify before fetching
+scp beybladex-database:/tmp/recover.bundle /tmp/recover.bundle
+git bundle verify /tmp/recover.bundle
+git fetch /tmp/recover.bundle '<branch>:<branch>'
+```
+
+A bundle of a 33 MB DuckDB change compresses to ~150 KB, so this is fast even with the DB included.
 
 ### GitHub Actions
 - `.github/workflows/rebuild.yml` - Triggers on `data/wbo_pages.json` push or manual dispatch
