@@ -605,7 +605,7 @@ def init_schema(conn: duckdb.DuckDBPyConnection = None) -> None:
             UNION ALL
             SELECT place, ratchet, 'ratchet' FROM combo_usage
             UNION ALL
-            SELECT place, bit, 'bit' FROM combo_usage
+            SELECT place, bit, 'bit' FROM combo_usage WHERE bit IS NOT NULL
             UNION ALL
             SELECT place, assist, 'assist' FROM combo_usage WHERE assist IS NOT NULL
             UNION ALL
@@ -1418,6 +1418,28 @@ def normalize_data(conn: duckdb.DuckDBPyConnection = None) -> int:
     for col in ["bit_1", "bit_2", "bit_3", "blade_1", "blade_2", "blade_3",
                 "ratchet_1", "ratchet_2", "ratchet_3"]:
         conn.execute(f"UPDATE placements SET {col} = TRIM({col}) WHERE {col} != TRIM({col})")
+
+    # Ratchet-integrated bits (Operate/Turbo) replace both the ratchet and the
+    # bit; they rank as ratchets only. Scrapers write the name into both
+    # columns — collapse to ratchet=<rib>, bit=NULL.
+    # DBs created before the hybrid-parts change still carry NOT NULL on the
+    # bit columns; drop it so the NULLing below can run.
+    for i in [1, 2, 3]:
+        try:
+            conn.execute(f"ALTER TABLE placements ALTER COLUMN bit_{i} DROP NOT NULL")
+        except Exception:
+            pass
+    for rib in ("Operate", "Turbo"):
+        for i in [1, 2, 3]:
+            count = conn.execute(
+                f"SELECT COUNT(*) FROM placements WHERE bit_{i} = ?", [rib]
+            ).fetchone()[0]
+            if count > 0:
+                conn.execute(
+                    f"UPDATE placements SET ratchet_{i} = ?, bit_{i} = NULL WHERE bit_{i} = ?",
+                    [rib, rib],
+                )
+                total_fixed += count
 
     # Extract lock chips from CX blade names FIRST (before normalizations)
     # This must run before BLADE_NORMALIZATIONS to preserve lock chip info.

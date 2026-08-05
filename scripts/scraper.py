@@ -326,6 +326,8 @@ def parse_combo(combo_str: str) -> Optional[Combo]:
     # Remove other parenthesized annotations (product codes, notes, etc.)
     # e.g., "(UX-03)", "(Upper Type)", "(Both)", "(Deck)"
     combo_str = re.sub(r"\s*\([^)]*\)\s*$", "", combo_str)
+    # Strip leading list numbering (e.g., "1.) Phoenix Wing", "2. Shark Edge")
+    combo_str = re.sub(r"^\s*\d*[.)\]]+\s*", "", combo_str)
     combo_str = combo_str.strip()
     if not combo_str:
         return None

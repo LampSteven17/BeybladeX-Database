@@ -676,7 +676,7 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.player_name,
             p.blade_1 as blade,
             p.ratchet_1 as ratchet,
-            p.bit_1 as bit,
+            COALESCE(p.bit_1, '') as bit,
             p.assist_1 as assist,
             p.lock_chip_1 as lock_chip,
             p.over_blade_1 as over_blade,
@@ -692,7 +692,7 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.player_name,
             p.blade_2,
             p.ratchet_2,
-            p.bit_2,
+            COALESCE(p.bit_2, ''),
             p.assist_2,
             p.lock_chip_2,
             p.over_blade_2,
@@ -709,7 +709,7 @@ export async function initDB(): Promise<duckdb.AsyncDuckDBConnection> {
             p.player_name,
             p.blade_3,
             p.ratchet_3,
-            p.bit_3,
+            COALESCE(p.bit_3, ''),
             p.assist_3,
             p.lock_chip_3,
             p.over_blade_3,
@@ -1194,7 +1194,7 @@ async function getRankedParts(partType: RankablePartType, limit: number, minUses
   const timeFilter = getTimeWhereClause(timeWindow);
   const needsNullFilter = partType === 'assist' || partType === 'lock_chip' || partType === 'over_blade' || partType === 'bit';
   const whereClause = needsNullFilter
-    ? `WHERE ${partType} IS NOT NULL${regionFilter}${timeFilter}`
+    ? `WHERE ${partType} IS NOT NULL AND ${partType} != ''${regionFilter}${timeFilter}`
     : `WHERE 1=1${regionFilter}${timeFilter}`;
 
   const rows = await query<{
@@ -1721,7 +1721,7 @@ export async function getAllRatchets(): Promise<string[]> {
  */
 export async function getAllBits(): Promise<string[]> {
   const rows = await query<{ bit: string }>(`
-    SELECT DISTINCT bit FROM combo_usage WHERE bit IS NOT NULL ORDER BY bit
+    SELECT DISTINCT bit FROM combo_usage WHERE bit IS NOT NULL AND bit != '' ORDER BY bit
   `);
   // Normalize and deduplicate
   const normalized = [...new Set(rows.map((r) => normalizeBit(r.bit)))];

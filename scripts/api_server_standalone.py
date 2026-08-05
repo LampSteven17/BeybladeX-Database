@@ -291,7 +291,7 @@ class APIHandler(BaseHTTPRequestHandler):
                         if blade_full in seen_blades:
                             continue
                         seen_blades.add(blade_full)
-                        combo_str = f"{blade_full} {r[2]} {r[3]}"
+                        combo_str = " ".join(str(x) for x in (blade_full, r[2], r[3]) if x)
                         combos.append({
                             "blade": r[0],
                             "lock_chip": r[1],
